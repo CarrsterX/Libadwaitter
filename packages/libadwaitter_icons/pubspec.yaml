@@ -1,0 +1,21 @@
+name: libadwaitter_icons
+description: Official GNOME Adwaita symbolic icon theme packaged for Flutter applications.
+version: 0.1.0
+homepage: https://gitlab.gnome.org/GNOME/adwaita-icon-theme
+repository: https://gitlab.gnome.org/GNOME/adwaita-icon-theme
+issue_tracker: https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/issues
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  fonts:
+    - family: AdwaitaIcons
+      fonts:
+        - asset: assets/fonts/AdwaitaIcons.ttf
+

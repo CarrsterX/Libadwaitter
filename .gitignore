@@ -1,0 +1,53 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+
+# Agent & internal docs
+.agent/
+.gemini/
+COMPONENTS.md
+Components.md
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+**/.idea/
+
+# Visual Studio Code related
+.vscode/
+**/.vscode/
+
+# Flutter/Dart related
+**/doc/api/
+.dart_tool/
+**/.dart_tool/
+.flutter-plugins
+**/.flutter-plugins
+.flutter-plugins-dependencies
+**/.flutter-plugins-dependencies
+.packages
+**/.packages
+.pub-cache/
+.pub/
+**/pubspec.lock
+**/.metadata
+**/linux/flutter/ephemeral/
+/build/
+**/build/
+
+# Node related (icon generator)
+**/node_modules/
+**/tool/staging_svgs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+

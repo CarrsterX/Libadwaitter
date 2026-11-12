@@ -1,0 +1,1173 @@
+import 'package:flutter/widgets.dart';
+import 'package:libadwaitter/libadwaitter.dart';
+import 'package:libadwaitter_icons/libadwaitter_icons.dart';
+
+void main() {
+  runApp(const AdwaitaDemoApplication());
+}
+
+class AdwaitaDemoApplication extends StatefulWidget {
+  const AdwaitaDemoApplication({super.key});
+
+  @override
+  State<AdwaitaDemoApplication> createState() => _AdwaitaDemoApplicationState();
+}
+
+class _AdwaitaDemoApplicationState extends State<AdwaitaDemoApplication> {
+  AdwThemeMode _themeMode = AdwThemeMode.system;
+  AdwAccentColor? _accentColor;
+
+  void _setThemeMode(AdwThemeMode mode) {
+    setState(() {
+      _themeMode = mode;
+    });
+  }
+
+  void _changeAccent(AdwAccentColor? color) {
+    setState(() {
+      _accentColor = color;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AdwApplication(
+      title: 'Adwaita Demo',
+      themeMode: _themeMode,
+      accentColor: _accentColor,
+      home: AdwToastOverlay(
+        child: AdwaitaDemoWindow(
+          currentThemeMode: _themeMode,
+          currentAccent: _accentColor,
+          onThemeModeChanged: _setThemeMode,
+          onAccentChanged: _changeAccent,
+        ),
+      ),
+    );
+  }
+}
+
+enum DemoPage {
+  welcome,
+  navigationView,
+  splitViews,
+  viewSwitcher,
+  carousel,
+  boxedLists,
+  toggleGroups,
+  buttons,
+  banner,
+  toasts,
+  appearance,
+  dialogs,
+}
+
+class AdwaitaDemoWindow extends StatefulWidget {
+  final AdwThemeMode currentThemeMode;
+  final AdwAccentColor? currentAccent;
+  final ValueChanged<AdwThemeMode> onThemeModeChanged;
+  final ValueChanged<AdwAccentColor?> onAccentChanged;
+
+  const AdwaitaDemoWindow({
+    super.key,
+    required this.currentThemeMode,
+    required this.currentAccent,
+    required this.onThemeModeChanged,
+    required this.onAccentChanged,
+  });
+
+  @override
+  State<AdwaitaDemoWindow> createState() => _AdwaitaDemoWindowState();
+}
+
+class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
+  DemoPage _selectedPage = DemoPage.welcome;
+  String _searchFilter = '';
+  bool _searchBarVisible = false;
+
+  // Interactive component demo state variables
+  bool _hardwareAcceleration = true;
+  bool _automaticUpdates = false;
+  int _counter = 0;
+  double _spinValue = 50.0;
+  String _selectedComboOption = 'Option Alpha';
+  bool _bannerRevealed = true;
+  int _viewSwitcherIndex = 0;
+  String _appliedText = 'None';
+  final AdwCarouselController _carouselController = AdwCarouselController();
+  String _selectedToggleInterval = 'Day';
+  int _selectedAlignment = 1;
+
+  @override
+  void dispose() {
+    _carouselController.dispose();
+    super.dispose();
+  }
+
+  void _showPreferencesMenu(BuildContext context) {
+    AdwThemeMode localMode = widget.currentThemeMode;
+    AdwAccentColor? localAccent = widget.currentAccent;
+
+    showAdwAlertDialog(
+      context: context,
+      heading: const Text('Preferences'),
+      content: StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final theme = AdwTheme.of(dialogContext);
+          final resolvedAccent =
+              localAccent ?? AdwStyleManager.instance.accentColor;
+
+          return SizedBox(
+            width: 320,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdwPreferencesGroup(
+                  children: [
+                    AdwComboRow<AdwThemeMode>(
+                      prefix: const Icon(AdwIcons.night_light_symbolic,
+                          size: 20),
+                      title: const Text('Color Scheme'),
+                      items: AdwThemeMode.values,
+                      selectedItem: localMode,
+                      itemTitleBuilder: (mode) => mode == AdwThemeMode.system
+                          ? 'Default'
+                          : mode == AdwThemeMode.light
+                              ? 'Light'
+                              : 'Dark',
+                      onSelected: (mode) {
+                        setDialogState(() => localMode = mode);
+                        widget.onThemeModeChanged(mode);
+                      },
+                    ),
+                  ],
+                ),
+                AdwPreferencesGroup(
+                  title: const Text('ACCENT COLOR'),
+                  headerSuffix: localAccent != null
+                      ? AdwButton.flat(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          onPressed: () {
+                            setDialogState(() => localAccent = null);
+                            widget.onAccentChanged(null);
+                          },
+                          child: const Text('System'),
+                        )
+                      : null,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      child: Center(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: AdwAccentColor.values.map((accent) {
+                            final isSelected = resolvedAccent == accent;
+                            return GestureDetector(
+                              onTap: () {
+                                setDialogState(() => localAccent = accent);
+                                widget.onAccentChanged(accent);
+                              },
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: accent.color,
+                                  shape: BoxShape.circle,
+                                  border: isSelected
+                                      ? Border.all(
+                                          color: theme.colors.foreground,
+                                          width: 2.5)
+                                      : null,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                AdwButton.flat(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showAbout(context);
+                  },
+                  child: const Text('About Adwaita Demo'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      actions: [
+        AdwButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+
+  void _showAbout(BuildContext context) {
+    showAdwAboutDialog(
+      context: context,
+      applicationName: 'Adwaita Demo',
+      version: '1.0.0',
+      developerName: 'Libadwaitter Contributors',
+      comments:
+          'A pure Dart & Flutter implementation of GNOME Libadwaita and GNOME HIG.',
+      website: 'https://gitlab.gnome.org/GNOME/libadwaita',
+      copyright: '© 2026 The GNOME Project & Libadwaitter Authors',
+      license:
+          'GNU Lesser General Public License Version 2.1 (LGPL-2.1-or-later)',
+    );
+  }
+
+  void _showResetDialog(BuildContext context) {
+    showAdwAlertDialog(
+      context: context,
+      heading: const Text('Reset Demo Settings?'),
+      body: const Text(
+        'Are you sure you want to reset all controls to their default state? '
+        'This action is reversible by changing the controls again.',
+      ),
+      actions: [
+        AdwButton.flat(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        AdwButton.destructive(
+          onPressed: () {
+            Navigator.of(context).pop();
+            setState(() {
+              _hardwareAcceleration = true;
+              _automaticUpdates = false;
+              _counter = 0;
+              _spinValue = 50.0;
+              _selectedComboOption = 'Option Alpha';
+              _bannerRevealed = true;
+            });
+            AdwToastOverlay.of(context).addToast(
+              const AdwToast(
+                title: Text('Settings restored to defaults'),
+              ),
+            );
+          },
+          child: const Text('Reset'),
+        ),
+      ],
+    );
+  }
+
+  void _showDemoToast(BuildContext context) {
+    AdwToastOverlay.of(context).addToast(
+      AdwToast(
+        title: const Text('File downloaded to ~/Downloads'),
+        action: AdwButton.suggested(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          onPressed: () {},
+          child: const Text('Undo'),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AdwTheme.of(context);
+    final isDark = theme.colors.isDark;
+
+    return AdwWindow(
+      showShadow: true,
+      showBorder: true,
+      child: AdwNavigationSplitView(
+        sidebarWidth: 240.0,
+        sidebar: _buildSidebar(theme),
+        content: _buildContent(theme, isDark),
+      ),
+    );
+  }
+
+  Widget _buildSidebar(AdwThemeData theme) {
+    return Column(
+      children: [
+        // Flat sidebar header bar (matching adwaita-1-demo)
+        AdwHeaderBar(
+          isFlat: true,
+          showWindowControls: false,
+          start: AdwButton.flat(
+            width: 34,
+            height: 34,
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              setState(() {
+                _searchBarVisible = !_searchBarVisible;
+                if (!_searchBarVisible) _searchFilter = '';
+              });
+            },
+            child: const Icon(AdwIcons.edit_find_symbolic, size: 16),
+          ),
+          title: const Text('Adwaita Demo'),
+          end: AdwButton.flat(
+            width: 34,
+            height: 34,
+            padding: EdgeInsets.zero,
+            onPressed: () => _showPreferencesMenu(context),
+            child: const Icon(AdwIcons.open_menu_symbolic, size: 16),
+          ),
+        ),
+        if (_searchBarVisible)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colors.cardBackground,
+                borderRadius: BorderRadius.circular(AdwMetrics.buttonRadius),
+                border: Border.all(color: theme.colors.borderColor),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    AdwIcons.edit_find_symbolic,
+                    size: 14,
+                    color: theme.colors.secondaryForeground,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AdwEntryRow(
+                      placeholder: 'Find pages...',
+                      showClearButton: true,
+                      onChanged: (val) =>
+                          setState(() => _searchFilter = val.toLowerCase()),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSidebarItem(
+                  page: DemoPage.welcome,
+                  iconWidget: const AdwEmblem(size: 16),
+                  title: 'Welcome',
+                ),
+                _buildSidebarSection(theme, 'Navigation', [
+                  _buildSidebarItem(
+                    page: DemoPage.navigationView,
+                    icon: AdwIcons.application_exit_rtl_symbolic,
+                    title: 'Navigation View',
+                  ),
+                  _buildSidebarItem(
+                    page: DemoPage.splitViews,
+                    icon: AdwIcons.view_dual_symbolic,
+                    title: 'Split Views',
+                  ),
+                  _buildSidebarItem(
+                    page: DemoPage.viewSwitcher,
+                    icon: AdwIcons.view_paged_symbolic,
+                    title: 'View Switcher',
+                  ),
+                  _buildSidebarItem(
+                    page: DemoPage.carousel,
+                    icon: AdwIcons.media_playlist_consecutive_symbolic,
+                    title: 'Carousel',
+                  ),
+                ]),
+                _buildSidebarSection(theme, 'Controls', [
+                  _buildSidebarItem(
+                    page: DemoPage.boxedLists,
+                    icon: AdwIcons.view_list_symbolic,
+                    title: 'Boxed Lists',
+                  ),
+                  _buildSidebarItem(
+                    page: DemoPage.toggleGroups,
+                    icon: AdwIcons.selection_mode_symbolic,
+                    title: 'Toggle Groups',
+                  ),
+                  _buildSidebarItem(
+                    page: DemoPage.buttons,
+                    icon: AdwIcons.avatar_default_symbolic,
+                    title: 'Buttons',
+                  ),
+                ]),
+                _buildSidebarSection(theme, 'Display', [
+                  _buildSidebarItem(
+                    page: DemoPage.banner,
+                    icon: AdwIcons.dialog_information_symbolic,
+                    title: 'Banner',
+                  ),
+                  _buildSidebarItem(
+                    page: DemoPage.toasts,
+                    icon: AdwIcons.preferences_system_notifications_symbolic,
+                    title: 'Toasts',
+                  ),
+                ]),
+                _buildSidebarSection(theme, 'Dialogs', [
+                  _buildSidebarItem(
+                    page: DemoPage.dialogs,
+                    icon: AdwIcons.help_about_symbolic,
+                    title: 'Alerts & About Dialog',
+                  ),
+                ]),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSidebarItem({
+    required DemoPage page,
+    Widget? iconWidget,
+    IconData? icon,
+    required String title,
+  }) {
+    if (_searchFilter.isNotEmpty &&
+        !title.toLowerCase().contains(_searchFilter)) {
+      return const SizedBox.shrink();
+    }
+    return AdwSidebarItem(
+      icon: iconWidget ?? (icon != null ? Icon(icon) : null),
+      title: Text(title),
+      isSelected: _selectedPage == page,
+      onTap: () => setState(() => _selectedPage = page),
+    );
+  }
+
+  Widget _buildSidebarSection(
+      AdwThemeData theme, String title, List<Widget> items) {
+    final hasMatches =
+        _searchFilter.isEmpty || items.any((item) => item is! SizedBox);
+    if (!hasMatches) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 18, 12, 14),
+          child: Text(
+            title,
+            style: theme.typography.sectionTitle,
+          ),
+        ),
+        ...items,
+      ],
+    );
+  }
+
+  Widget _buildContent(AdwThemeData theme, bool isDark) {
+    final isWelcome = _selectedPage == DemoPage.welcome;
+    final pageTitle = _getPageTitle(_selectedPage);
+
+    return Column(
+      children: [
+        // Flat content view header bar with in-app window controls on the right
+        AdwHeaderBar(
+          isFlat: true,
+          showWindowControls: true,
+          title: isWelcome ? null : Text(pageTitle),
+        ),
+        Expanded(
+          child: _buildPageBody(theme, isDark),
+        ),
+      ],
+    );
+  }
+
+  String _getPageTitle(DemoPage page) {
+    switch (page) {
+      case DemoPage.welcome:
+        return 'Welcome to Adwaita Demo';
+      case DemoPage.navigationView:
+        return 'Navigation View';
+      case DemoPage.splitViews:
+        return 'Split Views';
+      case DemoPage.viewSwitcher:
+        return 'View Switcher';
+      case DemoPage.carousel:
+        return 'Carousel';
+      case DemoPage.boxedLists:
+        return 'Boxed Lists';
+      case DemoPage.toggleGroups:
+        return 'Toggle Groups';
+      case DemoPage.buttons:
+        return 'Buttons';
+      case DemoPage.banner:
+        return 'Banner';
+      case DemoPage.toasts:
+        return 'Toasts';
+      case DemoPage.appearance:
+        return 'Appearance & Accent';
+      case DemoPage.dialogs:
+        return 'Alerts & About Dialog';
+    }
+  }
+
+  Widget _buildPageBody(AdwThemeData theme, bool isDark) {
+    switch (_selectedPage) {
+      case DemoPage.welcome:
+        return const AdwStatusPage(
+          icon: AdwEmblem(size: 110),
+          title: Text('Welcome to Adwaita Demo'),
+          description:
+              Text('This is a tour of the features the library has to offer'),
+        );
+
+      case DemoPage.boxedLists:
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: AdwClamp(
+            maximumSize: 560,
+            child: Column(
+              children: [
+                AdwPreferencesGroup(
+                  title: const Text('SYSTEM PREFERENCES'),
+                  description: const Text(
+                    'Grouped cards preserve a 12px border radius with 1px hairline dividers.',
+                  ),
+                  children: [
+                    AdwSwitchRow(
+                      prefix: const Icon(AdwIcons.preferences_system_symbolic,
+                          size: 20),
+                      title: const Text('Hardware Acceleration'),
+                      subtitle: const Text(
+                          'Utilize GPU for optimal rendering and smooth transitions'),
+                      value: _hardwareAcceleration,
+                      onChanged: (val) =>
+                          setState(() => _hardwareAcceleration = val),
+                    ),
+                    AdwSwitchRow(
+                      prefix: const Icon(AdwIcons.network_wireless_symbolic,
+                          size: 20),
+                      title: const Text('Automatic Updates'),
+                      subtitle: const Text(
+                          'Download security and stability patches in background'),
+                      value: _automaticUpdates,
+                      onChanged: (val) =>
+                          setState(() => _automaticUpdates = val),
+                    ),
+                    AdwActionRow(
+                      prefix: const Icon(AdwIcons.avatar_default_symbolic,
+                          size: 20),
+                      title: const Text('Reactive Counter'),
+                      subtitle: Text('Total button clicks: $_counter'),
+                      suffix: AdwButton.suggested(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        onPressed: () => setState(() => _counter++),
+                        child: const Text('Increment'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AdwPreferencesGroup(
+                  title: const Text('ENTRY ROWS'),
+                  description: const Text(
+                    'In-place text inputs with apply buttons and clear triggers.',
+                  ),
+                  children: [
+                    AdwEntryRow(
+                      title: const Text('Standard Entry'),
+                      placeholder: 'Type something...',
+                      initialValue: 'Libadwaitter',
+                    ),
+                    AdwEntryRow(
+                      title: const Text('Entry With Confirmation'),
+                      placeholder: 'Commit changes with apply...',
+                      showApplyButton: true,
+                      onApply: (val) {
+                        setState(() => _appliedText = val);
+                        AdwToastOverlay.of(context).addToast(
+                          AdwToast(title: Text('Applied: "$val"')),
+                        );
+                      },
+                    ),
+                    const AdwPasswordEntryRow(
+                      title: Text('Password Entry'),
+                      placeholder: 'Enter secret token...',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AdwPreferencesGroup(
+                  title: const Text('STEPPER & COMBO ROWS'),
+                  children: [
+                    AdwSpinRow(
+                      title: const Text('Numeric Stepper'),
+                      subtitle:
+                          const Text('Fine-tuned integer or decimal stepping'),
+                      value: _spinValue,
+                      min: 0,
+                      max: 100,
+                      step: 5,
+                      onChanged: (val) => setState(() => _spinValue = val),
+                    ),
+                    AdwComboRow<String>(
+                      title: const Text('Combo Selection'),
+                      subtitle: const Text(
+                          'Tap row to display options in modal dialog'),
+                      items: const [
+                        'Option Alpha',
+                        'Option Beta',
+                        'Option Gamma',
+                        'Option Delta'
+                      ],
+                      selectedItem: _selectedComboOption,
+                      onSelected: (val) =>
+                          setState(() => _selectedComboOption = val),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AdwPreferencesGroup(
+                  title: const Text('EXPANDER ROWS'),
+                  children: [
+                    const AdwExpanderRow(
+                      title: Text('Expander Row'),
+                      subtitle: Text('Tap to inspect nested preferences'),
+                      children: [
+                        AdwActionRow(
+                          title: Text('Nested Item 1'),
+                          subtitle: Text('Details for secondary option A'),
+                        ),
+                        AdwActionRow(
+                          title: Text('Nested Item 2'),
+                          subtitle: Text('Details for secondary option B'),
+                        ),
+                      ],
+                    ),
+                    const AdwExpanderRow(
+                      title: Text('Toggleable Expander Row'),
+                      showEnableSwitch: true,
+                      children: [
+                        AdwActionRow(
+                          title: Text('Feature 1'),
+                          subtitle:
+                              Text('Active only when switch is turned ON'),
+                        ),
+                        AdwActionRow(
+                          title: Text('Feature 2'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+
+      case DemoPage.buttons:
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: AdwClamp(
+            maximumSize: 480,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdwButton(
+                  onPressed: () {},
+                  child: const Text('Standard Button'),
+                ),
+                const SizedBox(height: 12),
+                AdwButton.suggested(
+                  onPressed: () {},
+                  child: const Text('Suggested Action (Accent)'),
+                ),
+                const SizedBox(height: 12),
+                AdwButton.destructive(
+                  onPressed: () {},
+                  child: const Text('Destructive Action (Red)'),
+                ),
+                const SizedBox(height: 12),
+                AdwButton.flat(
+                  onPressed: () {},
+                  child: const Text('Flat Button'),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: AdwButton.pill(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    onPressed: () {},
+                    child: const Text('Pill Button'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: AdwButton.circular(
+                    padding: const EdgeInsets.all(12),
+                    onPressed: () {},
+                    child: const Icon(AdwIcons.user_home_symbolic, size: 18),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+      case DemoPage.viewSwitcher:
+        return Column(
+          children: [
+            const SizedBox(height: 16),
+            AdwViewSwitcher(
+              items: const [
+                AdwViewSwitcherItem(
+                  icon: Icon(AdwIcons.view_reveal_symbolic),
+                  title: 'Explore',
+                ),
+                AdwViewSwitcherItem(
+                  icon: Icon(AdwIcons.system_software_install_symbolic),
+                  title: 'Installed',
+                ),
+                AdwViewSwitcherItem(
+                  icon: Icon(AdwIcons.software_update_available_symbolic),
+                  title: 'Updates',
+                ),
+              ],
+              currentIndex: _viewSwitcherIndex,
+              onIndexChanged: (i) => setState(() => _viewSwitcherIndex = i),
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  _viewSwitcherIndex == 0
+                      ? 'Explore View Content'
+                      : (_viewSwitcherIndex == 1
+                          ? 'Installed Packages'
+                          : 'System Updates Available'),
+                  style: theme.typography.title2,
+                ),
+              ),
+            ),
+          ],
+        );
+
+      case DemoPage.banner:
+        return Column(
+          children: [
+            AdwBanner(
+              revealed: _bannerRevealed,
+              title: const Text(
+                  'No Internet Connection. Some features may be unavailable.'),
+              buttonLabel: 'Retry',
+              onButtonPressed: () {
+                AdwToastOverlay.of(context).addToast(
+                  const AdwToast(title: Text('Retrying network connection...')),
+                );
+              },
+            ),
+            Expanded(
+              child: Center(
+                child: AdwButton(
+                  onPressed: () =>
+                      setState(() => _bannerRevealed = !_bannerRevealed),
+                  child: Text(_bannerRevealed ? 'Hide Banner' : 'Show Banner'),
+                ),
+              ),
+            ),
+          ],
+        );
+
+      case DemoPage.toasts:
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AdwButton.suggested(
+                isPill: true,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                onPressed: () => _showDemoToast(context),
+                child: const Text('Show Toast Notification'),
+              ),
+              const SizedBox(height: 12),
+              AdwButton(
+                isPill: true,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                onPressed: () {
+                  AdwToastOverlay.of(context).addToast(
+                    const AdwToast(
+                      title: Text('Preferences saved successfully'),
+                    ),
+                  );
+                },
+                child: const Text('Show Simple Toast'),
+              ),
+            ],
+          ),
+        );
+
+      case DemoPage.appearance:
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: AdwClamp(
+            maximumSize: 560,
+            child: Column(
+              children: [
+                AdwPreferencesGroup(
+                  title: const Text('APPEARANCE & ACCENT COLOR'),
+                  description: const Text(
+                    'Supports the 9 official GNOME 47 accent colors with seamless dark mode switching.',
+                  ),
+                  children: [
+                    AdwComboRow<AdwThemeMode>(
+                      prefix: const Icon(AdwIcons.night_light_symbolic,
+                          size: 20),
+                      title: const Text('Color Scheme'),
+                      items: AdwThemeMode.values,
+                      selectedItem: widget.currentThemeMode,
+                      itemTitleBuilder: (mode) => mode == AdwThemeMode.system
+                          ? 'Default'
+                          : mode == AdwThemeMode.light
+                              ? 'Light'
+                              : 'Dark',
+                      onSelected: widget.onThemeModeChanged,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Accent Color',
+                            style: theme.typography.body
+                                .copyWith(fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: AdwAccentColor.values.map((accent) {
+                              final effectiveAccent = widget.currentAccent ??
+                                  AdwStyleManager.instance.accentColor;
+                              final isSelected = effectiveAccent == accent;
+                              return GestureDetector(
+                                onTap: () => widget.onAccentChanged(accent),
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: accent.color,
+                                    shape: BoxShape.circle,
+                                    border: isSelected
+                                        ? Border.all(
+                                            color: theme.colors.foreground,
+                                            width: 3)
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+
+      case DemoPage.dialogs:
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AdwButton(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                onPressed: () => _showResetDialog(context),
+                child: const Text('Open Alert Dialog'),
+              ),
+              const SizedBox(height: 16),
+              AdwButton.suggested(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                onPressed: () => _showAbout(context),
+                child: const Text('Open About Dialog'),
+              ),
+            ],
+          ),
+        );
+
+      case DemoPage.carousel:
+        return _buildCarouselPage(theme);
+
+      case DemoPage.toggleGroups:
+        return _buildToggleGroupsPage(theme);
+
+      case DemoPage.navigationView:
+      case DemoPage.splitViews:
+        return Center(
+          child: Text(
+            '${_getPageTitle(_selectedPage)} Example Page',
+            style: theme.typography.title2,
+          ),
+        );
+    }
+  }
+
+  Widget _buildCarouselPage(AdwThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+      child: AdwClamp(
+        maximumSize: 740,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Featured banner carousel (resembling GNOME Software upstream)
+            SizedBox(
+              height: 260,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AdwMetrics.cardRadius),
+                child: AdwCarousel(
+                  controller: _carouselController,
+                  showNavigationButtons: true,
+                  children: [
+                    _buildBannerCard(
+                      theme: theme,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF632CA6), Color(0xFF813D9C)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      icon: const AdwEmblem(size: 64),
+                      title: 'Emblema',
+                      subtitle: 'Generar avatares de proyectos',
+                    ),
+                    _buildBannerCard(
+                      theme: theme,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1A5FB4), Color(0xFF3584E4)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      icon: const Icon(AdwIcons.applications_games_symbolic,
+                          size: 64, color: Color(0xFFFFFFFF)),
+                      title: 'Retro Games',
+                      subtitle: 'Colección de clásicos arcade y aventuras',
+                    ),
+                    _buildBannerCard(
+                      theme: theme,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF26A269), Color(0xFF33D17A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      icon: const Icon(AdwIcons.utilities_terminal_symbolic,
+                          size: 64, color: Color(0xFFFFFFFF)),
+                      title: 'Code Builder',
+                      subtitle: 'Herramientas modernas para desarrolladores',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            // Dots indicator
+            Center(
+              child: AdwCarouselIndicatorDots(
+                controller: _carouselController,
+                dotSize: 7,
+                activeDotWidth: 20,
+              ),
+            ),
+            const SizedBox(height: 28),
+            // Category tiles (matching GNOME Software lower section)
+            Text(
+              'CATEGORIES',
+              style: theme.typography.sectionTitle,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildCategoryCard(
+                    'Crear', const Color(0xFF7852FF), const Color(0xFF3B82F6)),
+                _buildCategoryCard('Trabajo', const Color(0xFFF59E0B),
+                    const Color(0xFFFBBF24)),
+                _buildCategoryCard(
+                    'Juegos', const Color(0xFFEC4899), const Color(0xFF8B5CF6)),
+                _buildCategoryCard('Socializar', const Color(0xFFEF4444),
+                    const Color(0xFFF97316)),
+                _buildCategoryCard('Aprendizaje', const Color(0xFF10B981),
+                    const Color(0xFF059669)),
+                _buildCategoryCard('Desarrollo', const Color(0xFF374151),
+                    const Color(0xFF1F2937)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBannerCard({
+    required AdwThemeData theme,
+    required Gradient gradient,
+    required Widget icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      decoration: BoxDecoration(gradient: gradient),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          icon,
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFFFFFFFF),
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              inherit: false,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Color(0xCCFFFFFF),
+              fontSize: 13,
+              inherit: false,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard(String label, Color startColor, Color endColor) {
+    return Container(
+      width: 170,
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AdwMetrics.buttonRadius),
+        gradient: LinearGradient(
+          colors: [startColor, endColor],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x24000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFFFFFFFF),
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            inherit: false,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToggleGroupsPage(AdwThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: AdwClamp(
+        maximumSize: 560,
+        child: Column(
+          children: [
+            AdwPreferencesGroup(
+              title: const Text('TIME INTERVAL SELECTOR'),
+              description: const Text(
+                'Segmented single-choice toggle bar with animated active indicator.',
+              ),
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Center(
+                    child: AdwToggleGroup<String>(
+                      selectedValue: _selectedToggleInterval,
+                      onChanged: (val) =>
+                          setState(() => _selectedToggleInterval = val),
+                      items: const [
+                        AdwToggleItem(value: 'Day', label: Text('Day')),
+                        AdwToggleItem(value: 'Week', label: Text('Week')),
+                        AdwToggleItem(value: 'Month', label: Text('Month')),
+                        AdwToggleItem(value: 'Year', label: Text('Year')),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            AdwPreferencesGroup(
+              title: const Text('TEXT STYLING TOGGLE'),
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Center(
+                    child: AdwToggleGroup<int>(
+                      selectedValue: _selectedAlignment,
+                      onChanged: (val) =>
+                          setState(() => _selectedAlignment = val),
+                      items: const [
+                        AdwToggleItem(
+                          value: 0,
+                          icon:
+                              Icon(AdwIcons.format_text_direction_ltr_symbolic),
+                          tooltip: 'Direction',
+                        ),
+                        AdwToggleItem(
+                          value: 1,
+                          icon: Icon(AdwIcons.format_text_bold_symbolic),
+                          tooltip: 'Bold',
+                        ),
+                        AdwToggleItem(
+                          value: 2,
+                          icon: Icon(AdwIcons.format_text_italic_symbolic),
+                          tooltip: 'Italic',
+                        ),
+                        AdwToggleItem(
+                          value: 3,
+                          icon: Icon(AdwIcons.format_text_underline_symbolic),
+                          tooltip: 'Underline',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
