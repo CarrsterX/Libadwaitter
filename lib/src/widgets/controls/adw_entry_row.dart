@@ -91,7 +91,7 @@ class _AdwEntryRowState extends State<AdwEntryRow>
     );
     _cursorController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 1200),
     );
     _cursorOpacity = TweenSequence<double>([
       TweenSequenceItem(tween: ConstantTween<double>(1.0), weight: 30),
