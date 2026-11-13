@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-import '../../theme/adw_metrics.dart';
 import '../../theme/adw_theme.dart';
 
 /// Libadwaita status or welcome page widget (`AdwStatusPage`).
@@ -41,7 +40,8 @@ class AdwStatusPage extends StatelessWidget {
                 IconTheme(
                   data: IconThemeData(
                     size: 96,
-                    color: theme.colors.secondaryForeground.withValues(alpha: 0.7),
+                    color:
+                        theme.colors.secondaryForeground.withValues(alpha: 0.7),
                   ),
                   child: icon!,
                 ),
@@ -73,4 +73,3 @@ class AdwStatusPage extends StatelessWidget {
     );
   }
 }
-

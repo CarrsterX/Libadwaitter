@@ -26,7 +26,8 @@ class AdwBanner extends StatefulWidget {
   State<AdwBanner> createState() => _AdwBannerState();
 }
 
-class _AdwBannerState extends State<AdwBanner> with SingleTickerProviderStateMixin {
+class _AdwBannerState extends State<AdwBanner>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   late final Animation<double> _expandAnimation;
 
@@ -68,7 +69,6 @@ class _AdwBannerState extends State<AdwBanner> with SingleTickerProviderStateMix
 
     return SizeTransition(
       sizeFactor: _expandAnimation,
-      axisAlignment: -1.0,
       child: Container(
         decoration: BoxDecoration(
           color: theme.colors.cardBackground,
@@ -93,7 +93,8 @@ class _AdwBannerState extends State<AdwBanner> with SingleTickerProviderStateMix
             if (widget.buttonLabel != null) ...[
               const SizedBox(width: 12),
               AdwButton(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 onPressed: widget.onButtonPressed,
                 child: Text(widget.buttonLabel!),
               ),
@@ -101,7 +102,7 @@ class _AdwBannerState extends State<AdwBanner> with SingleTickerProviderStateMix
           ],
         ),
       ),
+      alignment: AlignmentDirectional(-1.0, -1.0),
     );
   }
 }
-

@@ -189,7 +189,8 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
       children: [
         // Interactive Expander Header Row
         MouseRegion(
-          cursor: canExpand ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          cursor:
+              canExpand ? SystemMouseCursors.click : SystemMouseCursors.basic,
           onEnter: (_) => setState(() => _isHovered = true),
           onExit: (_) => setState(() => _isHovered = false),
           child: GestureDetector(
@@ -209,7 +210,8 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                       data: IconThemeData(
                         color: _isEnabled
                             ? theme.colors.windowForeground
-                            : theme.colors.secondaryForeground.withValues(alpha: 0.5),
+                            : theme.colors.secondaryForeground
+                                .withValues(alpha: 0.5),
                         size: AdwMetrics.iconSizeMedium,
                       ),
                       child: prefixWidget,
@@ -226,7 +228,8 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                             fontWeight: FontWeight.w500,
                             color: _isEnabled
                                 ? theme.colors.windowForeground
-                                : theme.colors.secondaryForeground.withValues(alpha: 0.5),
+                                : theme.colors.secondaryForeground
+                                    .withValues(alpha: 0.5),
                           ),
                           child: widget.title,
                         ),
@@ -234,7 +237,9 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                           const SizedBox(height: 2),
                           DefaultTextStyle(
                             style: theme.typography.subtitle.copyWith(
-                              color: theme.colors.secondaryForeground.withValues(alpha: _isEnabled ? 1.0 : 0.5,
+                              color:
+                                  theme.colors.secondaryForeground.withValues(
+                                alpha: _isEnabled ? 1.0 : 0.5,
                               ),
                             ),
                             child: widget.subtitle!,
@@ -268,7 +273,8 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                         child: _ExpanderChevron(
                           color: canExpand
                               ? theme.colors.secondaryForeground
-                              : theme.colors.secondaryForeground.withValues(alpha: 0.3),
+                              : theme.colors.secondaryForeground
+                                  .withValues(alpha: 0.3),
                         ),
                       );
                     },
@@ -283,7 +289,6 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
         ClipRect(
           child: SizeTransition(
             sizeFactor: _expandAnimation,
-            axisAlignment: -1.0,
             child: Container(
               color: theme.colors.isDark
                   ? const Color(0x0AFFFFFF) // ~4% subtle nested tint
@@ -301,6 +306,7 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                 ],
               ),
             ),
+            alignment: AlignmentDirectional(-1.0, -1.0),
           ),
         ),
       ],

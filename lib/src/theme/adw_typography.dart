@@ -1,4 +1,3 @@
-import 'dart:ui' show FontVariation;
 import 'package:flutter/painting.dart';
 
 /// Official typographic scale adhering to GNOME HIG and GTK4 Libadwaita specifications.

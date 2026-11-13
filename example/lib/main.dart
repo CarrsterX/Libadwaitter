@@ -90,7 +90,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   bool _automaticUpdates = false;
   int _counter = 0;
   double _spinValue = 50.0;
-  String _selectedComboOption = 'Option Alpha';
+  String _selectedComboOption = 'Foo';
+  String _selectedEnumComboOption = 'unknown';
   bool _bannerRevealed = true;
   int _viewSwitcherIndex = 0;
   String _appliedText = 'None';
@@ -672,20 +673,18 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 ),
                 const SizedBox(height: 24),
                 AdwPreferencesGroup(
-                  title: const Text('ENTRY ROWS'),
-                  description: const Text(
-                    'In-place text inputs with apply buttons and clear triggers.',
-                  ),
+                  title: const Text('Entry Rows'),
+                  separated: true,
                   children: [
-                    AdwEntryRow(
-                      title: const Text('Standard Entry'),
-                      placeholder: 'Type something...',
-                      initialValue: 'Libadwaitter',
+                    const AdwEntryRow(
+                      title: Text('Entry Row'),
+                      editIcon: Icon(AdwIcons.document_edit_symbolic, size: 16),
                     ),
                     AdwEntryRow(
                       title: const Text('Entry With Confirmation'),
-                      placeholder: 'Commit changes with apply...',
                       showApplyButton: true,
+                      editIcon:
+                          const Icon(AdwIcons.document_edit_symbolic, size: 16),
                       onApply: (val) {
                         setState(() => _appliedText = val);
                         AdwToastOverlay.of(context).addToast(
@@ -693,9 +692,30 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         );
                       },
                     ),
+                    AdwEntryRow(
+                      title: const Text('Entry With Suffix'),
+                      editIcon:
+                          const Icon(AdwIcons.document_edit_symbolic, size: 16),
+                      suffix: AdwButton.flat(
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          AdwToastOverlay.of(context).addToast(
+                            const AdwToast(
+                                title: Text('Suffix action triggered')),
+                          );
+                        },
+                        child: const Icon(
+                          AdwIcons.edit_copy_symbolic,
+                          size: 16,
+                        ),
+                      ),
+                    ),
                     const AdwPasswordEntryRow(
                       title: Text('Password Entry'),
-                      placeholder: 'Enter secret token...',
+                      editIcon: Icon(AdwIcons.document_edit_symbolic, size: 16),
+                      revealIcon: Icon(AdwIcons.view_reveal_symbolic, size: 16),
+                      concealIcon:
+                          Icon(AdwIcons.view_conceal_symbolic, size: 16),
                     ),
                   ],
                 ),
@@ -713,19 +733,47 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                       step: 5,
                       onChanged: (val) => setState(() => _spinValue = val),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AdwPreferencesGroup(
+                  title: const Text('COMBO ROWS'),
+                  children: [
                     AdwComboRow<String>(
-                      title: const Text('Combo Selection'),
-                      subtitle: const Text(
-                          'Tap row to display options in modal dialog'),
-                      items: const [
-                        'Option Alpha',
-                        'Option Beta',
-                        'Option Gamma',
-                        'Option Delta'
-                      ],
+                      title: const Text('Combo Row'),
+                      items: const ['Foo', 'Bar', 'Baz'],
                       selectedItem: _selectedComboOption,
                       onSelected: (val) =>
                           setState(() => _selectedComboOption = val),
+                    ),
+                    AdwComboRow<String>(
+                      title: const Text('Enumeration Combo Row'),
+                      subtitle: const Text(
+                          'This combo row was created from an enumeration'),
+                      enableSearch: true,
+                      items: const [
+                        'unknown',
+                        'custom',
+                        'gpl-2-0',
+                        'gpl-3-0',
+                        'lgpl-2-1',
+                        'lgpl-3-0',
+                        'bsd',
+                        'mit-x11',
+                        'artistic',
+                        'gpl-2-0-only',
+                        'gpl-2-0-or-later',
+                        'gpl-3-0-only',
+                        'gpl-3-0-or-later',
+                        'lgpl-2-1-only',
+                        'lgpl-2-1-or-later',
+                        'bsd-3-clause',
+                        'apache-2-0',
+                        'mpl-2-0',
+                      ],
+                      selectedItem: _selectedEnumComboOption,
+                      onSelected: (val) =>
+                          setState(() => _selectedEnumComboOption = val),
                     ),
                   ],
                 ),

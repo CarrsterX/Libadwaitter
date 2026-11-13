@@ -1,4 +1,3 @@
-import 'package:flutter/animation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'adw_desktop_settings.dart';

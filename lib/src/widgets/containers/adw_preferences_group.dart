@@ -13,6 +13,7 @@ class AdwPreferencesGroup extends StatelessWidget {
   final Widget? headerSuffix;
   final List<Widget> children;
   final EdgeInsetsGeometry margin;
+  final bool separated;
 
   const AdwPreferencesGroup({
     super.key,
@@ -22,6 +23,7 @@ class AdwPreferencesGroup extends StatelessWidget {
     this.children = const <Widget>[],
     this.margin =
         const EdgeInsets.only(bottom: AdwMetrics.preferencesGroupSpacing),
+    this.separated = false,
   });
 
   @override
@@ -72,7 +74,7 @@ class AdwPreferencesGroup extends StatelessWidget {
                 child: description!,
               ),
             ),
-          if (children.isNotEmpty)
+          if (children.isNotEmpty && !separated)
             Container(
               decoration: BoxDecoration(
                 color: theme.colors.cardBackground,
@@ -106,6 +108,43 @@ class AdwPreferencesGroup extends StatelessWidget {
                 children: itemsWithDividers,
               ),
             ),
+          if (children.isNotEmpty && separated)
+            for (int i = 0; i < children.length; i++)
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: i < children.length - 1 ? 12.0 : 0.0,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colors.cardBackground,
+                    borderRadius: BorderRadius.circular(AdwMetrics.cardRadius),
+                    boxShadow: theme.colors.isDark
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x28000000),
+                              blurRadius: 3,
+                              offset: Offset(0, 1),
+                            ),
+                          ]
+                        : const [
+                            BoxShadow(
+                              color: Color(0x0D000000),
+                              blurRadius: 3,
+                              spreadRadius: 1,
+                              offset: Offset(0, 1),
+                            ),
+                            BoxShadow(
+                              color: Color(0x08000000),
+                              blurRadius: 6,
+                              spreadRadius: 2,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: children[i],
+                ),
+              ),
         ],
       ),
     );

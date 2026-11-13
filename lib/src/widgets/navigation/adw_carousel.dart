@@ -1,8 +1,6 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../theme/adw_curves.dart';
-import '../../theme/adw_metrics.dart';
 import '../../theme/adw_theme.dart';
 
 /// Controller coordinating page transitions and position tracking for [AdwCarousel].
@@ -54,7 +52,8 @@ class AdwCarouselController extends ChangeNotifier {
   }
 
   /// Current discrete rounded page index.
-  int get currentPage => page.round().clamp(0, _itemCount > 0 ? _itemCount - 1 : 0);
+  int get currentPage =>
+      page.round().clamp(0, _itemCount > 0 ? _itemCount - 1 : 0);
 
   /// Animate smoothly to a specific target [page] index.
   Future<void> animateToPage(
@@ -64,7 +63,8 @@ class AdwCarouselController extends ChangeNotifier {
   }) {
     if (!_pageController.hasClients) return Future.value();
     final target = page.clamp(0, _itemCount > 0 ? _itemCount - 1 : 0);
-    return _pageController.animateToPage(target, duration: duration, curve: curve);
+    return _pageController.animateToPage(target,
+        duration: duration, curve: curve);
   }
 
   /// Advance to the next page if available.
@@ -242,7 +242,8 @@ class _AdwCarouselState extends State<AdwCarousel> {
                     child: _CarouselNavButton(
                       direction: _NavDirection.previous,
                       onPressed: () => _controller.previousPage(
-                        duration: AdwCurves.resolve(context, AdwCurves.normalDuration),
+                        duration: AdwCurves.resolve(
+                            context, AdwCurves.normalDuration),
                       ),
                     ),
                   ),
@@ -268,7 +269,8 @@ class _AdwCarouselState extends State<AdwCarousel> {
                     child: _CarouselNavButton(
                       direction: _NavDirection.next,
                       onPressed: () => _controller.nextPage(
-                        duration: AdwCurves.resolve(context, AdwCurves.normalDuration),
+                        duration: AdwCurves.resolve(
+                            context, AdwCurves.normalDuration),
                       ),
                     ),
                   ),
@@ -393,4 +395,3 @@ class _ChevronPainter extends CustomPainter {
     return direction != oldDelegate.direction || color != oldDelegate.color;
   }
 }
-

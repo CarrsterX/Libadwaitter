@@ -1,9 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import '../../theme/adw_curves.dart';
 import '../../theme/adw_metrics.dart';
 import '../../theme/adw_theme.dart';
-import 'adw_button.dart';
 
 /// Preference row with numeric increment/decrement spin control (`AdwSpinRow`).
 ///
@@ -108,7 +106,8 @@ class AdwSpinRow extends StatelessWidget {
                 ),
                 Container(
                   constraints: const BoxConstraints(minWidth: 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                   child: Text(
                     displayText,
                     textAlign: TextAlign.center,
@@ -154,7 +153,8 @@ class _SpinButtonState extends State<_SpinButton> {
     final theme = AdwTheme.of(context);
 
     return MouseRegion(
-      cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor:
+          widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
@@ -184,4 +184,3 @@ class _SpinButtonState extends State<_SpinButton> {
     );
   }
 }
-
