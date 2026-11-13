@@ -126,8 +126,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 AdwPreferencesGroup(
                   children: [
                     AdwComboRow<AdwThemeMode>(
-                      prefix: const Icon(AdwIcons.night_light_symbolic,
-                          size: 20),
+                      prefix:
+                          const Icon(AdwIcons.night_light_symbolic, size: 20),
                       title: const Text('Color Scheme'),
                       items: AdwThemeMode.values,
                       selectedItem: localMode,
@@ -297,30 +297,38 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   Widget _buildSidebar(AdwThemeData theme) {
     return Column(
       children: [
-        // Flat sidebar header bar (matching adwaita-1-demo)
-        AdwHeaderBar(
-          isFlat: true,
-          showWindowControls: false,
-          start: AdwButton.flat(
-            width: 34,
-            height: 34,
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              setState(() {
-                _searchBarVisible = !_searchBarVisible;
-                if (!_searchBarVisible) _searchFilter = '';
-              });
-            },
-            child: const Icon(AdwIcons.edit_find_symbolic, size: 16),
-          ),
-          title: const Text('Adwaita Demo'),
-          end: AdwButton.flat(
-            width: 34,
-            height: 34,
-            padding: EdgeInsets.zero,
-            onPressed: () => _showPreferencesMenu(context),
-            child: const Icon(AdwIcons.open_menu_symbolic, size: 16),
-          ),
+        // Flat sidebar header bar (matching adwaita-1-demo; shows window controls when collapsed)
+        Builder(
+          builder: (sidebarContext) {
+            final isCollapsed =
+                AdwNavigationSplitViewScope.maybeOf(sidebarContext)
+                        ?.isCollapsed ??
+                    false;
+            return AdwHeaderBar(
+              isFlat: true,
+              showWindowControls: isCollapsed,
+              start: AdwButton.flat(
+                width: 34,
+                height: 34,
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  setState(() {
+                    _searchBarVisible = !_searchBarVisible;
+                    if (!_searchBarVisible) _searchFilter = '';
+                  });
+                },
+                child: const Icon(AdwIcons.edit_find_symbolic, size: 16),
+              ),
+              title: const Text('Adwaita Demo'),
+              end: AdwButton.flat(
+                width: 34,
+                height: 34,
+                padding: EdgeInsets.zero,
+                onPressed: () => _showPreferencesMenu(context),
+                child: const Icon(AdwIcons.open_menu_symbolic, size: 16),
+              ),
+            );
+          },
         ),
         if (_searchBarVisible)
           Padding(
@@ -353,76 +361,126 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
             ),
           ),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSidebarItem(
-                  page: DemoPage.welcome,
-                  iconWidget: const AdwEmblem(size: 16),
-                  title: 'Welcome',
+          child: Builder(
+            builder: (sidebarContext) {
+              final isCollapsed =
+                  AdwNavigationSplitViewScope.maybeOf(sidebarContext)
+                          ?.isCollapsed ??
+                      false;
+              return SingleChildScrollView(
+                padding: isCollapsed
+                    ? const EdgeInsets.fromLTRB(12, 20, 12, 24)
+                    : const EdgeInsets.symmetric(vertical: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (isCollapsed)
+                      AdwPreferencesGroup(
+                        children: [
+                          _buildSidebarItem(
+                            page: DemoPage.welcome,
+                            iconWidget: const AdwEmblem(size: 16),
+                            title: 'Welcome',
+                            isCollapsed: true,
+                          ),
+                        ],
+                      )
+                    else
+                      _buildSidebarItem(
+                        page: DemoPage.welcome,
+                        iconWidget: const AdwEmblem(size: 16),
+                        title: 'Welcome',
+                        isCollapsed: false,
+                      ),
+                    _buildSidebarSection(
+                        theme,
+                        'Navigation',
+                        [
+                          _buildSidebarItem(
+                            page: DemoPage.navigationView,
+                            icon: AdwIcons.application_exit_rtl_symbolic,
+                            title: 'Navigation View',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.splitViews,
+                            icon: AdwIcons.view_dual_symbolic,
+                            title: 'Split Views',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.viewSwitcher,
+                            icon: AdwIcons.view_paged_symbolic,
+                            title: 'View Switcher',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.carousel,
+                            icon: AdwIcons.media_playlist_consecutive_symbolic,
+                            title: 'Carousel',
+                            isCollapsed: isCollapsed,
+                          ),
+                        ],
+                        isCollapsed: isCollapsed),
+                    _buildSidebarSection(
+                        theme,
+                        'Controls',
+                        [
+                          _buildSidebarItem(
+                            page: DemoPage.boxedLists,
+                            icon: AdwIcons.view_list_symbolic,
+                            title: 'Boxed Lists',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.toggleGroups,
+                            icon: AdwIcons.selection_mode_symbolic,
+                            title: 'Toggle Groups',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.buttons,
+                            icon: AdwIcons.avatar_default_symbolic,
+                            title: 'Buttons',
+                            isCollapsed: isCollapsed,
+                          ),
+                        ],
+                        isCollapsed: isCollapsed),
+                    _buildSidebarSection(
+                        theme,
+                        'Display',
+                        [
+                          _buildSidebarItem(
+                            page: DemoPage.banner,
+                            icon: AdwIcons.dialog_information_symbolic,
+                            title: 'Banner',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.toasts,
+                            icon: AdwIcons
+                                .preferences_system_notifications_symbolic,
+                            title: 'Toasts',
+                            isCollapsed: isCollapsed,
+                          ),
+                        ],
+                        isCollapsed: isCollapsed),
+                    _buildSidebarSection(
+                        theme,
+                        'Dialogs',
+                        [
+                          _buildSidebarItem(
+                            page: DemoPage.dialogs,
+                            icon: AdwIcons.help_about_symbolic,
+                            title: 'Alerts & About Dialog',
+                            isCollapsed: isCollapsed,
+                          ),
+                        ],
+                        isCollapsed: isCollapsed),
+                  ],
                 ),
-                _buildSidebarSection(theme, 'Navigation', [
-                  _buildSidebarItem(
-                    page: DemoPage.navigationView,
-                    icon: AdwIcons.application_exit_rtl_symbolic,
-                    title: 'Navigation View',
-                  ),
-                  _buildSidebarItem(
-                    page: DemoPage.splitViews,
-                    icon: AdwIcons.view_dual_symbolic,
-                    title: 'Split Views',
-                  ),
-                  _buildSidebarItem(
-                    page: DemoPage.viewSwitcher,
-                    icon: AdwIcons.view_paged_symbolic,
-                    title: 'View Switcher',
-                  ),
-                  _buildSidebarItem(
-                    page: DemoPage.carousel,
-                    icon: AdwIcons.media_playlist_consecutive_symbolic,
-                    title: 'Carousel',
-                  ),
-                ]),
-                _buildSidebarSection(theme, 'Controls', [
-                  _buildSidebarItem(
-                    page: DemoPage.boxedLists,
-                    icon: AdwIcons.view_list_symbolic,
-                    title: 'Boxed Lists',
-                  ),
-                  _buildSidebarItem(
-                    page: DemoPage.toggleGroups,
-                    icon: AdwIcons.selection_mode_symbolic,
-                    title: 'Toggle Groups',
-                  ),
-                  _buildSidebarItem(
-                    page: DemoPage.buttons,
-                    icon: AdwIcons.avatar_default_symbolic,
-                    title: 'Buttons',
-                  ),
-                ]),
-                _buildSidebarSection(theme, 'Display', [
-                  _buildSidebarItem(
-                    page: DemoPage.banner,
-                    icon: AdwIcons.dialog_information_symbolic,
-                    title: 'Banner',
-                  ),
-                  _buildSidebarItem(
-                    page: DemoPage.toasts,
-                    icon: AdwIcons.preferences_system_notifications_symbolic,
-                    title: 'Toasts',
-                  ),
-                ]),
-                _buildSidebarSection(theme, 'Dialogs', [
-                  _buildSidebarItem(
-                    page: DemoPage.dialogs,
-                    icon: AdwIcons.help_about_symbolic,
-                    title: 'Alerts & About Dialog',
-                  ),
-                ]),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ],
@@ -434,24 +492,62 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     Widget? iconWidget,
     IconData? icon,
     required String title,
+    required bool isCollapsed,
   }) {
     if (_searchFilter.isNotEmpty &&
         !title.toLowerCase().contains(_searchFilter)) {
       return const SizedBox.shrink();
     }
-    return AdwSidebarItem(
-      icon: iconWidget ?? (icon != null ? Icon(icon) : null),
-      title: Text(title),
-      isSelected: _selectedPage == page,
-      onTap: () => setState(() => _selectedPage = page),
+    return Builder(
+      builder: (itemContext) {
+        void handleSelect() {
+          setState(() => _selectedPage = page);
+          AdwNavigationSplitViewScope.maybeOf(itemContext)?.showContentPage();
+        }
+
+        if (isCollapsed) {
+          final isSingleItem = page == DemoPage.welcome;
+          return AdwActionRow(
+            minHeight: isSingleItem ? 46.0 : AdwMetrics.rowMinHeight,
+            padding: isSingleItem
+                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+                : const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            prefix: iconWidget ?? (icon != null ? Icon(icon, size: 16) : null),
+            title: Text(title),
+            trailing: const Icon(AdwIcons.go_next_symbolic, size: 16),
+            onPressed: handleSelect,
+          );
+        }
+
+        return AdwSidebarItem(
+          icon: iconWidget ?? (icon != null ? Icon(icon) : null),
+          title: Text(title),
+          isSelected: _selectedPage == page,
+          onTap: handleSelect,
+        );
+      },
     );
   }
 
   Widget _buildSidebarSection(
-      AdwThemeData theme, String title, List<Widget> items) {
-    final hasMatches =
-        _searchFilter.isEmpty || items.any((item) => item is! SizedBox);
-    if (!hasMatches) return const SizedBox.shrink();
+    AdwThemeData theme,
+    String title,
+    List<Widget> items, {
+    required bool isCollapsed,
+  }) {
+    final visibleItems =
+        items.where((item) => item is! SizedBox).toList(growable: false);
+    if (visibleItems.isEmpty) return const SizedBox.shrink();
+
+    if (isCollapsed) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 18),
+        child: AdwPreferencesGroup(
+          title: Text(title),
+          children: visibleItems,
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,7 +560,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
             style: theme.typography.sectionTitle,
           ),
         ),
-        ...items,
+        ...visibleItems,
       ],
     );
   }
@@ -828,8 +924,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                   ),
                   children: [
                     AdwComboRow<AdwThemeMode>(
-                      prefix: const Icon(AdwIcons.night_light_symbolic,
-                          size: 20),
+                      prefix:
+                          const Icon(AdwIcons.night_light_symbolic, size: 20),
                       title: const Text('Color Scheme'),
                       items: AdwThemeMode.values,
                       selectedItem: widget.currentThemeMode,

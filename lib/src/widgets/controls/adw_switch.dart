@@ -81,7 +81,7 @@ class _AdwSwitchState extends State<AdwSwitch> {
     }
 
     if (!_isEnabled) {
-      trackColor = trackColor.withOpacity(0.5);
+      trackColor = trackColor.withValues(alpha: 0.5);
     }
 
     Color sliderColor;
@@ -93,7 +93,7 @@ class _AdwSwitchState extends State<AdwSwitch> {
     }
 
     if (!_isEnabled) {
-      sliderColor = sliderColor.withOpacity(0.7);
+      sliderColor = sliderColor.withValues(alpha: 0.7);
     }
 
     const double switchWidth = AdwMetrics.switchWidth; // 46.0

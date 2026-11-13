@@ -41,7 +41,7 @@ class AdwStatusPage extends StatelessWidget {
                 IconTheme(
                   data: IconThemeData(
                     size: 96,
-                    color: theme.colors.secondaryForeground.withOpacity(0.7),
+                    color: theme.colors.secondaryForeground.withValues(alpha: 0.7),
                   ),
                   child: icon!,
                 ),

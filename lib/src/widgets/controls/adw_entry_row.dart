@@ -139,7 +139,7 @@ class _AdwEntryRowState extends State<AdwEntryRow> {
                       color: theme.colors.foreground,
                     ),
                     placeholderStyle: theme.typography.body.copyWith(
-                      color: theme.colors.secondaryForeground.withOpacity(0.5),
+                      color: theme.colors.secondaryForeground.withValues(alpha: 0.5),
                     ),
                     cursorColor: theme.colors.accentColor,
                     onChanged: widget.onChanged,
@@ -257,8 +257,8 @@ class _ClearButtonState extends State<_ClearButton> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: _isHovered
-                ? theme.colors.secondaryForeground.withOpacity(0.3)
-                : theme.colors.secondaryForeground.withOpacity(0.15),
+                ? theme.colors.secondaryForeground.withValues(alpha: 0.3)
+                : theme.colors.secondaryForeground.withValues(alpha: 0.15),
           ),
           child: Center(
             child: Text(
@@ -321,7 +321,7 @@ class _AdwPureEditableText extends StatelessWidget {
           inputFormatters: inputFormatters,
           onChanged: onChanged,
           onSubmitted: onSubmitted,
-          selectionColor: cursorColor.withOpacity(0.3),
+          selectionColor: cursorColor.withValues(alpha: 0.3),
         ),
       ],
     );

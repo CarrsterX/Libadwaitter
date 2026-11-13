@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import '../../theme/adw_curves.dart';
 import '../../theme/adw_metrics.dart';
 import '../../theme/adw_theme.dart';
+import '../controls/adw_button.dart';
+import '../navigation/adw_navigation_view.dart';
 import 'adw_window.dart';
 import 'adw_window_controls.dart';
 import 'adw_window_title.dart';
@@ -26,6 +28,7 @@ class AdwHeaderBar extends StatelessWidget {
   final Widget? start;
   final Widget? end;
   final bool showWindowControls;
+  final bool showBackButton;
   final Widget? windowControls;
   final EdgeInsetsGeometry padding;
   final bool isFlat;
@@ -38,6 +41,7 @@ class AdwHeaderBar extends StatelessWidget {
     this.start,
     this.end,
     this.showWindowControls = true,
+    this.showBackButton = true,
     this.windowControls,
     this.padding = defaultPadding,
     this.isFlat = false,
@@ -47,8 +51,23 @@ class AdwHeaderBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AdwTheme.of(context);
     final windowScope = AdwWindowScope.maybeOf(context);
+    final navScope = AdwNavigationViewScope.maybeOf(context);
     final controller = windowScope?.controller;
     final isWindowActive = windowScope?.isActive ?? true;
+
+    Widget? effectiveStart = start;
+    if (effectiveStart == null && showBackButton && (navScope?.canPop ?? false)) {
+      effectiveStart = AdwButton.flat(
+        width: 34,
+        height: 34,
+        padding: EdgeInsets.zero,
+        onPressed: () => navScope!.controller.pop(),
+        child: CustomPaint(
+          size: const Size(16, 16),
+          painter: _BackChevronPainter(color: theme.colors.foreground),
+        ),
+      );
+    }
 
     // Resolve effective title content
     Widget? effectiveTitle = titleWidget;
@@ -58,6 +77,10 @@ class AdwHeaderBar extends StatelessWidget {
           title: title is String ? title as String : '',
           subtitle: subtitle is String ? subtitle as String : null,
         );
+      } else if (title == null &&
+          subtitle == null &&
+          navScope?.visiblePageTitle != null) {
+        effectiveTitle = AdwWindowTitle(title: navScope!.visiblePageTitle!);
       } else if (title != null || subtitle != null) {
         effectiveTitle = Column(
           mainAxisSize: MainAxisSize.min,
@@ -141,10 +164,10 @@ class AdwHeaderBar extends StatelessWidget {
                   padding: resolvedPadding,
                 ),
                 children: [
-                  if (start != null)
+                  if (effectiveStart != null)
                     LayoutId(
                       id: _AdwHeaderBarLayoutDelegate.startId,
-                      child: start!,
+                      child: effectiveStart,
                     ),
                   if (effectiveTitle != null)
                     LayoutId(
@@ -255,4 +278,31 @@ class _AdwHeaderBarLayoutDelegate extends MultiChildLayoutDelegate {
   bool shouldRelayout(covariant _AdwHeaderBarLayoutDelegate oldDelegate) {
     return oldDelegate.padding != padding;
   }
+}
+
+class _BackChevronPainter extends CustomPainter {
+  final Color color;
+
+  const _BackChevronPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path()
+      ..moveTo(size.width * 0.68, size.height * 0.14)
+      ..lineTo(size.width * 0.30, size.height * 0.50)
+      ..lineTo(size.width * 0.68, size.height * 0.86);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BackChevronPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

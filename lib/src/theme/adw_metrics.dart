@@ -40,7 +40,7 @@ abstract final class AdwMetrics {
   static const double headerBarHeight = 46.0;
 
   /// Standard minimum height of a preference action row (48px).
-  static const double rowMinHeight = 48.0;
+  static const double rowMinHeight = 54.0;
 
   /// Standard minimum height of interactive push buttons (34px).
   static const double buttonMinHeight = 34.0;

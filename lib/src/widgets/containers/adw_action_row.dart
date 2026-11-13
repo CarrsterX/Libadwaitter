@@ -17,6 +17,7 @@ class AdwActionRow extends StatefulWidget {
   final Widget? suffix;
   final VoidCallback? onPressed;
   final EdgeInsetsGeometry padding;
+  final double minHeight;
   final bool isActivatable;
 
   const AdwActionRow({
@@ -28,7 +29,8 @@ class AdwActionRow extends StatefulWidget {
     this.trailing,
     this.suffix,
     this.onPressed,
-    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+    this.minHeight = AdwMetrics.rowMinHeight,
     this.isActivatable = true,
   });
 
@@ -61,7 +63,7 @@ class _AdwActionRowState extends State<AdwActionRow> {
     }
 
     Widget content = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: AdwMetrics.rowMinHeight),
+      constraints: BoxConstraints(minHeight: widget.minHeight),
       child: Padding(
         padding: widget.padding,
         child: Row(
@@ -70,7 +72,7 @@ class _AdwActionRowState extends State<AdwActionRow> {
               IconTheme(
                 data: IconThemeData(
                   color: theme.colors.windowForeground,
-                  size: AdwMetrics.iconSizeMedium,
+                  size: AdwMetrics.iconSizeSmall,
                 ),
                 child: prefixWidget,
               ),
@@ -83,7 +85,8 @@ class _AdwActionRowState extends State<AdwActionRow> {
                 children: [
                   DefaultTextStyle(
                     style: theme.typography.body.copyWith(
-                      fontWeight: FontWeight.w500,
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.normal,
                     ),
                     child: widget.title,
                   ),
@@ -101,8 +104,8 @@ class _AdwActionRowState extends State<AdwActionRow> {
               const SizedBox(width: AdwMetrics.spacingMedium),
               IconTheme(
                 data: IconThemeData(
-                  color: theme.colors.secondaryForeground,
-                  size: AdwMetrics.iconSizeMedium,
+                  color: theme.colors.windowForeground,
+                  size: AdwMetrics.iconSizeSmall,
                 ),
                 child: suffixWidget,
               ),

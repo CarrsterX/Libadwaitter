@@ -72,15 +72,78 @@ class AdwAnimationScope extends InheritedWidget {
   }
 }
 
+/// Parsed representation of the desktop shell's window decoration button layout
+/// (`org.gnome.desktop.wm.preferences` `button-layout`, e.g. `:minimize,maximize,close` or `:close`).
+class AdwWindowButtonLayout {
+  final List<String> startButtons;
+  final List<String> endButtons;
+
+  const AdwWindowButtonLayout({
+    this.startButtons = const <String>[],
+    this.endButtons = const <String>['minimize', 'maximize', 'close'],
+  });
+
+  static const Set<String> _supportedTokens = {'minimize', 'maximize', 'close'};
+
+  factory AdwWindowButtonLayout.parse(String raw) {
+    final parts = raw.split(':');
+    final leftRaw = parts.isNotEmpty ? parts[0] : '';
+    final rightRaw = parts.length > 1 ? parts[1] : '';
+
+    List<String> parseSide(String side) {
+      return side
+          .split(',')
+          .map((t) => t.trim())
+          .where((t) => _supportedTokens.contains(t))
+          .toList(growable: false);
+    }
+
+    return AdwWindowButtonLayout(
+      startButtons: parseSide(leftRaw),
+      endButtons: parseSide(rightRaw),
+    );
+  }
+
+  bool get hasMinimize =>
+      startButtons.contains('minimize') || endButtons.contains('minimize');
+  bool get hasMaximize =>
+      startButtons.contains('maximize') || endButtons.contains('maximize');
+  bool get hasClose =>
+      startButtons.contains('close') || endButtons.contains('close');
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AdwWindowButtonLayout) return false;
+    if (startButtons.length != other.startButtons.length ||
+        endButtons.length != other.endButtons.length) {
+      return false;
+    }
+    for (int i = 0; i < startButtons.length; i++) {
+      if (startButtons[i] != other.startButtons[i]) return false;
+    }
+    for (int i = 0; i < endButtons.length; i++) {
+      if (endButtons[i] != other.endButtons[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(Object.hashAll(startButtons), Object.hashAll(endButtons));
+}
+
 /// Native desktop integration service querying host settings (GNOME, Qt/KDE, XFCE).
 class AdwDesktopSettings {
   static const MethodChannel _channel = MethodChannel('libadwaitter/settings');
   static final ValueNotifier<AdwAnimationSettings> animationSettings =
       ValueNotifier(const AdwAnimationSettings());
+  static final ValueNotifier<AdwWindowButtonLayout> windowButtonLayout =
+      ValueNotifier(const AdwWindowButtonLayout());
 
   static bool _initialized = false;
 
-  /// Initializes platform channel bindings for desktop animation preferences.
+  /// Initializes platform channel bindings for desktop animation and shell button preferences.
   static void initialize() {
     if (_initialized || kIsWeb || !Platform.isLinux) return;
     _initialized = true;
@@ -91,6 +154,11 @@ class AdwDesktopSettings {
             call.arguments as Map<dynamic, dynamic>?;
         if (args != null) {
           _updateFromMap(args);
+        }
+      } else if (call.method == 'onWindowButtonLayoutChanged') {
+        final String? layout = call.arguments as String?;
+        if (layout != null) {
+          windowButtonLayout.value = AdwWindowButtonLayout.parse(layout);
         }
       }
     });
@@ -107,6 +175,16 @@ class AdwDesktopSettings {
       }
     } catch (_) {
       // Gracefully retain GNOME standard defaults if channel is unavailable
+    }
+
+    try {
+      final String? layout =
+          await _channel.invokeMethod<String>('getWindowButtonLayout');
+      if (layout != null) {
+        windowButtonLayout.value = AdwWindowButtonLayout.parse(layout);
+      }
+    } catch (_) {
+      // Gracefully retain default button layout if channel is unavailable
     }
   }
 

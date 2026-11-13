@@ -4,6 +4,7 @@ library libadwaitter;
 // Core framework behaviors
 export 'src/core/adw_scroll_behavior.dart';
 export 'src/core/adw_scrollbar.dart';
+export 'src/core/adw_spring.dart';
 
 // Theme and design tokens
 export 'src/l10n/adw_localizations.dart';
@@ -44,6 +45,8 @@ export 'src/widgets/layout/adw_window_title.dart';
 export 'src/widgets/navigation/adw_carousel.dart';
 export 'src/widgets/navigation/adw_carousel_indicator_dots.dart';
 export 'src/widgets/navigation/adw_navigation_split_view.dart';
+export 'src/widgets/navigation/adw_navigation_transition.dart';
+export 'src/widgets/navigation/adw_navigation_view.dart';
 export 'src/widgets/navigation/adw_sidebar_item.dart';
 export 'src/widgets/navigation/adw_view_switcher.dart';
 

@@ -94,7 +94,7 @@ class AdwCarouselIndicatorDots extends StatelessWidget {
         final targetWidth = isActive ? activeDotWidth : dotSize;
         final targetColor = isActive
             ? theme.colors.foreground
-            : theme.colors.foreground.withOpacity(0.35);
+            : theme.colors.foreground.withValues(alpha: 0.35);
 
         return GestureDetector(
           onTap: onTap != null ? () => onTap(index) : null,
@@ -188,7 +188,7 @@ class AdwCarouselIndicatorLines extends StatelessWidget {
         final isActive = index == current;
         final targetColor = isActive
             ? theme.colors.foreground
-            : theme.colors.foreground.withOpacity(0.25);
+            : theme.colors.foreground.withValues(alpha: 0.25);
 
         return GestureDetector(
           onTap: onTap != null ? () => onTap(index) : null,

@@ -64,6 +64,50 @@ static FlValue* build_animation_settings_map() {
   return map;
 }
 
+static gchar* get_window_button_layout() {
+  GSettingsSchemaSource* source = g_settings_schema_source_get_default();
+  if (source != nullptr) {
+    g_autoptr(GSettingsSchema) wm_schema =
+        g_settings_schema_source_lookup(source, "org.gnome.desktop.wm.preferences", TRUE);
+    if (wm_schema != nullptr && g_settings_schema_has_key(wm_schema, "button-layout")) {
+      g_autoptr(GSettings) wm_settings = g_settings_new("org.gnome.desktop.wm.preferences");
+      gchar* layout = g_settings_get_string(wm_settings, "button-layout");
+      if (layout != nullptr && layout[0] != '\0') {
+        return layout;
+      }
+      g_free(layout);
+    }
+  }
+
+  GtkSettings* settings = gtk_settings_get_default();
+  if (settings != nullptr) {
+    gchar* gtk_layout = nullptr;
+    g_object_get(settings, "gtk-decoration-layout", &gtk_layout, NULL);
+    if (gtk_layout != nullptr && gtk_layout[0] != '\0') {
+      return gtk_layout;
+    }
+    g_free(gtk_layout);
+  }
+
+  return g_strdup(":close");
+}
+
+static void on_wm_button_layout_changed(GSettings* settings, const gchar* key, gpointer user_data) {
+  FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  g_autofree gchar* layout = get_window_button_layout();
+  g_autoptr(FlValue) val = fl_value_new_string(layout);
+  fl_method_channel_invoke_method(channel, "onWindowButtonLayoutChanged", val,
+                                  nullptr, nullptr, nullptr);
+}
+
+static void on_gtk_decoration_layout_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
+  FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  g_autofree gchar* layout = get_window_button_layout();
+  g_autoptr(FlValue) val = fl_value_new_string(layout);
+  fl_method_channel_invoke_method(channel, "onWindowButtonLayoutChanged", val,
+                                  nullptr, nullptr, nullptr);
+}
+
 static void on_gtk_animations_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
   FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
   g_autoptr(FlValue) map = build_animation_settings_map();
@@ -77,6 +121,10 @@ static void settings_method_call_handler(FlMethodChannel* channel,
   if (strcmp(method, "getAnimationSettings") == 0) {
     g_autoptr(FlValue) map = build_animation_settings_map();
     fl_method_call_respond_success(method_call, map, nullptr);
+  } else if (strcmp(method, "getWindowButtonLayout") == 0) {
+    g_autofree gchar* layout = get_window_button_layout();
+    g_autoptr(FlValue) val = fl_value_new_string(layout);
+    fl_method_call_respond_success(method_call, val, nullptr);
   } else {
     fl_method_call_respond_not_implemented(method_call, nullptr);
   }
@@ -554,6 +602,16 @@ static void my_application_activate(GApplication* application) {
                        G_CALLBACK(on_gsettings_appearance_changed), style_state);
       (void)g_settings_get_boolean(style_state->a11y_settings, "high-contrast");
     }
+    g_autoptr(GSettingsSchema) wm_schema =
+        g_settings_schema_source_lookup(schema_source, "org.gnome.desktop.wm.preferences", TRUE);
+    if (wm_schema != nullptr && g_settings_schema_has_key(wm_schema, "button-layout")) {
+      GSettings* wm_settings = g_settings_new("org.gnome.desktop.wm.preferences");
+      g_object_set_data_full(G_OBJECT(window), "libadwaitter-wm-gsettings",
+                             wm_settings, g_object_unref);
+      g_signal_connect(wm_settings, "changed::button-layout",
+                       G_CALLBACK(on_wm_button_layout_changed), settings_channel);
+      g_free(g_settings_get_string(wm_settings, "button-layout"));
+    }
   }
 
   GWeakRef* weak_window = g_new(GWeakRef, 1);
@@ -564,6 +622,8 @@ static void my_application_activate(GApplication* application) {
   if (default_settings != nullptr) {
     g_signal_connect(default_settings, "notify::gtk-enable-animations",
                      G_CALLBACK(on_gtk_animations_changed), settings_channel);
+    g_signal_connect(default_settings, "notify::gtk-decoration-layout",
+                     G_CALLBACK(on_gtk_decoration_layout_changed), settings_channel);
   }
 
   // Show the window when Flutter renders.

@@ -175,7 +175,7 @@ class _SpinButtonState extends State<_SpinButton> {
                 fontWeight: FontWeight.bold,
                 color: widget.enabled
                     ? theme.colors.foreground
-                    : theme.colors.secondaryForeground.withOpacity(0.4),
+                    : theme.colors.secondaryForeground.withValues(alpha: 0.4),
               ),
             ),
           ),

@@ -118,7 +118,7 @@ class AdwAboutDialog extends StatelessWidget {
                   copyright!,
                   textAlign: TextAlign.center,
                   style: theme.typography.caption.copyWith(
-                    color: theme.colors.secondaryForeground.withOpacity(0.8),
+                    color: theme.colors.secondaryForeground.withValues(alpha: 0.8),
                     fontSize: 11,
                   ),
                 ),
@@ -128,7 +128,7 @@ class AdwAboutDialog extends StatelessWidget {
                 Text(
                   license!,
                   style: theme.typography.caption.copyWith(
-                    color: theme.colors.secondaryForeground.withOpacity(0.6),
+                    color: theme.colors.secondaryForeground.withValues(alpha: 0.6),
                     fontSize: 10,
                   ),
                 ),

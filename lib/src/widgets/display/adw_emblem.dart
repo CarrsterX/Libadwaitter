@@ -22,7 +22,7 @@ class AdwEmblem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AdwTheme.of(context);
     final effectiveColor = color ??
-        theme.colors.secondaryForeground.withOpacity(theme.colors.isDark ? 0.45 : 0.35);
+        theme.colors.secondaryForeground.withValues(alpha: theme.colors.isDark ? 0.45 : 0.35);
 
     return SizedBox(
       width: size,

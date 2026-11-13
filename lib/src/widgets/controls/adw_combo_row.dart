@@ -162,7 +162,7 @@ class _AdwComboRowState<T> extends State<AdwComboRow<T>> {
                   CustomPaint(
                     size: const Size(10, 10),
                     painter: _ChevronDownPainter(
-                      color: theme.colors.secondaryForeground.withOpacity(0.8),
+                      color: theme.colors.secondaryForeground.withValues(alpha: 0.8),
                     ),
                   ),
                 ],

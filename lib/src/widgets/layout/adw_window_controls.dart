@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../theme/adw_curves.dart';
+import '../../theme/adw_desktop_settings.dart';
 import '../../theme/adw_theme.dart';
 import 'adw_window.dart';
 
@@ -53,11 +54,11 @@ class _AdwWindowControlButtonState extends State<AdwWindowControlButton> {
     // windowcontrols > button:active > image: background-color: color-mix(in srgb, currentColor 30%, transparent);
     Color bg;
     if (_isPressed) {
-      bg = currentColor.withOpacity(0.30);
+      bg = currentColor.withValues(alpha: 0.30);
     } else if (_isHovered) {
-      bg = currentColor.withOpacity(0.15);
+      bg = currentColor.withValues(alpha: 0.15);
     } else {
-      bg = currentColor.withOpacity(0.10);
+      bg = currentColor.withValues(alpha: 0.10);
     }
 
     return MouseRegion(
@@ -212,15 +213,17 @@ class _GnomeWindowControlSvgPainter extends CustomPainter {
 
 /// Official in-app GNOME window control buttons container (`-`, `□`, `✕`).
 ///
-/// Follows upstream Libadwaita CSS:
-/// `windowcontrols { border-spacing: 3px; }`
+/// Follows upstream Libadwaita CSS (`windowcontrols { border-spacing: 3px; }`)
+/// and synchronizes button visibility and order with the host desktop shell
+/// (`org.gnome.desktop.wm.preferences` `button-layout`) when explicit overrides
+/// are not provided.
 class AdwWindowControls extends StatelessWidget {
   final VoidCallback? onClose;
   final VoidCallback? onMaximize;
   final VoidCallback? onMinimize;
-  final bool showMinimize;
-  final bool showMaximize;
-  final bool showClose;
+  final bool? showMinimize;
+  final bool? showMaximize;
+  final bool? showClose;
   final double spacing;
 
   const AdwWindowControls({
@@ -228,9 +231,9 @@ class AdwWindowControls extends StatelessWidget {
     this.onClose,
     this.onMaximize,
     this.onMinimize,
-    this.showMinimize = true,
-    this.showMaximize = true,
-    this.showClose = true,
+    this.showMinimize,
+    this.showMaximize,
+    this.showClose,
     this.spacing = 3.0,
   });
 
@@ -244,31 +247,64 @@ class AdwWindowControls extends StatelessWidget {
     final effectiveOnMaximize = onMaximize ?? controller?.maximize;
     final effectiveOnMinimize = onMinimize ?? controller?.minimize;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (showMinimize) ...[
-          AdwWindowControlButton(
-            type: AdwWindowButtonType.minimize,
-            onPressed: effectiveOnMinimize,
-          ),
-          SizedBox(width: spacing),
-        ],
-        if (showMaximize) ...[
-          AdwWindowControlButton(
-            type: AdwWindowButtonType.maximize,
-            isMaximized: isMaximized,
-            onPressed: effectiveOnMaximize,
-          ),
-          SizedBox(width: spacing),
-        ],
-        if (showClose)
-          AdwWindowControlButton(
-            type: AdwWindowButtonType.close,
-            onPressed: effectiveOnClose,
-          ),
-      ],
+    return ValueListenableBuilder<AdwWindowButtonLayout>(
+      valueListenable: AdwDesktopSettings.windowButtonLayout,
+      builder: (context, layout, _) {
+        final List<String> tokens;
+        if (showMinimize == null &&
+            showMaximize == null &&
+            showClose == null) {
+          tokens = layout.endButtons.isNotEmpty
+              ? layout.endButtons
+              : layout.startButtons;
+        } else {
+          tokens = <String>[
+            if (showMinimize ?? layout.hasMinimize) 'minimize',
+            if (showMaximize ?? layout.hasMaximize) 'maximize',
+            if (showClose ?? layout.hasClose) 'close',
+          ];
+        }
+
+        final children = <Widget>[];
+        for (int i = 0; i < tokens.length; i++) {
+          if (i > 0) {
+            children.add(SizedBox(width: spacing));
+          }
+          switch (tokens[i]) {
+            case 'minimize':
+              children.add(
+                AdwWindowControlButton(
+                  type: AdwWindowButtonType.minimize,
+                  onPressed: effectiveOnMinimize,
+                ),
+              );
+              break;
+            case 'maximize':
+              children.add(
+                AdwWindowControlButton(
+                  type: AdwWindowButtonType.maximize,
+                  isMaximized: isMaximized,
+                  onPressed: effectiveOnMaximize,
+                ),
+              );
+              break;
+            case 'close':
+              children.add(
+                AdwWindowControlButton(
+                  type: AdwWindowButtonType.close,
+                  onPressed: effectiveOnClose,
+                ),
+              );
+              break;
+          }
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: children,
+        );
+      },
     );
   }
 }

@@ -174,8 +174,8 @@ class _AdwButtonState extends State<AdwButton> {
     }
 
     if (!_isEnabled) {
-      backgroundColor = backgroundColor.withOpacity(0.5);
-      foregroundColor = foregroundColor.withOpacity(0.4);
+      backgroundColor = backgroundColor.withValues(alpha: 0.5);
+      foregroundColor = foregroundColor.withValues(alpha: 0.4);
     }
 
     final borderRadius = widget.isCircular || widget.isPill

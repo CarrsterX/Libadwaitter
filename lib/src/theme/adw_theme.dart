@@ -150,7 +150,7 @@ class AdwColorScheme {
       secondaryForeground: const Color(0xB3FFFFFF),
       viewBackground: const Color(0xFF1D1D20),
       viewForeground: const Color(0xFFFFFFFF),
-      cardBackground: const Color(0x14FFFFFF), // 8% white in dark mode
+      cardBackground: const Color(0xFF333337),
       cardForeground: const Color(0xFFFFFFFF),
       headerBarBackground: const Color(0xFF2E2E32),
       headerBarForeground: const Color(0xFFFFFFFF),

@@ -183,7 +183,7 @@ class _AdwToggleSegmentState<T> extends State<_AdwToggleSegment<T>> {
     }
 
     if (!widget.item.enabled) {
-      fg = fg.withOpacity(0.4);
+      fg = fg.withValues(alpha: 0.4);
     }
 
     Widget content = widget.item.child;

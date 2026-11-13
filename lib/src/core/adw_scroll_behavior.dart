@@ -219,7 +219,8 @@ class _AdwOverscrollIndicatorState extends State<AdwOverscrollIndicator>
     if (_maxScrollExtent <= _minScrollExtent) return;
 
     final axis = axisDirectionToAxis(widget.axisDirection);
-    final delta = axis == Axis.vertical ? event.scrollDelta.dy : event.scrollDelta.dx;
+    final delta =
+        axis == Axis.vertical ? event.scrollDelta.dy : event.scrollDelta.dx;
     if (delta == 0.0) return;
 
     final isReversed = widget.axisDirection == AxisDirection.up ||
@@ -230,7 +231,8 @@ class _AdwOverscrollIndicatorState extends State<AdwOverscrollIndicator>
     if (effectiveDelta < 0 && _pixels + effectiveDelta < _minScrollExtent) {
       final overscroll = (_pixels + effectiveDelta) - _minScrollExtent;
       _triggerGlow(isLeading: true, delta: overscroll);
-    } else if (effectiveDelta > 0 && _pixels + effectiveDelta > _maxScrollExtent) {
+    } else if (effectiveDelta > 0 &&
+        _pixels + effectiveDelta > _maxScrollExtent) {
       final overscroll = (_pixels + effectiveDelta) - _maxScrollExtent;
       _triggerGlow(isLeading: false, delta: overscroll);
     }
@@ -244,7 +246,7 @@ class _AdwOverscrollIndicatorState extends State<AdwOverscrollIndicator>
             ? const Color(0xFFFFFFFF)
             : const Color(0xFF000000));
     // Subtle GTK4 Libadwaita overshoot edge highlight.
-    final maxOpacity = theme.colors.isDark ? 0.11 : 0.08;
+    final maxOpacity = theme.colors.isDark ? 0.13 : 0.09;
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -296,7 +298,8 @@ class _AdwOverscrollPainter extends CustomPainter {
       _paintEdgeGlow(canvas, size, isLeading: true, progress: leadingProgress);
     }
     if (trailingProgress > 0.001) {
-      _paintEdgeGlow(canvas, size, isLeading: false, progress: trailingProgress);
+      _paintEdgeGlow(canvas, size,
+          isLeading: false, progress: trailingProgress);
     }
   }
 
@@ -307,46 +310,79 @@ class _AdwOverscrollPainter extends CustomPainter {
     required double progress,
   }) {
     final peakOpacity = (maxOpacity * progress).clamp(0.0, 1.0);
-    // Matches GTK4 Libadwaita overshoot falloff:
-    // crisp ~3px edge highlight (100% of peak) tapering into a very subtle 45px diffused tail.
-    final glowColors = [
-      color.withOpacity(peakOpacity),
-      color.withOpacity(peakOpacity * 0.25),
-      color.withOpacity(peakOpacity * 0.12),
-      color.withOpacity(peakOpacity * 0.04),
-      color.withOpacity(0.0),
+    // Compact curved GTK4 Libadwaita overshoot glow:
+    // brightest at the center of the boundary edge, fading smoothly toward
+    // the left/right edges and into the scrollable area.
+    final outerColors = [
+      color.withValues(alpha: peakOpacity * 0.40),
+      color.withValues(alpha: peakOpacity * 0.22),
+      color.withValues(alpha: peakOpacity * 0.08),
+      color.withValues(alpha: peakOpacity * 0.02),
+      color.withValues(alpha: 0.0),
     ];
-    const stops = [0.0, 0.08, 0.35, 0.70, 1.0];
+    final innerColors = [
+      color.withValues(alpha: (peakOpacity * 1.65).clamp(0.0, 1.0)),
+      color.withValues(alpha: (peakOpacity * 0.90).clamp(0.0, 1.0)),
+      color.withValues(alpha: (peakOpacity * 0.30).clamp(0.0, 1.0)),
+      color.withValues(alpha: 0.0),
+    ];
+    const outerStops = [0.0, 0.22, 0.48, 0.75, 1.0];
+    const innerStops = [0.0, 0.28, 0.62, 1.0];
 
-    // Unit circle shader scaled into an ellipse matching GTK4 `radial-gradient(farthest-side at ...)`.
+    // Unit circle shader scaled into an ellipse matching GTK4 `radial-gradient`.
     const unitRect = Rect.fromLTWH(-1.0, -1.0, 2.0, 2.0);
-    final paint = Paint()
+    final outerPaint = Paint()
       ..shader = RadialGradient(
         center: Alignment.center,
         radius: 1.0,
-        colors: glowColors,
-        stops: stops,
+        colors: outerColors,
+        stops: outerStops,
+      ).createShader(unitRect);
+    final innerPaint = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        radius: 1.0,
+        colors: innerColors,
+        stops: innerStops,
       ).createShader(unitRect);
 
     canvas.save();
     canvas.clipRect(Offset.zero & size);
 
+    final extentScale = 0.65 + 0.35 * progress;
     if (axis == Axis.vertical) {
-      final glowHeight = 30.0 * (0.65 + 0.35 * progress);
-      final radiusX = math.max(size.width * 0.85, 1.0);
-      final edgeY = isLeading ? 0.0 : size.height;
+      final outerHeight = 38.0 * extentScale;
+      final innerHeight = 2.5 * extentScale;
+      final outerRadiusX = math.max(size.width * 0.56, 1.0);
+      final innerRadiusX = math.max(size.width * 0.45, 1.0);
+      // Inset trailing edge by 2px so AdwWindow's 1px inner border does not cover the rim.
+      final edgeY = isLeading ? 0.0 : math.max(0.0, size.height - 2.0);
+
+      canvas.save();
+      canvas.translate(size.width / 2, edgeY);
+      canvas.scale(outerRadiusX, outerHeight);
+      canvas.drawCircle(Offset.zero, 1.0, outerPaint);
+      canvas.restore();
 
       canvas.translate(size.width / 2, edgeY);
-      canvas.scale(radiusX, glowHeight);
-      canvas.drawCircle(Offset.zero, 1.0, paint);
+      canvas.scale(innerRadiusX, innerHeight);
+      canvas.drawCircle(Offset.zero, 1.0, innerPaint);
     } else {
-      final glowWidth = 30.0 * (0.65 + 0.35 * progress);
-      final radiusY = math.max(size.height * 0.85, 1.0);
-      final edgeX = isLeading ? 0.0 : size.width;
+      final outerWidth = 38.0 * extentScale;
+      final innerWidth = 2.5 * extentScale;
+      final outerRadiusY = math.max(size.height * 0.56, 1.0);
+      final innerRadiusY = math.max(size.height * 0.45, 1.0);
+      final edgeX = isLeading ? 0.0 : math.max(0.0, size.width - 2.0);
+
+      canvas.save();
+      canvas.translate(edgeX, size.height / 2);
+      canvas.scale(outerWidth, outerRadiusY);
+      canvas.drawCircle(Offset.zero, 1.0, outerPaint);
+      canvas.restore();
 
       canvas.translate(edgeX, size.height / 2);
-      canvas.scale(glowWidth, radiusY);
-      canvas.drawCircle(Offset.zero, 1.0, paint);
+      canvas.scale(innerWidth, innerRadiusY);
+      canvas.drawCircle(Offset.zero, 1.0, innerPaint);
     }
 
     canvas.restore();

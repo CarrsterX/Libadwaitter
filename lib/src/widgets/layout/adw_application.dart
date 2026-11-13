@@ -5,6 +5,7 @@ import '../../theme/adw_colors.dart';
 import '../../theme/adw_desktop_settings.dart';
 import '../../theme/adw_style_manager.dart';
 import '../../theme/adw_theme.dart';
+import '../navigation/adw_navigation_transition.dart';
 
 /// Root application widget for applications built with Libadwaitter.
 ///
@@ -99,13 +100,9 @@ class _AdwApplicationState extends State<AdwApplication> with WidgetsBindingObse
       initialRoute: widget.initialRoute,
       onGenerateRoute: widget.onGenerateRoute,
       pageRouteBuilder: <T>(RouteSettings settings, WidgetBuilder builder) {
-        return PageRouteBuilder<T>(
+        return AdwNavigationPageRoute<T>(
           settings: settings,
-          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            // GNOME-style smooth fade page transition
-            return FadeTransition(opacity: animation, child: child);
-          },
+          builder: builder,
         );
       },
       home: widget.home,

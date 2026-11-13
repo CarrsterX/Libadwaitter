@@ -20,7 +20,8 @@ class AdwPreferencesGroup extends StatelessWidget {
     this.description,
     this.headerSuffix,
     this.children = const <Widget>[],
-    this.margin = const EdgeInsets.only(bottom: AdwMetrics.preferencesGroupSpacing),
+    this.margin =
+        const EdgeInsets.only(bottom: AdwMetrics.preferencesGroupSpacing),
   });
 
   @override
@@ -34,7 +35,9 @@ class AdwPreferencesGroup extends StatelessWidget {
         itemsWithDividers.add(
           Container(
             height: 1,
-            color: theme.colors.dividerColor,
+            color: theme.colors.isDark
+                ? theme.colors.windowBackground
+                : theme.colors.dividerColor,
           ),
         );
       }
@@ -47,7 +50,7 @@ class AdwPreferencesGroup extends StatelessWidget {
         children: [
           if (title != null || headerSuffix != null)
             Padding(
-              padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
+              padding: const EdgeInsets.only(left: 2, right: 2, bottom: 10),
               child: Row(
                 children: [
                   if (title != null)
@@ -74,10 +77,28 @@ class AdwPreferencesGroup extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.colors.cardBackground,
                 borderRadius: BorderRadius.circular(AdwMetrics.cardRadius),
-                border: Border.all(
-                  color: theme.colors.borderColor,
-                  width: 1,
-                ),
+                boxShadow: theme.colors.isDark
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x28000000),
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
+                        ),
+                      ]
+                    : const [
+                        BoxShadow(
+                          color: Color(0x0D000000),
+                          blurRadius: 3,
+                          spreadRadius: 1,
+                          offset: Offset(0, 1),
+                        ),
+                        BoxShadow(
+                          color: Color(0x08000000),
+                          blurRadius: 6,
+                          spreadRadius: 2,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -90,4 +111,3 @@ class AdwPreferencesGroup extends StatelessWidget {
     );
   }
 }
-
