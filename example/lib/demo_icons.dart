@@ -20,6 +20,10 @@ enum DemoIconType {
   multiLayoutView,
   styleClasses,
   animations,
+  clockWorld,
+  clockAlarm,
+  clockStopwatch,
+  clockTimer,
 }
 
 /// Crisp vector symbolic icons matching the `adwaita-1-demo` widget icons.
@@ -156,32 +160,60 @@ class _DemoWidgetIconPainter extends CustomPainter {
         break;
 
       case DemoIconType.viewSwitcher:
+        final u = s / 16.0;
+        final outerPaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = s <= 24 ? strokeWidth : s * 0.0625
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+        final innerPaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = s <= 24 ? strokeWidth * 0.55 : s * 0.028
+          ..strokeCap = StrokeCap.butt
+          ..strokeJoin = StrokeJoin.round;
         final frame = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.12, s * 0.16, s * 0.76, s * 0.68),
-          Radius.circular(s * 0.12),
+          Rect.fromLTRB(1.0 * u, 1.0 * u, 15.0 * u, 15.0 * u),
+          Radius.circular(2.2 * u),
         );
-        canvas.drawRRect(frame, strokePaint);
+        canvas.drawRRect(frame, outerPaint);
         canvas.drawLine(
-          Offset(s * 0.13, s * 0.42),
-          Offset(s * 0.87, s * 0.42),
-          thinPaint,
+          Offset(1.2 * u, 4.5 * u),
+          Offset(14.8 * u, 4.5 * u),
+          innerPaint,
         );
         canvas.drawLine(
-          Offset(s * 0.50, s * 0.17),
-          Offset(s * 0.50, s * 0.42),
-          thinPaint,
+          Offset(5.65 * u, 1.2 * u),
+          Offset(5.65 * u, 4.5 * u),
+          innerPaint,
+        );
+        canvas.drawLine(
+          Offset(10.35 * u, 1.2 * u),
+          Offset(10.35 * u, 4.5 * u),
+          innerPaint,
         );
         break;
 
       case DemoIconType.splitView:
+        final u = s / 16.0;
+        final sidebarFillPaint = Paint()
+          ..color = color.withValues(alpha: 0.2)
+          ..style = PaintingStyle.fill;
+        final sidebarPane = RRect.fromRectAndCorners(
+          Rect.fromLTRB(1.0 * u, 2.0 * u, 6.5 * u, 14.0 * u),
+          topLeft: Radius.circular(2.0 * u),
+          bottomLeft: Radius.circular(2.0 * u),
+        );
+        canvas.drawRRect(sidebarPane, sidebarFillPaint);
         final frame = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.10, s * 0.16, s * 0.80, s * 0.68),
-          Radius.circular(s * 0.12),
+          Rect.fromLTRB(1.0 * u, 2.0 * u, 15.0 * u, 14.0 * u),
+          Radius.circular(2.0 * u),
         );
         canvas.drawRRect(frame, strokePaint);
         canvas.drawLine(
-          Offset(s * 0.40, s * 0.17),
-          Offset(s * 0.40, s * 0.83),
+          Offset(6.5 * u, 2.0 * u),
+          Offset(6.5 * u, 14.0 * u),
           thinPaint,
         );
         break;
@@ -424,6 +456,93 @@ class _DemoWidgetIconPainter extends CustomPainter {
           ..quadraticBezierTo(11.5 * u, 5.0 * u, 12.0 * u, 8.0 * u);
         canvas.drawPath(bounce, strokePaint);
         canvas.drawCircle(Offset(13.0 * u, 13.0 * u), 1.8 * u, strokePaint);
+        break;
+
+      case DemoIconType.clockWorld:
+        final u = s / 16.0;
+        canvas.drawCircle(Offset(8.0 * u, 8.0 * u), 7.0 * u, strokePaint);
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(8.0 * u, 8.0 * u),
+            width: 7.0 * u,
+            height: 14.0 * u,
+          ),
+          thinPaint,
+        );
+        final latTop = Path()
+          ..moveTo(2.25 * u, 4.07 * u)
+          ..quadraticBezierTo(8.0 * u, 6.2 * u, 13.79 * u, 4.05 * u);
+        final latBot = Path()
+          ..moveTo(2.25 * u, 11.95 * u)
+          ..quadraticBezierTo(8.0 * u, 9.8 * u, 13.79 * u, 11.98 * u);
+        canvas.drawPath(latTop, thinPaint);
+        canvas.drawPath(latBot, thinPaint);
+        break;
+
+      case DemoIconType.clockAlarm:
+        final u = s / 16.0;
+        canvas.drawCircle(Offset(8.0 * u, 8.0 * u), 5.0 * u, strokePaint);
+        // Bells
+        canvas.drawLine(
+            Offset(1.8 * u, 3.8 * u), Offset(3.8 * u, 1.8 * u), strokePaint);
+        canvas.drawLine(
+            Offset(14.2 * u, 3.8 * u), Offset(12.2 * u, 1.8 * u), strokePaint);
+        // Feet
+        canvas.drawLine(
+            Offset(5.0 * u, 12.0 * u), Offset(4.0 * u, 14.0 * u), strokePaint);
+        canvas.drawLine(Offset(11.0 * u, 12.0 * u), Offset(12.0 * u, 14.0 * u),
+            strokePaint);
+        // Hands
+        final hands = Path()
+          ..moveTo(8.0 * u, 5.0 * u)
+          ..lineTo(8.0 * u, 8.0 * u)
+          ..lineTo(10.0 * u, 9.0 * u);
+        canvas.drawPath(hands, thinPaint);
+        break;
+
+      case DemoIconType.clockStopwatch:
+        final u = s / 16.0;
+        canvas.drawCircle(Offset(8.0 * u, 9.0 * u), 5.0 * u, strokePaint);
+        // Top crown + side button
+        canvas.drawLine(
+            Offset(6.0 * u, 1.0 * u), Offset(10.0 * u, 1.0 * u), strokePaint);
+        canvas.drawLine(
+            Offset(8.0 * u, 1.0 * u), Offset(8.0 * u, 4.0 * u), strokePaint);
+        canvas.drawLine(
+            Offset(2.0 * u, 4.5 * u), Offset(3.4 * u, 3.1 * u), strokePaint);
+        // Hand
+        canvas.drawLine(
+            Offset(8.0 * u, 9.0 * u), Offset(10.0 * u, 7.0 * u), thinPaint);
+        break;
+
+      case DemoIconType.clockTimer:
+        final u = s / 16.0;
+        // Top and bottom bars
+        canvas.drawLine(
+            Offset(2.5 * u, 1.0 * u), Offset(13.5 * u, 1.0 * u), strokePaint);
+        canvas.drawLine(
+            Offset(2.5 * u, 14.0 * u), Offset(13.5 * u, 14.0 * u), strokePaint);
+        // Hourglass sides
+        final left = Path()
+          ..moveTo(4.0 * u, 1.0 * u)
+          ..lineTo(4.0 * u, 4.0 * u)
+          ..quadraticBezierTo(4.0 * u, 5.0 * u, 4.8 * u, 5.55 * u)
+          ..lineTo(7.0 * u, 7.0 * u)
+          ..lineTo(7.0 * u, 8.0 * u)
+          ..lineTo(4.8 * u, 9.45 * u)
+          ..quadraticBezierTo(4.0 * u, 10.0 * u, 4.0 * u, 11.0 * u)
+          ..lineTo(4.0 * u, 14.0 * u);
+        final right = Path()
+          ..moveTo(11.0 * u, 1.0 * u)
+          ..lineTo(11.0 * u, 4.0 * u)
+          ..quadraticBezierTo(11.0 * u, 5.0 * u, 10.2 * u, 5.55 * u)
+          ..lineTo(8.0 * u, 7.0 * u)
+          ..lineTo(8.0 * u, 8.0 * u)
+          ..lineTo(10.2 * u, 9.45 * u)
+          ..quadraticBezierTo(11.0 * u, 10.0 * u, 11.0 * u, 11.0 * u)
+          ..lineTo(11.0 * u, 14.0 * u);
+        canvas.drawPath(left, strokePaint);
+        canvas.drawPath(right, strokePaint);
         break;
     }
   }

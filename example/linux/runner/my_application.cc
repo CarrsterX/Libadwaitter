@@ -362,6 +362,40 @@ static void style_method_call_handler(FlMethodChannel* channel,
   }
 }
 
+static gboolean is_gdk_window_tiled(GtkWindow* window) {
+  GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
+  if (gdk_win == nullptr) return FALSE;
+  GdkWindowState state = gdk_window_get_state(gdk_win);
+  return (state & (GDK_WINDOW_STATE_TILED |
+                   GDK_WINDOW_STATE_TOP_TILED |
+                   GDK_WINDOW_STATE_RIGHT_TILED |
+                   GDK_WINDOW_STATE_BOTTOM_TILED |
+                   GDK_WINDOW_STATE_LEFT_TILED |
+                   GDK_WINDOW_STATE_FULLSCREEN)) != 0;
+}
+
+static gboolean on_window_state_changed(GtkWidget* widget,
+                                        GdkEventWindowState* event,
+                                        gpointer user_data) {
+  FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  if (channel == nullptr || event == nullptr) return FALSE;
+  GdkWindowState state = event->new_window_state;
+  gboolean is_max = (state & GDK_WINDOW_STATE_MAXIMIZED) != 0;
+  gboolean is_tiled =
+      (state & (GDK_WINDOW_STATE_TILED |
+                GDK_WINDOW_STATE_TOP_TILED |
+                GDK_WINDOW_STATE_RIGHT_TILED |
+                GDK_WINDOW_STATE_BOTTOM_TILED |
+                GDK_WINDOW_STATE_LEFT_TILED |
+                GDK_WINDOW_STATE_FULLSCREEN)) != 0;
+  g_autoptr(FlValue) args = fl_value_new_map();
+  fl_value_set_string_take(args, "isMaximized", fl_value_new_bool(is_max));
+  fl_value_set_string_take(args, "isTiled", fl_value_new_bool(is_tiled));
+  fl_method_channel_invoke_method(channel, "onWindowStateChanged", args,
+                                  nullptr, nullptr, nullptr);
+  return FALSE;
+}
+
 static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
   GtkWindow* window = GTK_WINDOW(object);
   FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
@@ -397,6 +431,81 @@ static gboolean on_window_post_drag_event(GtkWidget* widget, GdkEvent* event, gp
   return FALSE;
 }
 
+typedef struct {
+  GdkDevice* device;
+  gint button;
+  gdouble x;
+  gdouble y;
+  gdouble root_x;
+  gdouble root_y;
+  guint32 timestamp;
+} LastPointerState;
+
+static gboolean on_capture_pointer_event(GtkWidget* widget,
+                                         GdkEvent* event,
+                                         gpointer user_data) {
+  GtkWindow* window = GTK_WINDOW(user_data);
+  if (window == nullptr || event == nullptr) return FALSE;
+  LastPointerState* state = static_cast<LastPointerState*>(
+      g_object_get_data(G_OBJECT(window), "libadwaitter-last-pointer"));
+  if (state == nullptr) {
+    state = g_new0(LastPointerState, 1);
+    g_object_set_data_full(G_OBJECT(window), "libadwaitter-last-pointer", state,
+                           g_free);
+  }
+  GdkDevice* dev = gdk_event_get_device(event);
+  if (dev != nullptr) {
+    state->device = dev;
+  }
+  gdouble wx = 0, wy = 0;
+  if (gdk_event_get_coords(event, &wx, &wy)) {
+    state->x = wx;
+    state->y = wy;
+  }
+  gdouble rx = 0, ry = 0;
+  if (gdk_event_get_root_coords(event, &rx, &ry)) {
+    state->root_x = rx;
+    state->root_y = ry;
+  }
+  guint32 ts = gdk_event_get_time(event);
+  if (ts != GDK_CURRENT_TIME) {
+    state->timestamp = ts;
+  }
+  guint btn = 0;
+  if (gdk_event_get_button(event, &btn) && btn > 0) {
+    state->button = static_cast<gint>(btn);
+  } else if (state->button == 0) {
+    state->button = 1;
+  }
+  return FALSE;
+}
+
+static void release_fl_view_pointer_state(GtkWindow* window,
+                                          LastPointerState* state) {
+  GtkWidget* view_widget = GTK_WIDGET(
+      g_object_get_data(G_OBJECT(window), "libadwaitter-fl-view"));
+  if (view_widget == nullptr) return;
+  GdkWindow* view_gdk_win = gtk_widget_get_window(view_widget);
+  if (view_gdk_win == nullptr) return;
+
+  GdkEvent* rel = gdk_event_new(GDK_BUTTON_RELEASE);
+  rel->button.window = GDK_WINDOW(g_object_ref(view_gdk_win));
+  rel->button.send_event = TRUE;
+  rel->button.time = state != nullptr ? state->timestamp : GDK_CURRENT_TIME;
+  rel->button.x = state != nullptr ? state->x : 0.0;
+  rel->button.y = state != nullptr ? state->y : 0.0;
+  rel->button.x_root = state != nullptr ? state->root_x : 0.0;
+  rel->button.y_root = state != nullptr ? state->root_y : 0.0;
+  rel->button.button =
+      (state != nullptr && state->button > 0) ? state->button : 1;
+  rel->button.state = GDK_BUTTON1_MASK;
+  if (state != nullptr && state->device != nullptr) {
+    gdk_event_set_device(rel, state->device);
+  }
+  gtk_widget_event(view_widget, rel);
+  gdk_event_free(rel);
+}
+
 static void window_method_call_handler(FlMethodChannel* channel,
                                        FlMethodCall* method_call,
                                        gpointer user_data) {
@@ -405,15 +514,24 @@ static void window_method_call_handler(FlMethodChannel* channel,
 
   if (strcmp(method, "startDragging") == 0) {
     g_object_set_data(G_OBJECT(window), "libadwaitter-interactive-drag", GINT_TO_POINTER(1));
-    GdkSeat* seat = gdk_display_get_default_seat(gdk_display_get_default());
-    GdkDevice* pointer = seat != nullptr ? gdk_seat_get_pointer(seat) : nullptr;
-    gint x = 0, y = 0;
-    if (pointer != nullptr) {
-      gdk_device_get_position(pointer, nullptr, &x, &y);
+    LastPointerState* state = static_cast<LastPointerState*>(
+        g_object_get_data(G_OBJECT(window), "libadwaitter-last-pointer"));
+    release_fl_view_pointer_state(window, state);
+    if (state != nullptr && state->timestamp != GDK_CURRENT_TIME) {
+      gtk_window_begin_move_drag(
+          window, state->button > 0 ? state->button : 1,
+          static_cast<gint>(state->root_x), static_cast<gint>(state->root_y),
+          state->timestamp);
+    } else {
+      GdkSeat* seat = gdk_display_get_default_seat(gdk_display_get_default());
+      GdkDevice* pointer = seat != nullptr ? gdk_seat_get_pointer(seat) : nullptr;
+      gint x = 0, y = 0;
+      if (pointer != nullptr) {
+        gdk_device_get_position(pointer, nullptr, &x, &y);
+      }
+      guint32 timestamp = gtk_get_current_event_time();
+      gtk_window_begin_move_drag(window, 1, x, y, timestamp);
     }
-    guint32 timestamp = gtk_get_current_event_time();
-    // Initiate native window drag (Wayland and X11) with pointer device and coordinates
-    gtk_window_begin_move_drag(window, 1, x, y, timestamp);
     fl_method_call_respond_success(method_call, nullptr, nullptr);
   } else if (strcmp(method, "beginResizeDrag") == 0) {
     g_object_set_data(G_OBJECT(window), "libadwaitter-interactive-drag", GINT_TO_POINTER(1));
@@ -447,15 +565,24 @@ static void window_method_call_handler(FlMethodChannel* channel,
       edge = GDK_WINDOW_EDGE_SOUTH_EAST;
     }
 
-    GdkSeat* seat = gdk_display_get_default_seat(gdk_display_get_default());
-    GdkDevice* pointer = seat != nullptr ? gdk_seat_get_pointer(seat) : nullptr;
-    gint x = 0, y = 0;
-    if (pointer != nullptr) {
-      gdk_device_get_position(pointer, nullptr, &x, &y);
+    LastPointerState* state = static_cast<LastPointerState*>(
+        g_object_get_data(G_OBJECT(window), "libadwaitter-last-pointer"));
+    release_fl_view_pointer_state(window, state);
+    if (state != nullptr && state->timestamp != GDK_CURRENT_TIME) {
+      gtk_window_begin_resize_drag(
+          window, edge, state->button > 0 ? state->button : 1,
+          static_cast<gint>(state->root_x), static_cast<gint>(state->root_y),
+          state->timestamp);
+    } else {
+      GdkSeat* seat = gdk_display_get_default_seat(gdk_display_get_default());
+      GdkDevice* pointer = seat != nullptr ? gdk_seat_get_pointer(seat) : nullptr;
+      gint x = 0, y = 0;
+      if (pointer != nullptr) {
+        gdk_device_get_position(pointer, nullptr, &x, &y);
+      }
+      guint32 timestamp = gtk_get_current_event_time();
+      gtk_window_begin_resize_drag(window, edge, 1, x, y, timestamp);
     }
-    guint32 timestamp = gtk_get_current_event_time();
-    // Initiate native window resize (Wayland and X11) with pointer device and coordinates
-    gtk_window_begin_resize_drag(window, edge, 1, x, y, timestamp);
     fl_method_call_respond_success(method_call, nullptr, nullptr);
   } else if (strcmp(method, "close") == 0) {
     gtk_window_close(window);
@@ -473,6 +600,10 @@ static void window_method_call_handler(FlMethodChannel* channel,
   } else if (strcmp(method, "isMaximized") == 0) {
     gboolean is_max = gtk_window_is_maximized(window);
     g_autoptr(FlValue) result = fl_value_new_bool(is_max);
+    fl_method_call_respond_success(method_call, result, nullptr);
+  } else if (strcmp(method, "isTiled") == 0) {
+    gboolean is_tiled = is_gdk_window_tiled(window);
+    g_autoptr(FlValue) result = fl_value_new_bool(is_tiled);
     fl_method_call_respond_success(method_call, result, nullptr);
   } else if (strcmp(method, "isActive") == 0) {
     gboolean is_act = gtk_window_is_active(window);
@@ -946,7 +1077,15 @@ static void my_application_activate(GApplication* application) {
       window_channel, window_method_call_handler, window, nullptr);
   g_signal_connect(window, "notify::is-active",
                    G_CALLBACK(on_window_active_changed), window_channel);
-  gtk_widget_add_events(GTK_WIDGET(window), GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_RELEASE_MASK);
+  g_signal_connect(window, "window-state-event",
+                   G_CALLBACK(on_window_state_changed), window_channel);
+  g_object_set_data(G_OBJECT(window), "libadwaitter-fl-view", view);
+  gtk_widget_add_events(GTK_WIDGET(window),
+                        GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_RELEASE_MASK);
+  g_signal_connect(view, "button-press-event",
+                   G_CALLBACK(on_capture_pointer_event), window);
+  g_signal_connect(view, "motion-notify-event",
+                   G_CALLBACK(on_capture_pointer_event), window);
   g_signal_connect(window, "enter-notify-event",
                    G_CALLBACK(on_window_post_drag_event), window_channel);
   g_signal_connect(window, "button-release-event",

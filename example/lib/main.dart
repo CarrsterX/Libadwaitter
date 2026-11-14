@@ -106,7 +106,6 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   String _selectedComboOption = 'Foo';
   String _selectedEnumComboOption = 'unknown';
   bool _bannerRevealed = true;
-  int _viewSwitcherIndex = 0;
   final AdwCarouselController _carouselController = AdwCarouselController();
   String _selectedToggleInterval = 'Day';
   int _selectedAlignment = 1;
@@ -351,7 +350,9 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     false;
             return AdwHeaderBar(
               isFlat: true,
-              showWindowControls: isCollapsed,
+              showWindowControls: true,
+              showStartWindowControls: true,
+              showEndWindowControls: isCollapsed,
               start: AdwButton(
                 style: _searchBarVisible
                     ? AdwButtonStyle.standard
@@ -407,7 +408,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           color: theme.colors.isDark
                               ? const Color(0xFF3E3E42)
                               : const Color(0xFFFFFFFF),
-                          borderRadius: BorderRadius.circular(7.0),
+                          borderRadius:
+                              BorderRadius.circular(AdwMetrics.buttonRadius),
                           border: Border.all(
                             color: _searchFocused
                                 ? theme.colors.accentColor
@@ -417,6 +419,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           ),
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Icon(
                               AdwIcons.edit_find_symbolic,
@@ -430,30 +433,42 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                                 children: [
                                   if (_searchController.text.isEmpty)
                                     IgnorePointer(
-                                      child: Text(
-                                        'Find pages',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.typography.body.copyWith(
-                                          color: theme
-                                              .colors.secondaryForeground
-                                              .withValues(alpha: 0.75),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Find pages',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.body.copyWith(
+                                            height: 1.0,
+                                            leadingDistribution:
+                                                TextLeadingDistribution.even,
+                                            color: theme
+                                                .colors.secondaryForeground
+                                                .withValues(alpha: 0.75),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  EditableText(
-                                    controller: _searchController,
-                                    focusNode: _searchFocusNode,
-                                    style: theme.typography.body.copyWith(
-                                      color: theme.colors.windowForeground,
-                                    ),
-                                    cursorColor: theme.colors.windowForeground,
-                                    backgroundCursorColor:
-                                        theme.colors.borderColor,
-                                    selectionColor: theme.colors.accentColor
-                                        .withValues(alpha: 0.35),
-                                    onChanged: (val) => setState(
-                                      () => _searchFilter = val.toLowerCase(),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: EditableText(
+                                      controller: _searchController,
+                                      focusNode: _searchFocusNode,
+                                      style: theme.typography.body.copyWith(
+                                        height: 1.0,
+                                        leadingDistribution:
+                                            TextLeadingDistribution.even,
+                                        color: theme.colors.windowForeground,
+                                      ),
+                                      cursorColor: theme.colors.windowForeground,
+                                      backgroundCursorColor:
+                                          theme.colors.borderColor,
+                                      selectionColor: theme.colors.accentColor
+                                          .withValues(alpha: 0.35),
+                                      onChanged: (val) => setState(
+                                        () => _searchFilter = val.toLowerCase(),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -495,14 +510,14 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                       false;
               return SingleChildScrollView(
                 padding: isCollapsed
-                    ? const EdgeInsets.fromLTRB(12, 20, 12, 24)
+                    ? const EdgeInsets.fromLTRB(12, 18, 12, 24)
                     : const EdgeInsets.symmetric(vertical: 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (isCollapsed)
                       AdwPreferencesGroup(
-                        margin: const EdgeInsets.only(bottom: 18),
+                        margin: const EdgeInsets.only(bottom: 24),
                         children: [
                           _buildSidebarItem(
                             page: DemoPage.welcome,
@@ -742,12 +757,9 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         }
 
         if (isCollapsed) {
-          final isSingleItem = page == DemoPage.welcome;
           return AdwActionRow(
-            minHeight: isSingleItem ? 46.0 : AdwMetrics.rowMinHeight,
-            padding: isSingleItem
-                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
-                : const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            minHeight: AdwMetrics.rowMinHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
             prefix: iconWidget ?? (icon != null ? Icon(icon, size: 16) : null),
             title: Text(title),
             trailing: const Icon(AdwIcons.go_next_symbolic, size: 16),
@@ -776,13 +788,10 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     if (visibleItems.isEmpty) return const SizedBox.shrink();
 
     if (isCollapsed) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 18),
-        child: AdwPreferencesGroup(
-          margin: const EdgeInsets.only(bottom: 18),
-          title: Text(title),
-          children: visibleItems,
-        ),
+      return AdwPreferencesGroup(
+        margin: const EdgeInsets.only(bottom: 24),
+        title: Text(title),
+        children: visibleItems,
       );
     }
 
@@ -805,10 +814,20 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   Widget _buildContent(AdwThemeData theme, bool isDark) {
     return Column(
       children: [
-        // Flat content view header bar with in-app window controls on the right
-        const AdwHeaderBar(
-          isFlat: true,
-          showWindowControls: true,
+        // Flat content view header bar with window controls on end (and start when collapsed)
+        Builder(
+          builder: (contentContext) {
+            final isCollapsed =
+                AdwNavigationSplitViewScope.maybeOf(contentContext)
+                        ?.isCollapsed ??
+                    false;
+            return AdwHeaderBar(
+              isFlat: true,
+              showWindowControls: true,
+              showStartWindowControls: isCollapsed,
+              showEndWindowControls: true,
+            );
+          },
         ),
         Expanded(
           child: _buildPageBody(theme, isDark),
@@ -1226,40 +1245,18 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         );
 
       case DemoPage.viewSwitcher:
-        return Column(
-          children: [
-            const SizedBox(height: 16),
-            AdwViewSwitcher(
-              items: const [
-                AdwViewSwitcherItem(
-                  icon: Icon(AdwIcons.view_reveal_symbolic),
-                  title: 'Explore',
-                ),
-                AdwViewSwitcherItem(
-                  icon: Icon(AdwIcons.system_software_install_symbolic),
-                  title: 'Installed',
-                ),
-                AdwViewSwitcherItem(
-                  icon: Icon(AdwIcons.software_update_available_symbolic),
-                  title: 'Updates',
-                ),
-              ],
-              currentIndex: _viewSwitcherIndex,
-              onIndexChanged: (i) => setState(() => _viewSwitcherIndex = i),
-            ),
-            Expanded(
-              child: Center(
-                child: Text(
-                  _viewSwitcherIndex == 0
-                      ? 'Explore View Content'
-                      : (_viewSwitcherIndex == 1
-                          ? 'Installed Packages'
-                          : 'System Updates Available'),
-                  style: theme.typography.title2,
-                ),
+        return AdwStatusPage(
+          icon: const DemoWidgetIcon(DemoIconType.viewSwitcher, size: 128),
+          title: const Text('View Switcher'),
+          description: const Text("Widgets to switch the window's view"),
+          child: Center(
+            child: Builder(
+              builder: (innerContext) => AdwButton.pill(
+                onPressed: () => _openViewSwitcherDemoDialog(innerContext),
+                child: const Text('Run the Demo'),
               ),
             ),
-          ],
+          ),
         );
 
       case DemoPage.banner:
@@ -1478,6 +1475,96 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     }
   }
 
+  void _openViewSwitcherDemoDialog(BuildContext context) {
+    int currentIndex = 0;
+    const items = [
+      AdwViewSwitcherItem(
+        icon: DemoWidgetIcon(DemoIconType.clockWorld, size: 16),
+        title: 'World',
+      ),
+      AdwViewSwitcherItem(
+        icon: DemoWidgetIcon(DemoIconType.clockAlarm, size: 16),
+        title: 'Alarm',
+      ),
+      AdwViewSwitcherItem(
+        icon: DemoWidgetIcon(DemoIconType.clockStopwatch, size: 16),
+        title: 'Stopwatch',
+        badgeNumber: 3,
+        needsAttention: true,
+      ),
+      AdwViewSwitcherItem(
+        icon: DemoWidgetIcon(DemoIconType.clockTimer, size: 16),
+        title: 'Timer',
+      ),
+    ];
+
+    const pages = [
+      AdwStatusPage(
+        icon: DemoWidgetIcon(DemoIconType.clockWorld, size: 128),
+        title: Text('World'),
+        description: Text('View the time in cities around the world'),
+      ),
+      AdwStatusPage(
+        icon: DemoWidgetIcon(DemoIconType.clockAlarm, size: 128),
+        title: Text('Alarm'),
+        description: Text('Set customizable alarms to go off on specific days'),
+      ),
+      AdwStatusPage(
+        icon: DemoWidgetIcon(DemoIconType.clockStopwatch, size: 128),
+        title: Text('Stopwatch'),
+        description:
+            Text('Use the stopwatch to time how long something takes'),
+      ),
+      AdwStatusPage(
+        icon: DemoWidgetIcon(DemoIconType.clockTimer, size: 128),
+        title: Text('Timer'),
+        description:
+            Text('Set a countdown in seconds, minutes or hours'),
+      ),
+    ];
+
+    showAdwDialog<void>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AdwDialog(
+            contentWidth: 640,
+            contentHeight: 480,
+            title: 'AdwViewSwitcher Demo',
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth <= 550;
+                return AdwToolbarView(
+                  topBar: AdwHeaderBar(
+                    isFlat: true,
+                    title: isNarrow ? const Text('AdwViewSwitcher Demo') : null,
+                    titleWidget: isNarrow
+                        ? null
+                        : AdwViewSwitcher(
+                            items: items,
+                            currentIndex: currentIndex,
+                            policy: AdwViewSwitcherPolicy.wide,
+                            onIndexChanged: (i) =>
+                                setDialogState(() => currentIndex = i),
+                          ),
+                  ),
+                  content: pages[currentIndex],
+                  bottomBar: AdwViewSwitcherBar(
+                    items: items,
+                    currentIndex: currentIndex,
+                    reveal: isNarrow,
+                    onIndexChanged: (i) =>
+                        setDialogState(() => currentIndex = i),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _openNavigationSplitViewDemoDialog(BuildContext context) {
     showAdwDialog<void>(
       context: context,
@@ -1534,8 +1621,10 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         padding: EdgeInsets.zero,
                         onPressed: () =>
                             setDialogState(() => showSidebar = !showSidebar),
-                        child: const Icon(AdwIcons.sidebar_show_symbolic,
-                            size: 16),
+                        child: const DemoWidgetIcon(
+                          DemoIconType.splitView,
+                          size: 16,
+                        ),
                       )
                     : null,
                 end: position == AdwSplitViewPosition.end
@@ -1546,8 +1635,13 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         padding: EdgeInsets.zero,
                         onPressed: () =>
                             setDialogState(() => showSidebar = !showSidebar),
-                        child: const Icon(AdwIcons.sidebar_show_right_symbolic,
-                            size: 16),
+                        child: Transform.flip(
+                          flipX: true,
+                          child: const DemoWidgetIcon(
+                            DemoIconType.splitView,
+                            size: 16,
+                          ),
+                        ),
                       )
                     : null,
               ),
