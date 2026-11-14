@@ -549,13 +549,17 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           ),
                           _buildSidebarItem(
                             page: DemoPage.tabView,
-                            icon: AdwIcons.focus_windows_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.tabView,
+                                size: 16),
                             title: 'Tab View',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.bottomSheet,
-                            icon: AdwIcons.preferences_desktop_display_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.bottomSheet,
+                                size: 16),
                             title: 'Bottom Sheet',
                             isCollapsed: isCollapsed,
                           ),
@@ -613,14 +617,17 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           ),
                           _buildSidebarItem(
                             page: DemoPage.toasts,
-                            icon: AdwIcons
-                                .preferences_system_notifications_symbolic,
-                            title: 'Toast',
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.toasts,
+                                size: 16),
+                            title: 'Toasts',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.spinner,
-                            icon: AdwIcons.applications_system_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.spinner,
+                                size: 16),
                             title: 'Spinner',
                             isCollapsed: isCollapsed,
                           ),
@@ -638,13 +645,17 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         [
                           _buildSidebarItem(
                             page: DemoPage.alertDialog,
-                            icon: AdwIcons.dialog_question_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.alertDialog,
+                                size: 16),
                             title: 'Alert Dialog',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.aboutDialog,
-                            icon: AdwIcons.help_about_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.aboutDialog,
+                                size: 16),
                             title: 'About Dialog',
                             isCollapsed: isCollapsed,
                           ),
@@ -656,20 +667,25 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         [
                           _buildSidebarItem(
                             page: DemoPage.clamp,
-                            icon: AdwIcons.preferences_desktop_display_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.clamp,
+                                size: 16),
                             title: 'Clamp',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.wrapBox,
-                            icon: AdwIcons.preferences_desktop_apps_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.wrapBox,
+                                size: 16),
                             title: 'Wrap Box',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.multiLayoutView,
-                            icon: AdwIcons
-                                .preferences_desktop_multitasking_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.multiLayoutView,
+                                size: 16),
                             title: 'Multi-Layout View',
                             isCollapsed: isCollapsed,
                           ),
@@ -681,13 +697,17 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         [
                           _buildSidebarItem(
                             page: DemoPage.styleClasses,
-                            icon: AdwIcons.applications_graphics_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.styleClasses,
+                                size: 16),
                             title: 'Style Classes',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.animations,
-                            icon: AdwIcons.media_playback_start_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.animations,
+                                size: 16),
                             title: 'Animations',
                             isCollapsed: isCollapsed,
                           ),
