@@ -490,7 +490,7 @@ String _renderCounterMainDart({required String title}) {
   final escapedTitle = _escapeDartSingleQuote(title);
   return '''import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
-import 'package:libadwaitter_icons/libadwaitter_icons.dart';
+import 'package:adwaitter_icons/adwaitter_icons.dart';
 
 void main() {
   runApp(const CounterApp());

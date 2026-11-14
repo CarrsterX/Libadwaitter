@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
-import 'package:libadwaitter_icons/libadwaitter_icons.dart';
+import 'package:adwaitter_icons/adwaitter_icons.dart';
 
 import 'demo_icons.dart';
 

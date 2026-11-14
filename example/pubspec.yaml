@@ -12,8 +12,8 @@ dependencies:
     sdk: flutter
   libadwaitter:
     path: ../
-  libadwaitter_icons:
-    path: ../packages/libadwaitter_icons
+  adwaitter_icons:
+    path: ../packages/adwaitter_icons
 
 flutter:
   uses-material-design: false
