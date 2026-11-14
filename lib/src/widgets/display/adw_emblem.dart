@@ -15,14 +15,15 @@ class AdwEmblem extends StatelessWidget {
     super.key,
     this.size = 120.0,
     this.color,
-    this.strokeWidth = 2.0,
+    this.strokeWidth = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = AdwTheme.of(context);
     final effectiveColor = color ??
-        theme.colors.secondaryForeground.withValues(alpha: theme.colors.isDark ? 0.45 : 0.35);
+        IconTheme.of(context).color ??
+        theme.colors.statusIconColor;
 
     return SizedBox(
       width: size,

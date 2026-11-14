@@ -80,6 +80,31 @@ class AdwColorScheme {
       ? const Color(0x14FFFFFF)
       : const Color(0x80FFFFFF);
 
+  /// Dimmed icon color used by `AdwStatusPage` and `AdwPreferencesPage` headers.
+  Color get statusIconColor => isDark
+      ? const Color(0xFF9B9B9D)
+      : const Color(0xFF8C8C90);
+
+  /// Idle background for `AdwButtonRow` cards.
+  Color get buttonRowBackground => isDark
+      ? const Color(0xFF333337)
+      : const Color(0xFFFFFFFF);
+
+  /// Hover background for standard `AdwButtonRow` cards.
+  Color get buttonRowHoverBackground => isDark
+      ? Color.alphaBlend(hoverColor, buttonRowBackground)
+      : const Color(0xFFF9F9F9);
+
+  /// Foreground text/icon color for destructive `AdwButtonRow`.
+  Color get destructiveRowForeground => isDark
+      ? const Color(0xFFFF938C)
+      : destructiveColor;
+
+  /// Hover background for destructive `AdwButtonRow` cards.
+  Color get destructiveRowHoverBackground => isDark
+      ? const Color(0xFF3A3539)
+      : const Color(0xFFFDF7F7);
+
   const AdwColorScheme({
     required this.isDark,
     required this.windowBackground,

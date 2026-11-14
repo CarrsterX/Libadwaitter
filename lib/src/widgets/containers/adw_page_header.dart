@@ -17,9 +17,7 @@ List<Widget> buildAdwPageHeader({
         child: IconTheme(
           data: IconThemeData(
             size: 128,
-            color: theme.colors.isDark
-                ? theme.colors.secondaryForeground.withValues(alpha: 0.55)
-                : const Color(0xFF8C8C90),
+            color: theme.colors.statusIconColor,
           ),
           child: icon,
         ),
@@ -34,7 +32,7 @@ List<Widget> buildAdwPageHeader({
         child: title,
       ),
       if (description != null)
-        const SizedBox(height: 10)
+        const SizedBox(height: 12)
       else if (hasContentAfter)
         const SizedBox(height: 38),
     ],

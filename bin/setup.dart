@@ -1,0 +1,1674 @@
+import 'dart:io';
+
+/// CLI generator to configure a Flutter Linux project for Libadwaitter:
+/// - Patches `linux/runner/my_application.cc` with frameless CSD, RGBA
+///   transparency for rounded corners, and the native MethodChannels
+///   (`libadwaitter/window`, `libadwaitter/settings`, `libadwaitter/style`).
+/// - Optionally generates a starter Libadwaitter counter app in `lib/main.dart`
+///   when `--counter` is passed.
+///
+/// Usage:
+///   dart run libadwaitter:setup [options]
+void main(List<String> args) {
+  final options = _parseArgs(args);
+  if (options.showHelp) {
+    _printUsage();
+    return;
+  }
+
+  final cwd = Directory.current;
+  final pubspecFile = File('${cwd.path}/pubspec.yaml');
+  if (!pubspecFile.existsSync()) {
+    stderr.writeln(
+      'Error: pubspec.yaml not found in ${cwd.path}. Run this command from the root of your Flutter project.',
+    );
+    exitCode = 1;
+    return;
+  }
+
+  final myAppFile = File('${cwd.path}/linux/runner/my_application.cc');
+  if (!myAppFile.existsSync()) {
+    stderr.writeln(
+      'Error: linux/runner/my_application.cc not found.\n'
+      'If Linux is not enabled in your project yet, run: flutter create --platforms=linux .',
+    );
+    exitCode = 1;
+    return;
+  }
+
+  final resolvedTitle = options.title ?? _inferTitleFromPubspec(pubspecFile);
+  final resolvedSlug = _inferSlugFromPubspec(pubspecFile);
+  final resolvedAppId = options.appId ?? _inferAppId(cwd, resolvedSlug);
+  final isBeta = options.channel == 'beta';
+  final effectiveAppId =
+      isBeta && !resolvedAppId.endsWith('.Devel') && options.flatpak
+          ? '$resolvedAppId.Devel'
+          : resolvedAppId;
+
+  final renderedCpp = _renderMyApplicationCc(
+    title: resolvedTitle,
+    width: options.width,
+    height: options.height,
+  );
+
+  if (options.dryRun) {
+    stdout.writeln('[dry-run] Would update: ${myAppFile.path}');
+    stdout.writeln(
+      '[dry-run] Title: "$resolvedTitle", default size: ${options.width}x${options.height}',
+    );
+    stdout.writeln(
+      '[dry-run] App ID: $effectiveAppId (channel: ${options.channel})',
+    );
+    if (options.counter) {
+      stdout.writeln('[dry-run] Would generate Libadwaitter counter app in: ${cwd.path}/lib/main.dart');
+    }
+    if (options.flatpak) {
+      stdout.writeln(
+        '[dry-run] Would generate Flatpak packaging in: ${cwd.path}/linux/packaging/flatpak/',
+      );
+    }
+    if (options.snap) {
+      stdout.writeln(
+        '[dry-run] Would generate Snap packaging in: ${cwd.path}/snap/snapcraft.yaml',
+      );
+    }
+    return;
+  }
+
+  final existingCpp = myAppFile.readAsStringSync();
+  if (options.backup &&
+      !existingCpp.contains('libadwaitter/window') &&
+      !File('${myAppFile.path}.bak').existsSync()) {
+    myAppFile.copySync('${myAppFile.path}.bak');
+    stdout.writeln('Backup created: linux/runner/my_application.cc.bak');
+  }
+
+  myAppFile.writeAsStringSync(renderedCpp);
+  stdout.writeln(
+    'Configured linux/runner/my_application.cc (transparent CSD, Wayland app_id, and window/settings/style/portal channels).',
+  );
+
+  if (options.appId != null) {
+    _updateCmakeApplicationId(cwd, effectiveAppId);
+  }
+
+  if (options.counter) {
+    final mainFile = File('${cwd.path}/lib/main.dart');
+    if (mainFile.existsSync() &&
+        options.backup &&
+        !File('${mainFile.path}.bak').existsSync()) {
+      mainFile.copySync('${mainFile.path}.bak');
+      stdout.writeln('Backup created: lib/main.dart.bak');
+    }
+    mainFile.parent.createSync(recursive: true);
+    mainFile.writeAsStringSync(_renderCounterMainDart(title: resolvedTitle));
+    stdout.writeln('Generated lib/main.dart with Libadwaitter counter demo.');
+  }
+
+  if (options.flatpak) {
+    _writeFlatpakPackaging(
+      cwd: cwd,
+      appId: effectiveAppId,
+      binaryName: resolvedSlug,
+      title: resolvedTitle,
+      channel: options.channel,
+    );
+  }
+
+  if (options.snap) {
+    _writeSnapPackaging(
+      cwd: cwd,
+      snapName: resolvedSlug.replaceAll('_', '-'),
+      binaryName: resolvedSlug,
+      title: resolvedTitle,
+      channel: options.channel,
+    );
+  }
+
+  stdout.writeln('\nReady for native development: flutter run -d linux');
+  if (options.flatpak) {
+    stdout.writeln(
+      'To package Flatpak (${options.channel}): ./linux/packaging/flatpak/build-flatpak.sh',
+    );
+  }
+  if (options.snap) {
+    stdout.writeln('To package Snap (${options.channel}): snapcraft');
+  }
+}
+
+class _SetupOptions {
+  final bool showHelp;
+  final bool dryRun;
+  final bool counter;
+  final bool backup;
+  final bool flatpak;
+  final bool snap;
+  final String channel;
+  final String? appId;
+  final String? title;
+  final int width;
+  final int height;
+
+  const _SetupOptions({
+    required this.showHelp,
+    required this.dryRun,
+    required this.counter,
+    required this.backup,
+    required this.flatpak,
+    required this.snap,
+    required this.channel,
+    required this.appId,
+    required this.title,
+    required this.width,
+    required this.height,
+  });
+}
+
+_SetupOptions _parseArgs(List<String> args) {
+  bool showHelp = false;
+  bool dryRun = false;
+  bool counter = false;
+  bool backup = true;
+  bool flatpak = false;
+  bool snap = false;
+  String channel = 'stable';
+  String? appId;
+  String? title;
+  int width = 1080;
+  int height = 720;
+
+  for (int i = 0; i < args.length; i++) {
+    final arg = args[i];
+    if (arg == '-h' || arg == '--help') {
+      showHelp = true;
+    } else if (arg == '--dry-run') {
+      dryRun = true;
+    } else if (arg == '--counter') {
+      counter = true;
+    } else if (arg == '--no-backup') {
+      backup = false;
+    } else if (arg == '--flatpak') {
+      flatpak = true;
+    } else if (arg == '--snap') {
+      snap = true;
+    } else if (arg == '--all-packaging') {
+      flatpak = true;
+      snap = true;
+    } else if (arg == '--channel' && i + 1 < args.length) {
+      final val = args[++i].toLowerCase();
+      if (val == 'stable' || val == 'beta') channel = val;
+    } else if (arg.startsWith('--channel=')) {
+      final val = arg.substring('--channel='.length).toLowerCase();
+      if (val == 'stable' || val == 'beta') channel = val;
+    } else if (arg == '--app-id' && i + 1 < args.length) {
+      appId = args[++i];
+    } else if (arg.startsWith('--app-id=')) {
+      appId = arg.substring('--app-id='.length);
+    } else if (arg == '--title' && i + 1 < args.length) {
+      title = args[++i];
+    } else if (arg.startsWith('--title=')) {
+      title = arg.substring('--title='.length);
+    } else if (arg == '--width' && i + 1 < args.length) {
+      width = int.tryParse(args[++i]) ?? width;
+    } else if (arg.startsWith('--width=')) {
+      width = int.tryParse(arg.substring('--width='.length)) ?? width;
+    } else if (arg == '--height' && i + 1 < args.length) {
+      height = int.tryParse(args[++i]) ?? height;
+    } else if (arg.startsWith('--height=')) {
+      height = int.tryParse(arg.substring('--height='.length)) ?? height;
+    }
+  }
+
+  return _SetupOptions(
+    showHelp: showHelp,
+    dryRun: dryRun,
+    counter: counter,
+    backup: backup,
+    flatpak: flatpak,
+    snap: snap,
+    channel: channel,
+    appId: appId,
+    title: title,
+    width: width,
+    height: height,
+  );
+}
+
+void _printUsage() {
+  stdout.writeln('''
+Libadwaitter Linux Setup Generator
+
+Usage:
+  dart run libadwaitter:setup [options]
+
+Native Linux / Wayland options:
+  --title <name>         Initial GTK window title (defaults to pubspec.yaml name)
+  --app-id <reverse.dns> Freedesktop/Wayland application ID (e.g. io.github.user.myapp)
+  --width <px>           Initial window width (default: 1080)
+  --height <px>          Initial window height (default: 720)
+  --counter              Also generate a starter Libadwaitter counter app in lib/main.dart
+
+Distribution options (optional, does not affect native development):
+  --flatpak              Generate Flatpak manifest, .desktop, .metainfo.xml, and bundle script
+  --snap                 Generate snap/snapcraft.yaml with strict confinement and GNOME extension
+  --all-packaging        Generate both Flatpak and Snap packaging
+  --channel <type>       Release channel: stable (default) or beta
+
+Other:
+  --no-backup            Do not create .bak files before overwriting
+  --dry-run              Preview changes without writing files
+  -h, --help             Show this help message
+''');
+}
+
+String _inferSlugFromPubspec(File pubspecFile) {
+  final lines = pubspecFile.readAsLinesSync();
+  for (final line in lines) {
+    final trimmed = line.trim();
+    if (trimmed.startsWith('name:')) {
+      final raw = trimmed.substring('name:'.length).trim();
+      if (raw.isNotEmpty) return raw;
+    }
+  }
+  return 'libadwaitter_app';
+}
+
+String _inferAppId(Directory cwd, String slug) {
+  final cmakeFile = File('${cwd.path}/linux/CMakeLists.txt');
+  if (cmakeFile.existsSync()) {
+    final match = RegExp(r'set\(APPLICATION_ID\s+"([^"]+)"\)')
+        .firstMatch(cmakeFile.readAsStringSync());
+    if (match != null && match.group(1) != null && match.group(1)!.isNotEmpty) {
+      return match.group(1)!;
+    }
+  }
+  return 'org.example.$slug';
+}
+
+void _updateCmakeApplicationId(Directory cwd, String appId) {
+  final cmakeFile = File('${cwd.path}/linux/CMakeLists.txt');
+  if (!cmakeFile.existsSync()) return;
+  final content = cmakeFile.readAsStringSync();
+  final updated = content.replaceAllMapped(
+    RegExp(r'set\(APPLICATION_ID\s+"[^"]+"\)'),
+    (_) => 'set(APPLICATION_ID "$appId")',
+  );
+  if (updated != content) {
+    cmakeFile.writeAsStringSync(updated);
+    stdout.writeln('Updated APPLICATION_ID in linux/CMakeLists.txt -> $appId');
+  }
+}
+
+void _writeFlatpakPackaging({
+  required Directory cwd,
+  required String appId,
+  required String binaryName,
+  required String title,
+  required String channel,
+}) {
+  final dir = Directory('${cwd.path}/linux/packaging/flatpak');
+  dir.createSync(recursive: true);
+
+  final desktopFile = File('${dir.path}/$appId.desktop');
+  desktopFile.writeAsStringSync('''[Desktop Entry]
+Type=Application
+Name=$title
+Exec=$binaryName
+Icon=$appId
+Terminal=false
+Categories=Utility;GTK;
+StartupNotify=true
+StartupWMClass=$appId
+''');
+
+  final metainfoFile = File('${dir.path}/$appId.metainfo.xml');
+  metainfoFile.writeAsStringSync('''<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>$appId</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>$title</name>
+  <summary>$title built with Libadwaitter</summary>
+  <description>
+    <p>$title is a desktop application built with Flutter and Libadwaitter.</p>
+  </description>
+  <launchable type="desktop-id">$appId.desktop</launchable>
+  <releases>
+    <release version="0.1.0" date="2026-01-01" type="${channel == 'beta' ? 'development' : 'stable'}"/>
+  </releases>
+</component>
+''');
+
+  final svgFile = File('${dir.path}/$appId.svg');
+  svgFile.writeAsStringSync('''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="12" y="12" width="104" height="104" rx="24" fill="#3584e4"/>
+  <rect x="34" y="34" width="60" height="60" rx="14" fill="none" stroke="#ffffff" stroke-width="8"/>
+  <circle cx="64" cy="64" r="10" fill="#ffffff"/>
+</svg>
+''');
+
+  final manifestFile = File('${dir.path}/$appId.yml');
+  manifestFile.writeAsStringSync('''app-id: $appId
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.freedesktop.Sdk
+command: $binaryName
+branch: $channel
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+modules:
+  - name: $binaryName
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/bin /app/lib /app/data
+      - cp -r bundle/* /app/
+      - ln -sf /app/$binaryName /app/bin/$binaryName
+      - install -Dm644 $appId.desktop /app/share/applications/$appId.desktop
+      - install -Dm644 $appId.metainfo.xml /app/share/metainfo/$appId.metainfo.xml
+      - install -Dm644 $appId.svg /app/share/icons/hicolor/scalable/apps/$appId.svg
+    sources:
+      - type: dir
+        path: ../../../build/linux/x64/release/bundle
+        dest: bundle
+      - type: file
+        path: $appId.desktop
+      - type: file
+        path: $appId.metainfo.xml
+      - type: file
+        path: $appId.svg
+''');
+
+  final scriptFile = File('${dir.path}/build-flatpak.sh');
+  scriptFile.writeAsStringSync('''#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")/../../.." && pwd)"
+PACKAGING_DIR="\$ROOT_DIR/linux/packaging/flatpak"
+BUILD_DIR="\$ROOT_DIR/build/flatpak-build"
+REPO_DIR="\$ROOT_DIR/build/flatpak-repo"
+BUNDLE_OUT="\$ROOT_DIR/build/$appId-$channel.flatpak"
+
+cd "\$ROOT_DIR"
+flutter build linux --release
+
+flatpak-builder --force-clean --repo="\$REPO_DIR" "\$BUILD_DIR" "\$PACKAGING_DIR/$appId.yml"
+flatpak build-bundle "\$REPO_DIR" "\$BUNDLE_OUT" $appId $channel
+
+echo "Flatpak bundle built: \$BUNDLE_OUT"
+''');
+  if (!Platform.isWindows) {
+    Process.runSync('chmod', ['+x', scriptFile.path]);
+  }
+  stdout.writeln(
+    'Generated Flatpak packaging ($channel) in linux/packaging/flatpak/',
+  );
+}
+
+void _writeSnapPackaging({
+  required Directory cwd,
+  required String snapName,
+  required String binaryName,
+  required String title,
+  required String channel,
+}) {
+  final snapDir = Directory('${cwd.path}/snap');
+  snapDir.createSync(recursive: true);
+
+  final snapFile = File('${snapDir.path}/snapcraft.yaml');
+  snapFile.writeAsStringSync('''name: $snapName
+version: '0.1.0'
+summary: $title
+description: |
+  $title built with Flutter and Libadwaitter.
+base: core24
+confinement: strict
+grade: ${channel == 'beta' ? 'devel' : 'stable'}
+
+apps:
+  $snapName:
+    command: $binaryName
+    extensions: [gnome]
+    plugs:
+      - wayland
+      - x11
+      - opengl
+      - desktop
+      - desktop-legacy
+      - gsettings
+      - network
+
+parts:
+  $snapName:
+    plugin: flutter
+    source: .
+    flutter-target: lib/main.dart
+''');
+  stdout.writeln('Generated Snap packaging ($channel) in snap/snapcraft.yaml');
+}
+
+String _inferTitleFromPubspec(File pubspecFile) {
+  final lines = pubspecFile.readAsLinesSync();
+  for (final line in lines) {
+    final trimmed = line.trim();
+    if (trimmed.startsWith('name:')) {
+      final raw = trimmed.substring('name:'.length).trim();
+      if (raw.isEmpty) break;
+      return raw
+          .split('_')
+          .where((part) => part.isNotEmpty)
+          .map((part) => part[0].toUpperCase() + part.substring(1))
+          .join(' ');
+    }
+  }
+  return 'Libadwaitter App';
+}
+
+String _escapeCString(String input) {
+  return input.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+}
+
+String _escapeDartSingleQuote(String input) {
+  return input.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
+}
+
+String _renderMyApplicationCc({
+  required String title,
+  required int width,
+  required int height,
+}) {
+  final escapedTitle = _escapeCString(title);
+  return _myApplicationCcTemplate
+      .replaceAll('__APP_TITLE__', escapedTitle)
+      .replaceAll('__WINDOW_WIDTH__', width.toString())
+      .replaceAll('__WINDOW_HEIGHT__', height.toString());
+}
+
+String _renderCounterMainDart({required String title}) {
+  final escapedTitle = _escapeDartSingleQuote(title);
+  return '''import 'package:flutter/widgets.dart';
+import 'package:libadwaitter/libadwaitter.dart';
+import 'package:libadwaitter_icons/libadwaitter_icons.dart';
+
+void main() {
+  runApp(const CounterApp());
+}
+
+class CounterApp extends StatelessWidget {
+  const CounterApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const AdwApplication(
+      title: '$escapedTitle',
+      home: AdwWindow(
+        child: CounterHomePage(),
+      ),
+    );
+  }
+}
+
+class CounterHomePage extends StatefulWidget {
+  const CounterHomePage({super.key});
+
+  @override
+  State<CounterHomePage> createState() => _CounterHomePageState();
+}
+
+class _CounterHomePageState extends State<CounterHomePage> {
+  int _counter = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return AdwToolbarView(
+      topBar: const AdwHeaderBar(
+        showWindowControls: true,
+        title: Text('$escapedTitle'),
+      ),
+      content: AdwPreferencesPage(
+        title: const Text('Counter Demo'),
+        description: const Text(
+          'Flutter Linux application configured with Libadwaitter.',
+        ),
+        children: [
+          AdwPreferencesGroup(
+            children: [
+              AdwActionRow(
+                title: const Text('Button Taps'),
+                subtitle: const Text('You have pushed the button this many times'),
+                suffix: Text(
+                  '\$_counter',
+                  style: AdwTheme.of(context).typography.title2,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AdwButton(
+                onPressed: _counter > 0
+                    ? () => setState(() => _counter = 0)
+                    : null,
+                child: const Text('Reset'),
+              ),
+              const SizedBox(width: 12),
+              AdwButton.suggested(
+                isPill: true,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                onPressed: () => setState(() => _counter++),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(AdwIcons.list_add_symbolic, size: 16),
+                    SizedBox(width: 8),
+                    Text('Increment'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+''';
+}
+
+const String _myApplicationCcTemplate = r'''#include "my_application.h"
+
+#include <flutter_linux/flutter_linux.h>
+
+#include "flutter/generated_plugin_registrant.h"
+
+struct _MyApplication {
+  GtkApplication parent_instance;
+  char** dart_entrypoint_arguments;
+};
+
+G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
+
+const char* kWindowChannelName = "libadwaitter/window";
+const char* kSettingsChannelName = "libadwaitter/settings";
+const char* kStyleChannelName = "libadwaitter/style";
+const char* kPortalChannelName = "libadwaitter/portal";
+
+static gboolean get_system_enable_animations() {
+  GtkSettings* settings = gtk_settings_get_default();
+  if (settings != nullptr) {
+    gboolean enabled = TRUE;
+    g_object_get(settings, "gtk-enable-animations", &enabled, NULL);
+    return enabled;
+  }
+  GSettingsSchemaSource* source = g_settings_schema_source_get_default();
+  if (source != nullptr) {
+    g_autoptr(GSettingsSchema) schema =
+        g_settings_schema_source_lookup(source, "org.gnome.desktop.interface", TRUE);
+    if (schema != nullptr && g_settings_schema_has_key(schema, "enable-animations")) {
+      g_autoptr(GSettings) gsettings = g_settings_new("org.gnome.desktop.interface");
+      return g_settings_get_boolean(gsettings, "enable-animations");
+    }
+  }
+  return TRUE;
+}
+
+static gdouble get_system_duration_factor() {
+  const gchar* current_desktop = g_getenv("XDG_CURRENT_DESKTOP");
+  if (current_desktop != nullptr && strstr(current_desktop, "KDE") != nullptr) {
+    const gchar* config_dir = g_get_user_config_dir();
+    g_autofree gchar* path = g_build_filename(config_dir, "kdeglobals", nullptr);
+    g_autoptr(GKeyFile) key_file = g_key_file_new();
+    if (g_key_file_load_from_file(key_file, path, G_KEY_FILE_NONE, nullptr)) {
+      GError* error = nullptr;
+      gdouble factor = g_key_file_get_double(key_file, "KDE", "AnimationDurationFactor", &error);
+      if (error == nullptr) {
+        return factor;
+      }
+      g_clear_error(&error);
+    }
+  }
+  return 1.0;
+}
+
+static FlValue* build_animation_settings_map() {
+  FlValue* map = fl_value_new_map();
+  fl_value_set_string_take(map, "enableAnimations",
+                           fl_value_new_bool(get_system_enable_animations()));
+  fl_value_set_string_take(map, "durationFactor",
+                           fl_value_new_float(get_system_duration_factor()));
+  const gchar* current_desktop = g_getenv("XDG_CURRENT_DESKTOP");
+  fl_value_set_string_take(map, "desktop",
+                           fl_value_new_string(current_desktop != nullptr ? current_desktop : "GNOME"));
+  return map;
+}
+
+static gchar* get_window_button_layout() {
+  GSettingsSchemaSource* source = g_settings_schema_source_get_default();
+  if (source != nullptr) {
+    g_autoptr(GSettingsSchema) wm_schema =
+        g_settings_schema_source_lookup(source, "org.gnome.desktop.wm.preferences", TRUE);
+    if (wm_schema != nullptr && g_settings_schema_has_key(wm_schema, "button-layout")) {
+      g_autoptr(GSettings) wm_settings = g_settings_new("org.gnome.desktop.wm.preferences");
+      gchar* layout = g_settings_get_string(wm_settings, "button-layout");
+      if (layout != nullptr && layout[0] != '\0') {
+        return layout;
+      }
+      g_free(layout);
+    }
+  }
+
+  GtkSettings* settings = gtk_settings_get_default();
+  if (settings != nullptr) {
+    gchar* gtk_layout = nullptr;
+    g_object_get(settings, "gtk-decoration-layout", &gtk_layout, NULL);
+    if (gtk_layout != nullptr && gtk_layout[0] != '\0') {
+      return gtk_layout;
+    }
+    g_free(gtk_layout);
+  }
+
+  return g_strdup(":close");
+}
+
+static void on_wm_button_layout_changed(GSettings* settings, const gchar* key, gpointer user_data) {
+  FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  g_autofree gchar* layout = get_window_button_layout();
+  g_autoptr(FlValue) val = fl_value_new_string(layout);
+  fl_method_channel_invoke_method(channel, "onWindowButtonLayoutChanged", val,
+                                  nullptr, nullptr, nullptr);
+}
+
+static void on_gtk_decoration_layout_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
+  FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  g_autofree gchar* layout = get_window_button_layout();
+  g_autoptr(FlValue) val = fl_value_new_string(layout);
+  fl_method_channel_invoke_method(channel, "onWindowButtonLayoutChanged", val,
+                                  nullptr, nullptr, nullptr);
+}
+
+static void on_gtk_animations_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
+  FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  g_autoptr(FlValue) map = build_animation_settings_map();
+  fl_method_channel_invoke_method(channel, "onAnimationSettingsChanged", map, nullptr, nullptr, nullptr);
+}
+
+static void settings_method_call_handler(FlMethodChannel* channel,
+                                         FlMethodCall* method_call,
+                                         gpointer user_data) {
+  const gchar* method = fl_method_call_get_name(method_call);
+  if (strcmp(method, "getAnimationSettings") == 0) {
+    g_autoptr(FlValue) map = build_animation_settings_map();
+    fl_method_call_respond_success(method_call, map, nullptr);
+  } else if (strcmp(method, "getWindowButtonLayout") == 0) {
+    g_autofree gchar* layout = get_window_button_layout();
+    g_autoptr(FlValue) val = fl_value_new_string(layout);
+    fl_method_call_respond_success(method_call, val, nullptr);
+  } else {
+    fl_method_call_respond_not_implemented(method_call, nullptr);
+  }
+}
+
+struct StyleBridgeState {
+  FlMethodChannel* channel = nullptr;
+  GSettings* interface_settings = nullptr;
+  GSettings* a11y_settings = nullptr;
+  GDBusConnection* bus = nullptr;
+  guint portal_sub_id = 0;
+  gboolean has_portal_scheme = FALSE;
+  gchar* portal_color_scheme = nullptr;
+  gboolean has_portal_contrast = FALSE;
+  gboolean portal_high_contrast = FALSE;
+};
+
+static void style_bridge_state_free(gpointer data) {
+  StyleBridgeState* state = static_cast<StyleBridgeState*>(data);
+  if (state == nullptr) return;
+  if (state->bus != nullptr && state->portal_sub_id != 0) {
+    g_dbus_connection_signal_unsubscribe(state->bus, state->portal_sub_id);
+  }
+  g_clear_object(&state->bus);
+  g_clear_object(&state->interface_settings);
+  g_clear_object(&state->a11y_settings);
+  g_clear_object(&state->channel);
+  g_clear_pointer(&state->portal_color_scheme, g_free);
+  g_free(state);
+}
+
+static const gchar* portal_color_scheme_to_string(guint32 value) {
+  switch (value) {
+    case 1:
+      return "prefer-dark";
+    case 2:
+      return "prefer-light";
+    default:
+      return "default";
+  }
+}
+
+static FlValue* build_system_appearance_map(StyleBridgeState* state) {
+  FlValue* map = fl_value_new_map();
+  g_autofree gchar* color_scheme = g_strdup("default");
+  g_autofree gchar* accent_color = g_strdup("blue");
+  gboolean high_contrast = FALSE;
+
+  GSettingsSchemaSource* source = g_settings_schema_source_get_default();
+  if (source != nullptr) {
+    g_autoptr(GSettingsSchema) schema =
+        g_settings_schema_source_lookup(source, "org.gnome.desktop.interface", TRUE);
+    if (schema != nullptr) {
+      g_autoptr(GSettings) gsettings = g_settings_new("org.gnome.desktop.interface");
+      if (g_settings_schema_has_key(schema, "color-scheme")) {
+        g_free(color_scheme);
+        color_scheme = g_settings_get_string(gsettings, "color-scheme");
+      } else if (g_settings_schema_has_key(schema, "gtk-theme")) {
+        g_autofree gchar* gtk_theme = g_settings_get_string(gsettings, "gtk-theme");
+        if (gtk_theme != nullptr && g_str_has_suffix(gtk_theme, "-dark")) {
+          g_free(color_scheme);
+          color_scheme = g_strdup("prefer-dark");
+        }
+      }
+      if (g_settings_schema_has_key(schema, "accent-color")) {
+        g_free(accent_color);
+        accent_color = g_settings_get_string(gsettings, "accent-color");
+      }
+    }
+
+    g_autoptr(GSettingsSchema) a11y_schema =
+        g_settings_schema_source_lookup(source, "org.gnome.desktop.a11y.interface", TRUE);
+    if (a11y_schema != nullptr && g_settings_schema_has_key(a11y_schema, "high-contrast")) {
+      g_autoptr(GSettings) a11y_settings = g_settings_new("org.gnome.desktop.a11y.interface");
+      high_contrast = g_settings_get_boolean(a11y_settings, "high-contrast");
+    }
+  }
+
+  if (state != nullptr) {
+    if (state->has_portal_scheme && state->portal_color_scheme != nullptr) {
+      g_free(color_scheme);
+      color_scheme = g_strdup(state->portal_color_scheme);
+    }
+    if (state->has_portal_contrast) {
+      high_contrast = state->portal_high_contrast;
+    }
+  }
+
+  fl_value_set_string_take(map, "colorScheme", fl_value_new_string(color_scheme));
+  fl_value_set_string_take(map, "accentColor", fl_value_new_string(accent_color));
+  fl_value_set_string_take(map, "highContrast", fl_value_new_bool(high_contrast));
+  return map;
+}
+
+static void emit_system_appearance_changed(StyleBridgeState* state) {
+  if (state == nullptr || state->channel == nullptr) return;
+  g_autoptr(FlValue) map = build_system_appearance_map(state);
+  fl_method_channel_invoke_method(state->channel, "onSystemAppearanceChanged", map,
+                                  nullptr, nullptr, nullptr);
+}
+
+static void on_gsettings_appearance_changed(GSettings* settings, const gchar* key, gpointer user_data) {
+  StyleBridgeState* state = static_cast<StyleBridgeState*>(user_data);
+  if (state == nullptr) return;
+  // GSettings updated directly (e.g. via gsettings CLI); clear stale portal override for color-scheme
+  if (g_strcmp0(key, "color-scheme") == 0) {
+    state->has_portal_scheme = FALSE;
+    g_clear_pointer(&state->portal_color_scheme, g_free);
+  } else if (g_strcmp0(key, "high-contrast") == 0) {
+    state->has_portal_contrast = FALSE;
+  }
+  emit_system_appearance_changed(state);
+}
+
+static void on_portal_setting_changed(GDBusConnection* connection,
+                                      const gchar* sender_name,
+                                      const gchar* object_path,
+                                      const gchar* interface_name,
+                                      const gchar* signal_name,
+                                      GVariant* parameters,
+                                      gpointer user_data) {
+  StyleBridgeState* state = static_cast<StyleBridgeState*>(user_data);
+  if (state == nullptr || parameters == nullptr) return;
+
+  const gchar* ns = nullptr;
+  const gchar* key = nullptr;
+  g_autoptr(GVariant) value = nullptr;
+  g_variant_get(parameters, "(&s&sv)", &ns, &key, &value);
+  if (g_strcmp0(ns, "org.freedesktop.appearance") != 0 || value == nullptr) {
+    return;
+  }
+
+  if (g_strcmp0(key, "color-scheme") == 0 && g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32)) {
+    guint32 scheme_val = g_variant_get_uint32(value);
+    g_free(state->portal_color_scheme);
+    state->portal_color_scheme = g_strdup(portal_color_scheme_to_string(scheme_val));
+    state->has_portal_scheme = TRUE;
+    emit_system_appearance_changed(state);
+  } else if (g_strcmp0(key, "contrast") == 0 && g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32)) {
+    state->portal_high_contrast = g_variant_get_uint32(value) == 1;
+    state->has_portal_contrast = TRUE;
+    emit_system_appearance_changed(state);
+  }
+}
+
+static void on_portal_read_color_scheme_done(GObject* source_object,
+                                             GAsyncResult* res,
+                                             gpointer user_data) {
+  GWeakRef* weak_window = static_cast<GWeakRef*>(user_data);
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GVariant) result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
+  g_autoptr(GtkWindow) window = GTK_WINDOW(g_weak_ref_get(weak_window));
+  g_weak_ref_clear(weak_window);
+  g_free(weak_window);
+
+  if (error != nullptr || result == nullptr || window == nullptr) {
+    return;
+  }
+
+  StyleBridgeState* state =
+      static_cast<StyleBridgeState*>(g_object_get_data(G_OBJECT(window), "libadwaitter-style-bridge"));
+  if (state == nullptr) return;
+
+  g_autoptr(GVariant) outer_variant = nullptr;
+  g_variant_get(result, "(v)", &outer_variant);
+  if (outer_variant != nullptr && g_variant_is_of_type(outer_variant, G_VARIANT_TYPE_VARIANT)) {
+    g_autoptr(GVariant) inner = g_variant_get_variant(outer_variant);
+    if (inner != nullptr && g_variant_is_of_type(inner, G_VARIANT_TYPE_UINT32)) {
+      guint32 scheme_val = g_variant_get_uint32(inner);
+      g_free(state->portal_color_scheme);
+      state->portal_color_scheme = g_strdup(portal_color_scheme_to_string(scheme_val));
+      state->has_portal_scheme = TRUE;
+      emit_system_appearance_changed(state);
+    }
+  }
+}
+
+static void on_session_bus_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
+  GWeakRef* weak_window = static_cast<GWeakRef*>(user_data);
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GDBusConnection) bus = g_bus_get_finish(res, &error);
+  g_autoptr(GtkWindow) window = GTK_WINDOW(g_weak_ref_get(weak_window));
+  g_weak_ref_clear(weak_window);
+  g_free(weak_window);
+
+  if (error != nullptr || bus == nullptr || window == nullptr) {
+    return;
+  }
+
+  StyleBridgeState* state =
+      static_cast<StyleBridgeState*>(g_object_get_data(G_OBJECT(window), "libadwaitter-style-bridge"));
+  if (state == nullptr) return;
+
+  state->bus = G_DBUS_CONNECTION(g_object_ref(bus));
+  state->portal_sub_id = g_dbus_connection_signal_subscribe(
+      state->bus,
+      "org.freedesktop.portal.Desktop",
+      "org.freedesktop.portal.Settings",
+      "SettingChanged",
+      "/org/freedesktop/portal/desktop",
+      "org.freedesktop.appearance",
+      G_DBUS_SIGNAL_FLAGS_NONE,
+      on_portal_setting_changed,
+      state,
+      nullptr);
+
+  GWeakRef* read_weak_window = g_new(GWeakRef, 1);
+  g_weak_ref_init(read_weak_window, window);
+  g_dbus_connection_call(
+      state->bus,
+      "org.freedesktop.portal.Desktop",
+      "/org/freedesktop/portal/desktop",
+      "org.freedesktop.portal.Settings",
+      "Read",
+      g_variant_new("(ss)", "org.freedesktop.appearance", "color-scheme"),
+      G_VARIANT_TYPE("(v)"),
+      G_DBUS_CALL_FLAGS_NONE,
+      -1,
+      nullptr,
+      on_portal_read_color_scheme_done,
+      read_weak_window);
+}
+
+static void style_method_call_handler(FlMethodChannel* channel,
+                                      FlMethodCall* method_call,
+                                      gpointer user_data) {
+  StyleBridgeState* state = static_cast<StyleBridgeState*>(user_data);
+  const gchar* method = fl_method_call_get_name(method_call);
+  if (strcmp(method, "getSystemAppearance") == 0) {
+    g_autoptr(FlValue) map = build_system_appearance_map(state);
+    fl_method_call_respond_success(method_call, map, nullptr);
+  } else {
+    fl_method_call_respond_not_implemented(method_call, nullptr);
+  }
+}
+
+static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
+  GtkWindow* window = GTK_WINDOW(object);
+  FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  gboolean active = gtk_window_is_active(window);
+  gboolean is_dragging =
+      GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window), "libadwaitter-interactive-drag")) != 0;
+
+  if (active) {
+    g_object_set_data(G_OBJECT(window), "libadwaitter-interactive-drag", GINT_TO_POINTER(0));
+  } else if (is_dragging) {
+    // Compositor grabs (Wayland/X11 move or resize drag) transiently unset is-active;
+    // keep the window visually focused just like native GTK4/Libadwaita windows.
+    return;
+  }
+
+  g_autoptr(FlValue) val = fl_value_new_bool(active);
+  fl_method_channel_invoke_method(channel, "onWindowActiveChanged", val, nullptr, nullptr, nullptr);
+}
+
+static gboolean on_window_post_drag_event(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
+  gboolean is_dragging =
+      GPOINTER_TO_INT(g_object_get_data(G_OBJECT(widget), "libadwaitter-interactive-drag")) != 0;
+  if (is_dragging) {
+    g_object_set_data(G_OBJECT(widget), "libadwaitter-interactive-drag", GINT_TO_POINTER(0));
+    GtkWindow* window = GTK_WINDOW(widget);
+    FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+    gboolean active = gtk_window_is_active(window);
+    if (!active) {
+      g_autoptr(FlValue) val = fl_value_new_bool(FALSE);
+      fl_method_channel_invoke_method(channel, "onWindowActiveChanged", val, nullptr, nullptr, nullptr);
+    }
+  }
+  return FALSE;
+}
+
+static void window_method_call_handler(FlMethodChannel* channel,
+                                       FlMethodCall* method_call,
+                                       gpointer user_data) {
+  GtkWindow* window = GTK_WINDOW(user_data);
+  const gchar* method = fl_method_call_get_name(method_call);
+
+  if (strcmp(method, "startDragging") == 0) {
+    g_object_set_data(G_OBJECT(window), "libadwaitter-interactive-drag", GINT_TO_POINTER(1));
+    GdkSeat* seat = gdk_display_get_default_seat(gdk_display_get_default());
+    GdkDevice* pointer = seat != nullptr ? gdk_seat_get_pointer(seat) : nullptr;
+    gint x = 0, y = 0;
+    if (pointer != nullptr) {
+      gdk_device_get_position(pointer, nullptr, &x, &y);
+    }
+    guint32 timestamp = gtk_get_current_event_time();
+    // Initiate native window drag (Wayland and X11) with pointer device and coordinates
+    gtk_window_begin_move_drag(window, 1, x, y, timestamp);
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
+  } else if (strcmp(method, "beginResizeDrag") == 0) {
+    g_object_set_data(G_OBJECT(window), "libadwaitter-interactive-drag", GINT_TO_POINTER(1));
+    FlValue* args = fl_method_call_get_args(method_call);
+    const gchar* edge_str = "bottomRight";
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* val = fl_value_lookup_string(args, "edge");
+      if (val != nullptr && fl_value_get_type(val) == FL_VALUE_TYPE_STRING) {
+        edge_str = fl_value_get_string(val);
+      }
+    } else if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_STRING) {
+      edge_str = fl_value_get_string(args);
+    }
+
+    GdkWindowEdge edge = GDK_WINDOW_EDGE_SOUTH_EAST;
+    if (strcmp(edge_str, "top") == 0) {
+      edge = GDK_WINDOW_EDGE_NORTH;
+    } else if (strcmp(edge_str, "bottom") == 0) {
+      edge = GDK_WINDOW_EDGE_SOUTH;
+    } else if (strcmp(edge_str, "left") == 0) {
+      edge = GDK_WINDOW_EDGE_WEST;
+    } else if (strcmp(edge_str, "right") == 0) {
+      edge = GDK_WINDOW_EDGE_EAST;
+    } else if (strcmp(edge_str, "topLeft") == 0) {
+      edge = GDK_WINDOW_EDGE_NORTH_WEST;
+    } else if (strcmp(edge_str, "topRight") == 0) {
+      edge = GDK_WINDOW_EDGE_NORTH_EAST;
+    } else if (strcmp(edge_str, "bottomLeft") == 0) {
+      edge = GDK_WINDOW_EDGE_SOUTH_WEST;
+    } else if (strcmp(edge_str, "bottomRight") == 0) {
+      edge = GDK_WINDOW_EDGE_SOUTH_EAST;
+    }
+
+    GdkSeat* seat = gdk_display_get_default_seat(gdk_display_get_default());
+    GdkDevice* pointer = seat != nullptr ? gdk_seat_get_pointer(seat) : nullptr;
+    gint x = 0, y = 0;
+    if (pointer != nullptr) {
+      gdk_device_get_position(pointer, nullptr, &x, &y);
+    }
+    guint32 timestamp = gtk_get_current_event_time();
+    // Initiate native window resize (Wayland and X11) with pointer device and coordinates
+    gtk_window_begin_resize_drag(window, edge, 1, x, y, timestamp);
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
+  } else if (strcmp(method, "close") == 0) {
+    gtk_window_close(window);
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
+  } else if (strcmp(method, "minimize") == 0) {
+    gtk_window_iconify(window);
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
+  } else if (strcmp(method, "maximize") == 0) {
+    if (gtk_window_is_maximized(window)) {
+      gtk_window_unmaximize(window);
+    } else {
+      gtk_window_maximize(window);
+    }
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
+  } else if (strcmp(method, "isMaximized") == 0) {
+    gboolean is_max = gtk_window_is_maximized(window);
+    g_autoptr(FlValue) result = fl_value_new_bool(is_max);
+    fl_method_call_respond_success(method_call, result, nullptr);
+  } else if (strcmp(method, "isActive") == 0) {
+    gboolean is_act = gtk_window_is_active(window);
+    g_autoptr(FlValue) result = fl_value_new_bool(is_act);
+    fl_method_call_respond_success(method_call, result, nullptr);
+  } else {
+    fl_method_call_respond_not_implemented(method_call, nullptr);
+  }
+}
+
+// --- XDG Desktop Portal & Linux Sandbox Bridge (libadwaitter/portal) ---
+
+static FlValue* build_portal_result(const char* status,
+                                    FlValue* value_take,
+                                    const char* error_message) {
+  FlValue* map = fl_value_new_map();
+  fl_value_set_string_take(map, "status", fl_value_new_string(status));
+  if (value_take != nullptr) {
+    fl_value_set_string_take(map, "value", value_take);
+  }
+  if (error_message != nullptr) {
+    fl_value_set_string_take(map, "errorMessage",
+                             fl_value_new_string(error_message));
+  }
+  return map;
+}
+
+typedef struct {
+  FlMethodCall* method_call;
+  GDBusConnection* connection;
+  guint signal_id;
+  bool return_screenshot_uri;
+} PortalAsyncRequest;
+
+static void portal_async_request_free(PortalAsyncRequest* req) {
+  if (req == nullptr) return;
+  if (req->signal_id != 0 && req->connection != nullptr) {
+    g_dbus_connection_signal_unsubscribe(req->connection, req->signal_id);
+    req->signal_id = 0;
+  }
+  if (req->connection != nullptr) {
+    g_object_unref(req->connection);
+  }
+  if (req->method_call != nullptr) {
+    g_object_unref(req->method_call);
+  }
+  g_free(req);
+}
+
+static void on_portal_request_response(GDBusConnection* connection,
+                                       const gchar* sender_name,
+                                       const gchar* object_path,
+                                       const gchar* interface_name,
+                                       const gchar* signal_name,
+                                       GVariant* parameters,
+                                       gpointer user_data) {
+  PortalAsyncRequest* req = static_cast<PortalAsyncRequest*>(user_data);
+  if (req == nullptr || req->method_call == nullptr) return;
+
+  guint32 response_code = 2;
+  g_autoptr(GVariant) results = nullptr;
+  g_variant_get(parameters, "(u@a{sv})", &response_code, &results);
+
+  g_autoptr(FlValue) reply = nullptr;
+  if (response_code == 0) {
+    if (req->return_screenshot_uri && results != nullptr) {
+      const gchar* uri = nullptr;
+      if (g_variant_lookup(results, "uri", "&s", &uri) && uri != nullptr) {
+        reply = build_portal_result("granted", fl_value_new_string(uri), nullptr);
+      } else {
+        reply = build_portal_result("granted", nullptr, nullptr);
+      }
+    } else {
+      reply = build_portal_result("granted", fl_value_new_bool(TRUE), nullptr);
+    }
+  } else if (response_code == 1) {
+    reply = build_portal_result("cancelled", nullptr, nullptr);
+  } else {
+    reply = build_portal_result("denied", nullptr,
+                                "Permission denied by user or portal.");
+  }
+
+  fl_method_call_respond_success(req->method_call, reply, nullptr);
+  portal_async_request_free(req);
+}
+
+static void on_portal_dbus_call_finished(GObject* source_object,
+                                         GAsyncResult* res,
+                                         gpointer user_data) {
+  PortalAsyncRequest* req = static_cast<PortalAsyncRequest*>(user_data);
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GVariant) result = g_dbus_connection_call_finish(
+      G_DBUS_CONNECTION(source_object), res, &error);
+  if (error != nullptr) {
+    g_autoptr(FlValue) reply =
+        build_portal_result("unsupported", nullptr, error->message);
+    fl_method_call_respond_success(req->method_call, reply, nullptr);
+    portal_async_request_free(req);
+    return;
+  }
+  // Response will arrive via org.freedesktop.portal.Request::Response signal.
+  (void)result;
+}
+
+static void dispatch_portal_request(FlMethodCall* method_call,
+                                    const char* interface_name,
+                                    const char* method_name,
+                                    GVariant* parameters,
+                                    const char* expected_request_path,
+                                    GDBusConnection* bus,
+                                    bool return_screenshot_uri) {
+  PortalAsyncRequest* req = g_new0(PortalAsyncRequest, 1);
+  req->method_call = FL_METHOD_CALL(g_object_ref(method_call));
+  req->connection = G_DBUS_CONNECTION(g_object_ref(bus));
+  req->return_screenshot_uri = return_screenshot_uri;
+
+  req->signal_id = g_dbus_connection_signal_subscribe(
+      bus, "org.freedesktop.portal.Desktop", "org.freedesktop.portal.Request",
+      "Response", expected_request_path, nullptr, G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE,
+      on_portal_request_response, req, nullptr);
+
+  g_dbus_connection_call(
+      bus, "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+      interface_name, method_name, parameters, G_VARIANT_TYPE("(o)"),
+      G_DBUS_CALL_FLAGS_NONE, -1, nullptr, on_portal_dbus_call_finished, req);
+}
+
+static gchar* build_portal_request_path(GDBusConnection* bus,
+                                        const char* token) {
+  const gchar* unique_name = g_dbus_connection_get_unique_name(bus);
+  g_autofree gchar* sanitized = g_strdup(unique_name != nullptr ? unique_name : "");
+  if (sanitized[0] == ':') {
+    sanitized[0] = '_';
+    for (gchar* p = sanitized + 1; *p != '\0'; ++p) {
+      if (*p == '.') *p = '_';
+    }
+  }
+  return g_strdup_printf("/org/freedesktop/portal/desktop/request/%s/%s",
+                         sanitized[0] == '_' ? sanitized + 1 : sanitized, token);
+}
+
+static void portal_method_call_handler(FlMethodChannel* channel,
+                                       FlMethodCall* method_call,
+                                       gpointer user_data) {
+  GtkWindow* window = GTK_WINDOW(user_data);
+  const gchar* method = fl_method_call_get_name(method_call);
+  FlValue* args = fl_method_call_get_args(method_call);
+
+  if (strcmp(method, "getSandboxInfo") == 0) {
+    gboolean is_flatpak = g_file_test("/.flatpak-info", G_FILE_TEST_EXISTS);
+    const gchar* flatpak_id = g_getenv("FLATPAK_ID");
+    const gchar* snap_dir = g_getenv("SNAP");
+    const gchar* snap_name = g_getenv("SNAP_NAME");
+    const gchar* wayland_display = g_getenv("WAYLAND_DISPLAY");
+
+    g_autoptr(FlValue) map = fl_value_new_map();
+    fl_value_set_string_take(map, "isFlatpak",
+                             fl_value_new_bool(is_flatpak || flatpak_id != nullptr));
+    fl_value_set_string_take(map, "isSnap",
+                             fl_value_new_bool(snap_dir != nullptr || snap_name != nullptr));
+    fl_value_set_string_take(map, "isWayland",
+                             fl_value_new_bool(wayland_display != nullptr && wayland_display[0] != '\0'));
+    if (flatpak_id != nullptr) {
+      fl_value_set_string_take(map, "flatpakId", fl_value_new_string(flatpak_id));
+    }
+    if (snap_name != nullptr) {
+      fl_value_set_string_take(map, "snapName", fl_value_new_string(snap_name));
+    }
+    fl_method_call_respond_success(method_call, map, nullptr);
+  } else if (strcmp(method, "openUri") == 0) {
+    const gchar* uri = nullptr;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* uri_val = fl_value_lookup_string(args, "uri");
+      if (uri_val != nullptr && fl_value_get_type(uri_val) == FL_VALUE_TYPE_STRING) {
+        uri = fl_value_get_string(uri_val);
+      }
+    }
+    if (uri == nullptr) {
+      g_autoptr(FlValue) reply = build_portal_result("error", nullptr, "Missing uri argument.");
+      fl_method_call_respond_success(method_call, reply, nullptr);
+      return;
+    }
+    g_autoptr(GError) error = nullptr;
+    if (gtk_show_uri_on_window(window, uri, GDK_CURRENT_TIME, &error)) {
+      g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+      fl_method_call_respond_success(method_call, reply, nullptr);
+    } else {
+      g_autoptr(FlValue) reply = build_portal_result(
+          "error", nullptr, error != nullptr ? error->message : "Failed to open URI.");
+      fl_method_call_respond_success(method_call, reply, nullptr);
+    }
+  } else if (strcmp(method, "sendNotification") == 0) {
+    const gchar* id = "default";
+    const gchar* title = "";
+    const gchar* body = nullptr;
+    const gchar* icon_name = nullptr;
+    const gchar* priority_str = "normal";
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "id")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        id = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "title")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        title = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "body")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        body = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "iconName")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        icon_name = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "priority")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        priority_str = fl_value_get_string(v);
+    }
+    g_autoptr(GNotification) notification = g_notification_new(title);
+    if (body != nullptr) g_notification_set_body(notification, body);
+    if (icon_name != nullptr) {
+      g_autoptr(GIcon) icon = g_themed_icon_new(icon_name);
+      g_notification_set_icon(notification, icon);
+    }
+    if (strcmp(priority_str, "low") == 0) {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_LOW);
+    } else if (strcmp(priority_str, "high") == 0) {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_HIGH);
+    } else if (strcmp(priority_str, "urgent") == 0) {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_URGENT);
+    } else {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_NORMAL);
+    }
+    g_application_send_notification(g_application_get_default(), id, notification);
+    g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "withdrawNotification") == 0) {
+    const gchar* id = "default";
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = fl_value_lookup_string(args, "id");
+      if (v != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING) {
+        id = fl_value_get_string(v);
+      }
+    }
+    g_application_withdraw_notification(g_application_get_default(), id);
+    g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "openFiles") == 0) {
+    const gchar* title = "Open File";
+    gboolean multiple = FALSE;
+    gboolean directory = FALSE;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "title")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        title = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "multiple")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        multiple = fl_value_get_bool(v);
+      if ((v = fl_value_lookup_string(args, "directory")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        directory = fl_value_get_bool(v);
+    }
+    GtkFileChooserAction action = directory
+        ? GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER
+        : GTK_FILE_CHOOSER_ACTION_OPEN;
+    GtkFileChooserNative* chooser = gtk_file_chooser_native_new(
+        title, window, action, "_Open", "_Cancel");
+    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(chooser), multiple);
+    gint res = gtk_native_dialog_run(GTK_NATIVE_DIALOG(chooser));
+    g_autoptr(FlValue) reply = nullptr;
+    if (res == GTK_RESPONSE_ACCEPT) {
+      FlValue* list = fl_value_new_list();
+      GSList* files = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(chooser));
+      for (GSList* iter = files; iter != nullptr; iter = iter->next) {
+        gchar* path = static_cast<gchar*>(iter->data);
+        fl_value_append_take(list, fl_value_new_string(path));
+        g_free(path);
+      }
+      g_slist_free(files);
+      reply = build_portal_result("granted", list, nullptr);
+    } else {
+      reply = build_portal_result("cancelled", nullptr, nullptr);
+    }
+    g_object_unref(chooser);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "saveFile") == 0) {
+    const gchar* title = "Save File";
+    const gchar* current_name = nullptr;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "title")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        title = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "currentName")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        current_name = fl_value_get_string(v);
+    }
+    GtkFileChooserNative* chooser = gtk_file_chooser_native_new(
+        title, window, GTK_FILE_CHOOSER_ACTION_SAVE, "_Save", "_Cancel");
+    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(chooser), TRUE);
+    if (current_name != nullptr) {
+      gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(chooser), current_name);
+    }
+    gint res = gtk_native_dialog_run(GTK_NATIVE_DIALOG(chooser));
+    g_autoptr(FlValue) reply = nullptr;
+    if (res == GTK_RESPONSE_ACCEPT) {
+      g_autofree gchar* path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(chooser));
+      reply = build_portal_result(
+          "granted", path != nullptr ? fl_value_new_string(path) : nullptr, nullptr);
+    } else {
+      reply = build_portal_result("cancelled", nullptr, nullptr);
+    }
+    g_object_unref(chooser);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "inhibit") == 0) {
+    const gchar* reason = "Application activity";
+    gboolean idle = TRUE;
+    gboolean suspend = FALSE;
+    gboolean logout = FALSE;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "reason")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        reason = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "idle")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        idle = fl_value_get_bool(v);
+      if ((v = fl_value_lookup_string(args, "suspend")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        suspend = fl_value_get_bool(v);
+      if ((v = fl_value_lookup_string(args, "logout")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        logout = fl_value_get_bool(v);
+    }
+    int flags = 0;
+    if (logout) flags |= GTK_APPLICATION_INHIBIT_LOGOUT;
+    if (suspend) flags |= GTK_APPLICATION_INHIBIT_SUSPEND;
+    if (idle) flags |= GTK_APPLICATION_INHIBIT_IDLE;
+    guint cookie = gtk_application_inhibit(
+        GTK_APPLICATION(g_application_get_default()), window,
+        static_cast<GtkApplicationInhibitFlags>(flags), reason);
+    g_autoptr(FlValue) reply = nullptr;
+    if (cookie != 0) {
+      g_autofree gchar* handle = g_strdup_printf("%u", cookie);
+      reply = build_portal_result("granted", fl_value_new_string(handle), nullptr);
+    } else {
+      reply = build_portal_result("unsupported", nullptr,
+                                  "Session inhibit not supported by desktop.");
+    }
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "uninhibit") == 0) {
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = fl_value_lookup_string(args, "handle");
+      if (v != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING) {
+        guint cookie = static_cast<guint>(g_ascii_strtoull(fl_value_get_string(v), nullptr, 10));
+        if (cookie != 0) {
+          gtk_application_uninhibit(GTK_APPLICATION(g_application_get_default()), cookie);
+        }
+      }
+    }
+    g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "requestBackground") == 0 ||
+             strcmp(method, "requestCamera") == 0 ||
+             strcmp(method, "takeScreenshot") == 0) {
+    g_autoptr(GError) bus_error = nullptr;
+    g_autoptr(GDBusConnection) bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &bus_error);
+    if (bus == nullptr) {
+      g_autoptr(FlValue) reply = build_portal_result(
+          "error", nullptr, bus_error != nullptr ? bus_error->message : "No session D-Bus.");
+      fl_method_call_respond_success(method_call, reply, nullptr);
+      return;
+    }
+
+    g_autofree gchar* token = g_strdup_printf("libadwaitter_%u", g_random_int());
+    g_autofree gchar* request_path = build_portal_request_path(bus, token);
+
+    GVariantBuilder options;
+    g_variant_builder_init(&options, G_VARIANT_TYPE_VARDICT);
+    g_variant_builder_add(&options, "{sv}", "handle_token", g_variant_new_string(token));
+
+    if (strcmp(method, "requestBackground") == 0) {
+      const gchar* reason = "Allow running in background";
+      gboolean autostart = FALSE;
+      if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+        FlValue* v = nullptr;
+        if ((v = fl_value_lookup_string(args, "reason")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+          reason = fl_value_get_string(v);
+        if ((v = fl_value_lookup_string(args, "autostart")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+          autostart = fl_value_get_bool(v);
+      }
+      g_variant_builder_add(&options, "{sv}", "reason", g_variant_new_string(reason));
+      g_variant_builder_add(&options, "{sv}", "autostart", g_variant_new_boolean(autostart));
+      dispatch_portal_request(
+          method_call, "org.freedesktop.portal.Background", "RequestBackground",
+          g_variant_new("(sa{sv})", "", &options), request_path, bus, false);
+    } else if (strcmp(method, "requestCamera") == 0) {
+      dispatch_portal_request(
+          method_call, "org.freedesktop.portal.Camera", "AccessCamera",
+          g_variant_new("(a{sv})", &options), request_path, bus, false);
+    } else {
+      gboolean interactive = TRUE;
+      if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+        FlValue* v = fl_value_lookup_string(args, "interactive");
+        if (v != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+          interactive = fl_value_get_bool(v);
+      }
+      g_variant_builder_add(&options, "{sv}", "interactive", g_variant_new_boolean(interactive));
+      dispatch_portal_request(
+          method_call, "org.freedesktop.portal.Screenshot", "Screenshot",
+          g_variant_new("(sa{sv})", "", &options), request_path, bus, true);
+    }
+  } else {
+    fl_method_call_respond_not_implemented(method_call, nullptr);
+  }
+}
+
+// Cairo draw callback ensuring true alpha transparency (preventing opaque corner artifacts)
+static gboolean window_draw_cb(GtkWidget* widget, cairo_t* cr, gpointer user_data) {
+  cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.0);
+  cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+  cairo_paint(cr);
+  return FALSE;
+}
+
+// Called when first Flutter frame received.
+static void first_frame_cb(MyApplication* self, FlView* view) {
+  gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+}
+
+// Implements GApplication::activate.
+static void my_application_activate(GApplication* application) {
+  MyApplication* self = MY_APPLICATION(application);
+
+  // Set Wayland xdg_toplevel app_id / prgname so compositors match .desktop & icon
+  g_set_prgname(APPLICATION_ID);
+  g_set_application_name("__APP_TITLE__");
+
+  GtkWindow* window =
+      GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
+  gtk_window_set_default_size(window, __WINDOW_WIDTH__, __WINDOW_HEIGHT__);
+
+  // Configure RGBA visual for alpha transparency and rounded corners
+  GdkScreen* screen = gtk_window_get_screen(window);
+  GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
+  if (visual != nullptr && gdk_screen_is_composited(screen)) {
+    gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
+    gtk_widget_set_visual(GTK_WIDGET(window), visual);
+  }
+
+  // Hook draw signal to clear the Cairo surface to transparent black (operator CLEAR)
+  g_signal_connect(window, "draw", G_CALLBACK(window_draw_cb), nullptr);
+
+  // Apply transparent GTK CSS rule preventing opaque background drawing
+  GtkCssProvider* css_provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_data(
+      css_provider,
+      "window, .background, decoration { background-color: transparent !important; background: transparent !important; border: none !important; box-shadow: none !important; }",
+      -1, nullptr);
+  gtk_style_context_add_provider_for_screen(
+      screen, GTK_STYLE_PROVIDER(css_provider),
+      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+  // Disable server-side decorations (SSD) to enable in-app client-side decorations (CSD)
+  gtk_window_set_decorated(window, FALSE);
+
+  gtk_window_set_title(window, "__APP_TITLE__");
+
+  g_autoptr(FlDartProject) project = fl_dart_project_new();
+  fl_dart_project_set_dart_entrypoint_arguments(
+      project, self->dart_entrypoint_arguments);
+
+  FlView* view = fl_view_new(project);
+  // Configure FlView background as fully transparent (alpha = 0.0)
+  GdkRGBA background_color = {0.0, 0.0, 0.0, 0.0};
+  fl_view_set_background_color(view, &background_color);
+  gtk_widget_show(GTK_WIDGET(view));
+  gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
+
+  // Register Libadwaitter window control MethodChannel
+  FlEngine* engine = fl_view_get_engine(view);
+  FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(engine);
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  FlMethodChannel* window_channel =
+      fl_method_channel_new(messenger, kWindowChannelName, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(
+      window_channel, window_method_call_handler, window, nullptr);
+  g_signal_connect(window, "notify::is-active",
+                   G_CALLBACK(on_window_active_changed), window_channel);
+  gtk_widget_add_events(GTK_WIDGET(window), GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_RELEASE_MASK);
+  g_signal_connect(window, "enter-notify-event",
+                   G_CALLBACK(on_window_post_drag_event), window_channel);
+  g_signal_connect(window, "button-release-event",
+                   G_CALLBACK(on_window_post_drag_event), window_channel);
+
+  // Register Libadwaitter desktop animation and system settings MethodChannel
+  FlMethodChannel* settings_channel =
+      fl_method_channel_new(messenger, kSettingsChannelName, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(
+      settings_channel, settings_method_call_handler, settings_channel, nullptr);
+
+  // Register Libadwaitter central style manager MethodChannel (theme & accent color)
+  FlMethodChannel* style_channel =
+      fl_method_channel_new(messenger, kStyleChannelName, FL_METHOD_CODEC(codec));
+  StyleBridgeState* style_state = g_new0(StyleBridgeState, 1);
+  style_state->channel = style_channel;
+  g_object_set_data_full(G_OBJECT(window), "libadwaitter-style-bridge",
+                         style_state, style_bridge_state_free);
+  fl_method_channel_set_method_call_handler(
+      style_channel, style_method_call_handler, style_state, nullptr);
+
+  // Register Libadwaitter XDG Desktop Portal & sandbox bridge MethodChannel
+  FlMethodChannel* portal_channel =
+      fl_method_channel_new(messenger, kPortalChannelName, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(
+      portal_channel, portal_method_call_handler, window, nullptr);
+
+  GSettingsSchemaSource* schema_source = g_settings_schema_source_get_default();
+  if (schema_source != nullptr) {
+    g_autoptr(GSettingsSchema) interface_schema =
+        g_settings_schema_source_lookup(schema_source, "org.gnome.desktop.interface", TRUE);
+    if (interface_schema != nullptr) {
+      style_state->interface_settings = g_settings_new("org.gnome.desktop.interface");
+      if (g_settings_schema_has_key(interface_schema, "color-scheme")) {
+        g_signal_connect(style_state->interface_settings, "changed::color-scheme",
+                         G_CALLBACK(on_gsettings_appearance_changed), style_state);
+        g_free(g_settings_get_string(style_state->interface_settings, "color-scheme"));
+      } else if (g_settings_schema_has_key(interface_schema, "gtk-theme")) {
+        g_signal_connect(style_state->interface_settings, "changed::gtk-theme",
+                         G_CALLBACK(on_gsettings_appearance_changed), style_state);
+        g_free(g_settings_get_string(style_state->interface_settings, "gtk-theme"));
+      }
+      if (g_settings_schema_has_key(interface_schema, "accent-color")) {
+        g_signal_connect(style_state->interface_settings, "changed::accent-color",
+                         G_CALLBACK(on_gsettings_appearance_changed), style_state);
+        g_free(g_settings_get_string(style_state->interface_settings, "accent-color"));
+      }
+    }
+
+    g_autoptr(GSettingsSchema) a11y_schema =
+        g_settings_schema_source_lookup(schema_source, "org.gnome.desktop.a11y.interface", TRUE);
+    if (a11y_schema != nullptr && g_settings_schema_has_key(a11y_schema, "high-contrast")) {
+      style_state->a11y_settings = g_settings_new("org.gnome.desktop.a11y.interface");
+      g_signal_connect(style_state->a11y_settings, "changed::high-contrast",
+                       G_CALLBACK(on_gsettings_appearance_changed), style_state);
+      (void)g_settings_get_boolean(style_state->a11y_settings, "high-contrast");
+    }
+    g_autoptr(GSettingsSchema) wm_schema =
+        g_settings_schema_source_lookup(schema_source, "org.gnome.desktop.wm.preferences", TRUE);
+    if (wm_schema != nullptr && g_settings_schema_has_key(wm_schema, "button-layout")) {
+      GSettings* wm_settings = g_settings_new("org.gnome.desktop.wm.preferences");
+      g_object_set_data_full(G_OBJECT(window), "libadwaitter-wm-gsettings",
+                             wm_settings, g_object_unref);
+      g_signal_connect(wm_settings, "changed::button-layout",
+                       G_CALLBACK(on_wm_button_layout_changed), settings_channel);
+      g_free(g_settings_get_string(wm_settings, "button-layout"));
+    }
+  }
+
+  GWeakRef* weak_window = g_new(GWeakRef, 1);
+  g_weak_ref_init(weak_window, window);
+  g_bus_get(G_BUS_TYPE_SESSION, nullptr, on_session_bus_ready, weak_window);
+
+  GtkSettings* default_settings = gtk_settings_get_default();
+  if (default_settings != nullptr) {
+    g_signal_connect(default_settings, "notify::gtk-enable-animations",
+                     G_CALLBACK(on_gtk_animations_changed), settings_channel);
+    g_signal_connect(default_settings, "notify::gtk-decoration-layout",
+                     G_CALLBACK(on_gtk_decoration_layout_changed), settings_channel);
+  }
+
+  // Show the window when Flutter renders.
+  g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
+                           self);
+  gtk_widget_realize(GTK_WIDGET(view));
+
+  fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+
+  gtk_widget_grab_focus(GTK_WIDGET(view));
+}
+
+// Implements GApplication::local_command_line.
+static gboolean my_application_local_command_line(GApplication* application,
+                                                  gchar*** arguments,
+                                                  int* exit_status) {
+  MyApplication* self = MY_APPLICATION(application);
+  self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
+
+  g_autoptr(GError) error = nullptr;
+  if (!g_application_register(application, nullptr, &error)) {
+    g_warning("Failed to register: %s", error->message);
+    *exit_status = 1;
+    return TRUE;
+  }
+
+  g_application_activate(application);
+  *exit_status = 0;
+
+  return TRUE;
+}
+
+// Implements GApplication::startup.
+static void my_application_startup(GApplication* application) {
+  G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
+}
+
+// Implements GApplication::shutdown.
+static void my_application_shutdown(GApplication* application) {
+  G_APPLICATION_CLASS(my_application_parent_class)->shutdown(application);
+}
+
+// Implements GObject::dispose.
+static void my_application_dispose(GObject* object) {
+  MyApplication* self = MY_APPLICATION(object);
+  g_clear_pointer(&self->dart_entrypoint_arguments, g_strfreev);
+  G_OBJECT_CLASS(my_application_parent_class)->dispose(object);
+}
+
+static void my_application_init(MyApplication* self) {}
+
+static void my_application_class_init(MyApplicationClass* klass) {
+  G_APPLICATION_CLASS(klass)->activate = my_application_activate;
+  G_APPLICATION_CLASS(klass)->local_command_line = my_application_local_command_line;
+  G_APPLICATION_CLASS(klass)->startup = my_application_startup;
+  G_APPLICATION_CLASS(klass)->shutdown = my_application_shutdown;
+  G_OBJECT_CLASS(klass)->dispose = my_application_dispose;
+}
+
+MyApplication* my_application_new() {
+  return MY_APPLICATION(g_object_new(my_application_get_type(),
+                                     "application-id", APPLICATION_ID,
+                                     "flags", G_APPLICATION_NON_UNIQUE,
+                                     nullptr));
+}
+''';

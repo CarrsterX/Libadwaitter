@@ -34,7 +34,7 @@ class _AdwaitaDemoApplicationState extends State<AdwaitaDemoApplication> {
   @override
   Widget build(BuildContext context) {
     return AdwApplication(
-      title: 'Adwaita Demo',
+      title: 'Adwaitter Demo',
       themeMode: _themeMode,
       accentColor: _accentColor,
       home: AdwToastOverlay(
@@ -54,14 +54,24 @@ enum DemoPage {
   navigationView,
   splitViews,
   viewSwitcher,
+  tabView,
+  bottomSheet,
   carousel,
   boxedLists,
   toggleGroups,
   buttons,
   banner,
   toasts,
+  spinner,
+  avatar,
+  alertDialog,
+  aboutDialog,
+  clamp,
+  wrapBox,
+  multiLayoutView,
+  styleClasses,
+  animations,
   appearance,
-  dialogs,
 }
 
 class AdwaitaDemoWindow extends StatefulWidget {
@@ -236,7 +246,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     Navigator.of(context).pop();
                     _showAbout(context);
                   },
-                  child: const Text('About Adwaita Demo'),
+                  child: const Text('About Adwaitter Demo'),
                 ),
               ],
             ),
@@ -255,7 +265,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   void _showAbout(BuildContext context) {
     showAdwAboutDialog(
       context: context,
-      applicationName: 'Adwaita Demo',
+      applicationName: 'Adwaitter Demo',
       version: '1.0.0',
       developerName: 'Libadwaitter Contributors',
       comments:
@@ -353,7 +363,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 onPressed: _toggleSidebarSearch,
                 child: const Icon(AdwIcons.edit_find_symbolic, size: 16),
               ),
-              title: const Text('Adwaita Demo'),
+              title: const Text('Adwaitter Demo'),
               end: AdwButton.flat(
                 width: 34,
                 height: 34,
@@ -497,7 +507,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         children: [
                           _buildSidebarItem(
                             page: DemoPage.welcome,
-                            iconWidget: const AdwEmblem(size: 16),
+                            iconWidget: const AdwEmblem(size: 16, strokeWidth: 1.25),
                             title: 'Welcome',
                             isCollapsed: true,
                           ),
@@ -506,7 +516,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     else
                       _buildSidebarItem(
                         page: DemoPage.welcome,
-                        iconWidget: const AdwEmblem(size: 16),
+                        iconWidget: const AdwEmblem(size: 16, strokeWidth: 1.25),
                         title: 'Welcome',
                         isCollapsed: false,
                       ),
@@ -536,6 +546,18 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                                 DemoIconType.viewSwitcher,
                                 size: 16),
                             title: 'View Switcher',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.tabView,
+                            icon: AdwIcons.focus_windows_symbolic,
+                            title: 'Tab View',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.bottomSheet,
+                            icon: AdwIcons.preferences_desktop_display_symbolic,
+                            title: 'Bottom Sheet',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
@@ -594,7 +616,19 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                             page: DemoPage.toasts,
                             icon: AdwIcons
                                 .preferences_system_notifications_symbolic,
-                            title: 'Toasts',
+                            title: 'Toast',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.spinner,
+                            icon: AdwIcons.applications_system_symbolic,
+                            title: 'Spinner',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.avatar,
+                            icon: AdwIcons.avatar_default_symbolic,
+                            title: 'Avatar',
                             isCollapsed: isCollapsed,
                           ),
                         ],
@@ -604,9 +638,58 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         'Dialogs',
                         [
                           _buildSidebarItem(
-                            page: DemoPage.dialogs,
+                            page: DemoPage.alertDialog,
+                            icon: AdwIcons.dialog_question_symbolic,
+                            title: 'Alert Dialog',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.aboutDialog,
                             icon: AdwIcons.help_about_symbolic,
-                            title: 'Alerts & About Dialog',
+                            title: 'About Dialog',
+                            isCollapsed: isCollapsed,
+                          ),
+                        ],
+                        isCollapsed: isCollapsed),
+                    _buildSidebarSection(
+                        theme,
+                        'Layout',
+                        [
+                          _buildSidebarItem(
+                            page: DemoPage.clamp,
+                            icon: AdwIcons.preferences_desktop_display_symbolic,
+                            title: 'Clamp',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.wrapBox,
+                            icon: AdwIcons.preferences_desktop_apps_symbolic,
+                            title: 'Wrap Box',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.multiLayoutView,
+                            icon: AdwIcons
+                                .preferences_desktop_multitasking_symbolic,
+                            title: 'Multi-Layout View',
+                            isCollapsed: isCollapsed,
+                          ),
+                        ],
+                        isCollapsed: isCollapsed),
+                    _buildSidebarSection(
+                        theme,
+                        'Miscellaneous',
+                        [
+                          _buildSidebarItem(
+                            page: DemoPage.styleClasses,
+                            icon: AdwIcons.applications_graphics_symbolic,
+                            title: 'Style Classes',
+                            isCollapsed: isCollapsed,
+                          ),
+                          _buildSidebarItem(
+                            page: DemoPage.animations,
+                            icon: AdwIcons.media_playback_start_symbolic,
+                            title: 'Animations',
                             isCollapsed: isCollapsed,
                           ),
                         ],
@@ -718,13 +801,17 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   String _getPageTitle(DemoPage page) {
     switch (page) {
       case DemoPage.welcome:
-        return 'Welcome to Adwaita Demo';
+        return 'Welcome to Adwaitter Demo';
       case DemoPage.navigationView:
         return 'Navigation View';
       case DemoPage.splitViews:
         return 'Split Views';
       case DemoPage.viewSwitcher:
         return 'View Switcher';
+      case DemoPage.tabView:
+        return 'Tab View';
+      case DemoPage.bottomSheet:
+        return 'Bottom Sheet';
       case DemoPage.carousel:
         return 'Carousel';
       case DemoPage.boxedLists:
@@ -736,11 +823,27 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       case DemoPage.banner:
         return 'Banner';
       case DemoPage.toasts:
-        return 'Toasts';
+        return 'Toast';
+      case DemoPage.spinner:
+        return 'Spinner';
+      case DemoPage.avatar:
+        return 'Avatar';
+      case DemoPage.alertDialog:
+        return 'Alert Dialog';
+      case DemoPage.aboutDialog:
+        return 'About Dialog';
+      case DemoPage.clamp:
+        return 'Clamp';
+      case DemoPage.wrapBox:
+        return 'Wrap Box';
+      case DemoPage.multiLayoutView:
+        return 'Multi-Layout View';
+      case DemoPage.styleClasses:
+        return 'Style Classes';
+      case DemoPage.animations:
+        return 'Animations';
       case DemoPage.appearance:
         return 'Appearance & Accent';
-      case DemoPage.dialogs:
-        return 'Alerts & About Dialog';
     }
   }
 
@@ -748,8 +851,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     switch (_selectedPage) {
       case DemoPage.welcome:
         return const AdwStatusPage(
-          icon: AdwEmblem(size: 110),
-          title: Text('Welcome to Adwaita Demo'),
+          icon: AdwEmblem(size: 128, strokeWidth: 0.85),
+          title: Text('Welcome to Adwaitter Demo'),
           description:
               Text('This is a tour of the features the library has to offer'),
         );
@@ -1265,25 +1368,27 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           ],
         );
 
-      case DemoPage.dialogs:
-        return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AdwButton(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                onPressed: () => _showResetDialog(context),
-                child: const Text('Open Alert Dialog'),
-              ),
-              const SizedBox(height: 16),
-              AdwButton.suggested(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                onPressed: () => _showAbout(context),
-                child: const Text('Open About Dialog'),
-              ),
-            ],
+      case DemoPage.alertDialog:
+        return AdwStatusPage(
+          title: const Text('Alert Dialog'),
+          child: Center(
+            child: AdwButton(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              onPressed: () => _showResetDialog(context),
+              child: const Text('Open Alert Dialog'),
+            ),
+          ),
+        );
+
+      case DemoPage.aboutDialog:
+        return AdwStatusPage(
+          title: const Text('About Dialog'),
+          child: Center(
+            child: AdwButton.suggested(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              onPressed: () => _showAbout(context),
+              child: const Text('Open About Dialog'),
+            ),
           ),
         );
 
@@ -1295,11 +1400,18 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
 
       case DemoPage.navigationView:
       case DemoPage.splitViews:
-        return Center(
-          child: Text(
-            '${_getPageTitle(_selectedPage)} Example Page',
-            style: theme.typography.title2,
-          ),
+      case DemoPage.tabView:
+      case DemoPage.bottomSheet:
+      case DemoPage.spinner:
+      case DemoPage.avatar:
+      case DemoPage.clamp:
+      case DemoPage.wrapBox:
+      case DemoPage.multiLayoutView:
+      case DemoPage.styleClasses:
+      case DemoPage.animations:
+        return AdwStatusPage(
+          title: Text(_getPageTitle(_selectedPage)),
+          description: const Text('Pending review against native demo'),
         );
     }
   }

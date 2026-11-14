@@ -60,3 +60,6 @@ export 'src/widgets/overlays/adw_toast.dart';
 
 // Widgets: Display
 export 'src/widgets/display/adw_emblem.dart';
+
+// Platform integrations (optional Linux / Wayland / XDG Desktop Portals)
+export 'src/platform/adw_portal.dart';

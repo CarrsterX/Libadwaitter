@@ -69,9 +69,7 @@ class _AdwButtonRowState extends State<AdwButtonRow> {
     final Color bgColor;
     final Color fgColor;
 
-    final Color idleCardBg = theme.colors.isDark
-        ? const Color(0xFF333337)
-        : const Color(0xFFFFFFFF);
+    final Color idleCardBg = theme.colors.buttonRowBackground;
 
     switch (widget.style) {
       case AdwButtonRowStyle.standard:
@@ -81,26 +79,20 @@ class _AdwButtonRowState extends State<AdwButtonRow> {
         } else if (_isPressed) {
           bgColor = Color.alphaBlend(theme.colors.activeColor, idleCardBg);
         } else if (_isHovered) {
-          bgColor = theme.colors.isDark
-              ? Color.alphaBlend(theme.colors.hoverColor, idleCardBg)
-              : const Color(0xFFF9F9F9);
+          bgColor = theme.colors.buttonRowHoverBackground;
         } else {
           bgColor = idleCardBg;
         }
         break;
       case AdwButtonRowStyle.destructive:
-        fgColor = theme.colors.isDark
-            ? const Color(0xFFFF938C)
-            : theme.colors.destructiveColor;
+        fgColor = theme.colors.destructiveRowForeground;
         if (!isEnabled) {
           bgColor = idleCardBg;
         } else if (_isPressed) {
           bgColor = Color.alphaBlend(
               fgColor.withValues(alpha: 0.16), idleCardBg);
         } else if (_isHovered) {
-          bgColor = theme.colors.isDark
-              ? const Color(0xFF3A3539)
-              : const Color(0xFFFDF7F7);
+          bgColor = theme.colors.destructiveRowHoverBackground;
         } else {
           bgColor = idleCardBg;
         }

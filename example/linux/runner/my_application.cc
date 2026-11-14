@@ -14,6 +14,7 @@ G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 const char* kWindowChannelName = "libadwaitter/window";
 const char* kSettingsChannelName = "libadwaitter/settings";
 const char* kStyleChannelName = "libadwaitter/style";
+const char* kPortalChannelName = "libadwaitter/portal";
 
 static gboolean get_system_enable_animations() {
   GtkSettings* settings = gtk_settings_get_default();
@@ -482,6 +483,397 @@ static void window_method_call_handler(FlMethodChannel* channel,
   }
 }
 
+// --- XDG Desktop Portal & Linux Sandbox Bridge (libadwaitter/portal) ---
+
+static FlValue* build_portal_result(const char* status,
+                                    FlValue* value_take,
+                                    const char* error_message) {
+  FlValue* map = fl_value_new_map();
+  fl_value_set_string_take(map, "status", fl_value_new_string(status));
+  if (value_take != nullptr) {
+    fl_value_set_string_take(map, "value", value_take);
+  }
+  if (error_message != nullptr) {
+    fl_value_set_string_take(map, "errorMessage",
+                             fl_value_new_string(error_message));
+  }
+  return map;
+}
+
+typedef struct {
+  FlMethodCall* method_call;
+  GDBusConnection* connection;
+  guint signal_id;
+  bool return_screenshot_uri;
+} PortalAsyncRequest;
+
+static void portal_async_request_free(PortalAsyncRequest* req) {
+  if (req == nullptr) return;
+  if (req->signal_id != 0 && req->connection != nullptr) {
+    g_dbus_connection_signal_unsubscribe(req->connection, req->signal_id);
+    req->signal_id = 0;
+  }
+  if (req->connection != nullptr) {
+    g_object_unref(req->connection);
+  }
+  if (req->method_call != nullptr) {
+    g_object_unref(req->method_call);
+  }
+  g_free(req);
+}
+
+static void on_portal_request_response(GDBusConnection* connection,
+                                       const gchar* sender_name,
+                                       const gchar* object_path,
+                                       const gchar* interface_name,
+                                       const gchar* signal_name,
+                                       GVariant* parameters,
+                                       gpointer user_data) {
+  PortalAsyncRequest* req = static_cast<PortalAsyncRequest*>(user_data);
+  if (req == nullptr || req->method_call == nullptr) return;
+
+  guint32 response_code = 2;
+  g_autoptr(GVariant) results = nullptr;
+  g_variant_get(parameters, "(u@a{sv})", &response_code, &results);
+
+  g_autoptr(FlValue) reply = nullptr;
+  if (response_code == 0) {
+    if (req->return_screenshot_uri && results != nullptr) {
+      const gchar* uri = nullptr;
+      if (g_variant_lookup(results, "uri", "&s", &uri) && uri != nullptr) {
+        reply = build_portal_result("granted", fl_value_new_string(uri), nullptr);
+      } else {
+        reply = build_portal_result("granted", nullptr, nullptr);
+      }
+    } else {
+      reply = build_portal_result("granted", fl_value_new_bool(TRUE), nullptr);
+    }
+  } else if (response_code == 1) {
+    reply = build_portal_result("cancelled", nullptr, nullptr);
+  } else {
+    reply = build_portal_result("denied", nullptr,
+                                "Permission denied by user or portal.");
+  }
+
+  fl_method_call_respond_success(req->method_call, reply, nullptr);
+  portal_async_request_free(req);
+}
+
+static void on_portal_dbus_call_finished(GObject* source_object,
+                                         GAsyncResult* res,
+                                         gpointer user_data) {
+  PortalAsyncRequest* req = static_cast<PortalAsyncRequest*>(user_data);
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(GVariant) result = g_dbus_connection_call_finish(
+      G_DBUS_CONNECTION(source_object), res, &error);
+  if (error != nullptr) {
+    g_autoptr(FlValue) reply =
+        build_portal_result("unsupported", nullptr, error->message);
+    fl_method_call_respond_success(req->method_call, reply, nullptr);
+    portal_async_request_free(req);
+    return;
+  }
+  // Response will arrive via org.freedesktop.portal.Request::Response signal.
+  (void)result;
+}
+
+static void dispatch_portal_request(FlMethodCall* method_call,
+                                    const char* interface_name,
+                                    const char* method_name,
+                                    GVariant* parameters,
+                                    const char* expected_request_path,
+                                    GDBusConnection* bus,
+                                    bool return_screenshot_uri) {
+  PortalAsyncRequest* req = g_new0(PortalAsyncRequest, 1);
+  req->method_call = FL_METHOD_CALL(g_object_ref(method_call));
+  req->connection = G_DBUS_CONNECTION(g_object_ref(bus));
+  req->return_screenshot_uri = return_screenshot_uri;
+
+  req->signal_id = g_dbus_connection_signal_subscribe(
+      bus, "org.freedesktop.portal.Desktop", "org.freedesktop.portal.Request",
+      "Response", expected_request_path, nullptr, G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE,
+      on_portal_request_response, req, nullptr);
+
+  g_dbus_connection_call(
+      bus, "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+      interface_name, method_name, parameters, G_VARIANT_TYPE("(o)"),
+      G_DBUS_CALL_FLAGS_NONE, -1, nullptr, on_portal_dbus_call_finished, req);
+}
+
+static gchar* build_portal_request_path(GDBusConnection* bus,
+                                        const char* token) {
+  const gchar* unique_name = g_dbus_connection_get_unique_name(bus);
+  g_autofree gchar* sanitized = g_strdup(unique_name != nullptr ? unique_name : "");
+  if (sanitized[0] == ':') {
+    sanitized[0] = '_';
+    for (gchar* p = sanitized + 1; *p != '\0'; ++p) {
+      if (*p == '.') *p = '_';
+    }
+  }
+  return g_strdup_printf("/org/freedesktop/portal/desktop/request/%s/%s",
+                         sanitized[0] == '_' ? sanitized + 1 : sanitized, token);
+}
+
+static void portal_method_call_handler(FlMethodChannel* channel,
+                                       FlMethodCall* method_call,
+                                       gpointer user_data) {
+  GtkWindow* window = GTK_WINDOW(user_data);
+  const gchar* method = fl_method_call_get_name(method_call);
+  FlValue* args = fl_method_call_get_args(method_call);
+
+  if (strcmp(method, "getSandboxInfo") == 0) {
+    gboolean is_flatpak = g_file_test("/.flatpak-info", G_FILE_TEST_EXISTS);
+    const gchar* flatpak_id = g_getenv("FLATPAK_ID");
+    const gchar* snap_dir = g_getenv("SNAP");
+    const gchar* snap_name = g_getenv("SNAP_NAME");
+    const gchar* wayland_display = g_getenv("WAYLAND_DISPLAY");
+
+    g_autoptr(FlValue) map = fl_value_new_map();
+    fl_value_set_string_take(map, "isFlatpak",
+                             fl_value_new_bool(is_flatpak || flatpak_id != nullptr));
+    fl_value_set_string_take(map, "isSnap",
+                             fl_value_new_bool(snap_dir != nullptr || snap_name != nullptr));
+    fl_value_set_string_take(map, "isWayland",
+                             fl_value_new_bool(wayland_display != nullptr && wayland_display[0] != '\0'));
+    if (flatpak_id != nullptr) {
+      fl_value_set_string_take(map, "flatpakId", fl_value_new_string(flatpak_id));
+    }
+    if (snap_name != nullptr) {
+      fl_value_set_string_take(map, "snapName", fl_value_new_string(snap_name));
+    }
+    fl_method_call_respond_success(method_call, map, nullptr);
+  } else if (strcmp(method, "openUri") == 0) {
+    const gchar* uri = nullptr;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* uri_val = fl_value_lookup_string(args, "uri");
+      if (uri_val != nullptr && fl_value_get_type(uri_val) == FL_VALUE_TYPE_STRING) {
+        uri = fl_value_get_string(uri_val);
+      }
+    }
+    if (uri == nullptr) {
+      g_autoptr(FlValue) reply = build_portal_result("error", nullptr, "Missing uri argument.");
+      fl_method_call_respond_success(method_call, reply, nullptr);
+      return;
+    }
+    g_autoptr(GError) error = nullptr;
+    if (gtk_show_uri_on_window(window, uri, GDK_CURRENT_TIME, &error)) {
+      g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+      fl_method_call_respond_success(method_call, reply, nullptr);
+    } else {
+      g_autoptr(FlValue) reply = build_portal_result(
+          "error", nullptr, error != nullptr ? error->message : "Failed to open URI.");
+      fl_method_call_respond_success(method_call, reply, nullptr);
+    }
+  } else if (strcmp(method, "sendNotification") == 0) {
+    const gchar* id = "default";
+    const gchar* title = "";
+    const gchar* body = nullptr;
+    const gchar* icon_name = nullptr;
+    const gchar* priority_str = "normal";
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "id")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        id = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "title")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        title = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "body")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        body = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "iconName")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        icon_name = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "priority")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        priority_str = fl_value_get_string(v);
+    }
+    g_autoptr(GNotification) notification = g_notification_new(title);
+    if (body != nullptr) g_notification_set_body(notification, body);
+    if (icon_name != nullptr) {
+      g_autoptr(GIcon) icon = g_themed_icon_new(icon_name);
+      g_notification_set_icon(notification, icon);
+    }
+    if (strcmp(priority_str, "low") == 0) {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_LOW);
+    } else if (strcmp(priority_str, "high") == 0) {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_HIGH);
+    } else if (strcmp(priority_str, "urgent") == 0) {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_URGENT);
+    } else {
+      g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_NORMAL);
+    }
+    g_application_send_notification(g_application_get_default(), id, notification);
+    g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "withdrawNotification") == 0) {
+    const gchar* id = "default";
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = fl_value_lookup_string(args, "id");
+      if (v != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING) {
+        id = fl_value_get_string(v);
+      }
+    }
+    g_application_withdraw_notification(g_application_get_default(), id);
+    g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "openFiles") == 0) {
+    const gchar* title = "Open File";
+    gboolean multiple = FALSE;
+    gboolean directory = FALSE;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "title")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        title = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "multiple")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        multiple = fl_value_get_bool(v);
+      if ((v = fl_value_lookup_string(args, "directory")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        directory = fl_value_get_bool(v);
+    }
+    GtkFileChooserAction action = directory
+        ? GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER
+        : GTK_FILE_CHOOSER_ACTION_OPEN;
+    GtkFileChooserNative* chooser = gtk_file_chooser_native_new(
+        title, window, action, "_Open", "_Cancel");
+    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(chooser), multiple);
+    gint res = gtk_native_dialog_run(GTK_NATIVE_DIALOG(chooser));
+    g_autoptr(FlValue) reply = nullptr;
+    if (res == GTK_RESPONSE_ACCEPT) {
+      FlValue* list = fl_value_new_list();
+      GSList* files = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(chooser));
+      for (GSList* iter = files; iter != nullptr; iter = iter->next) {
+        gchar* path = static_cast<gchar*>(iter->data);
+        fl_value_append_take(list, fl_value_new_string(path));
+        g_free(path);
+      }
+      g_slist_free(files);
+      reply = build_portal_result("granted", list, nullptr);
+    } else {
+      reply = build_portal_result("cancelled", nullptr, nullptr);
+    }
+    g_object_unref(chooser);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "saveFile") == 0) {
+    const gchar* title = "Save File";
+    const gchar* current_name = nullptr;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "title")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        title = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "currentName")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        current_name = fl_value_get_string(v);
+    }
+    GtkFileChooserNative* chooser = gtk_file_chooser_native_new(
+        title, window, GTK_FILE_CHOOSER_ACTION_SAVE, "_Save", "_Cancel");
+    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(chooser), TRUE);
+    if (current_name != nullptr) {
+      gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(chooser), current_name);
+    }
+    gint res = gtk_native_dialog_run(GTK_NATIVE_DIALOG(chooser));
+    g_autoptr(FlValue) reply = nullptr;
+    if (res == GTK_RESPONSE_ACCEPT) {
+      g_autofree gchar* path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(chooser));
+      reply = build_portal_result(
+          "granted", path != nullptr ? fl_value_new_string(path) : nullptr, nullptr);
+    } else {
+      reply = build_portal_result("cancelled", nullptr, nullptr);
+    }
+    g_object_unref(chooser);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "inhibit") == 0) {
+    const gchar* reason = "Application activity";
+    gboolean idle = TRUE;
+    gboolean suspend = FALSE;
+    gboolean logout = FALSE;
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = nullptr;
+      if ((v = fl_value_lookup_string(args, "reason")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        reason = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "idle")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        idle = fl_value_get_bool(v);
+      if ((v = fl_value_lookup_string(args, "suspend")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        suspend = fl_value_get_bool(v);
+      if ((v = fl_value_lookup_string(args, "logout")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+        logout = fl_value_get_bool(v);
+    }
+    int flags = 0;
+    if (logout) flags |= GTK_APPLICATION_INHIBIT_LOGOUT;
+    if (suspend) flags |= GTK_APPLICATION_INHIBIT_SUSPEND;
+    if (idle) flags |= GTK_APPLICATION_INHIBIT_IDLE;
+    guint cookie = gtk_application_inhibit(
+        GTK_APPLICATION(g_application_get_default()), window,
+        static_cast<GtkApplicationInhibitFlags>(flags), reason);
+    g_autoptr(FlValue) reply = nullptr;
+    if (cookie != 0) {
+      g_autofree gchar* handle = g_strdup_printf("%u", cookie);
+      reply = build_portal_result("granted", fl_value_new_string(handle), nullptr);
+    } else {
+      reply = build_portal_result("unsupported", nullptr,
+                                  "Session inhibit not supported by desktop.");
+    }
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "uninhibit") == 0) {
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* v = fl_value_lookup_string(args, "handle");
+      if (v != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING) {
+        guint cookie = static_cast<guint>(g_ascii_strtoull(fl_value_get_string(v), nullptr, 10));
+        if (cookie != 0) {
+          gtk_application_uninhibit(GTK_APPLICATION(g_application_get_default()), cookie);
+        }
+      }
+    }
+    g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
+    fl_method_call_respond_success(method_call, reply, nullptr);
+  } else if (strcmp(method, "requestBackground") == 0 ||
+             strcmp(method, "requestCamera") == 0 ||
+             strcmp(method, "takeScreenshot") == 0) {
+    g_autoptr(GError) bus_error = nullptr;
+    g_autoptr(GDBusConnection) bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, &bus_error);
+    if (bus == nullptr) {
+      g_autoptr(FlValue) reply = build_portal_result(
+          "error", nullptr, bus_error != nullptr ? bus_error->message : "No session D-Bus.");
+      fl_method_call_respond_success(method_call, reply, nullptr);
+      return;
+    }
+
+    g_autofree gchar* token = g_strdup_printf("libadwaitter_%u", g_random_int());
+    g_autofree gchar* request_path = build_portal_request_path(bus, token);
+
+    GVariantBuilder options;
+    g_variant_builder_init(&options, G_VARIANT_TYPE_VARDICT);
+    g_variant_builder_add(&options, "{sv}", "handle_token", g_variant_new_string(token));
+
+    if (strcmp(method, "requestBackground") == 0) {
+      const gchar* reason = "Allow running in background";
+      gboolean autostart = FALSE;
+      if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+        FlValue* v = nullptr;
+        if ((v = fl_value_lookup_string(args, "reason")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+          reason = fl_value_get_string(v);
+        if ((v = fl_value_lookup_string(args, "autostart")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+          autostart = fl_value_get_bool(v);
+      }
+      g_variant_builder_add(&options, "{sv}", "reason", g_variant_new_string(reason));
+      g_variant_builder_add(&options, "{sv}", "autostart", g_variant_new_boolean(autostart));
+      dispatch_portal_request(
+          method_call, "org.freedesktop.portal.Background", "RequestBackground",
+          g_variant_new("(sa{sv})", "", &options), request_path, bus, false);
+    } else if (strcmp(method, "requestCamera") == 0) {
+      dispatch_portal_request(
+          method_call, "org.freedesktop.portal.Camera", "AccessCamera",
+          g_variant_new("(a{sv})", &options), request_path, bus, false);
+    } else {
+      gboolean interactive = TRUE;
+      if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+        FlValue* v = fl_value_lookup_string(args, "interactive");
+        if (v != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_BOOL)
+          interactive = fl_value_get_bool(v);
+      }
+      g_variant_builder_add(&options, "{sv}", "interactive", g_variant_new_boolean(interactive));
+      dispatch_portal_request(
+          method_call, "org.freedesktop.portal.Screenshot", "Screenshot",
+          g_variant_new("(sa{sv})", "", &options), request_path, bus, true);
+    }
+  } else {
+    fl_method_call_respond_not_implemented(method_call, nullptr);
+  }
+}
+
 // Cairo draw callback ensuring true alpha transparency (preventing opaque corner artifacts)
 static gboolean window_draw_cb(GtkWidget* widget, cairo_t* cr, gpointer user_data) {
   cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.0);
@@ -498,6 +890,10 @@ static void first_frame_cb(MyApplication* self, FlView* view) {
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
+
+  // Set Wayland xdg_toplevel app_id / prgname so compositors match .desktop & icon
+  g_set_prgname(APPLICATION_ID);
+  g_set_application_name("Adwaitter Demo");
 
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
@@ -527,7 +923,7 @@ static void my_application_activate(GApplication* application) {
   // Disable server-side decorations (SSD) to enable in-app client-side decorations (CSD)
   gtk_window_set_decorated(window, FALSE);
 
-  gtk_window_set_title(window, "Adwaita Demo");
+  gtk_window_set_title(window, "Adwaitter Demo");
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
@@ -571,6 +967,12 @@ static void my_application_activate(GApplication* application) {
                          style_state, style_bridge_state_free);
   fl_method_channel_set_method_call_handler(
       style_channel, style_method_call_handler, style_state, nullptr);
+
+  // Register Libadwaitter XDG Desktop Portal & sandbox bridge MethodChannel
+  FlMethodChannel* portal_channel =
+      fl_method_channel_new(messenger, kPortalChannelName, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(
+      portal_channel, portal_method_call_handler, window, nullptr);
 
   GSettingsSchemaSource* schema_source = g_settings_schema_source_get_default();
   if (schema_source != nullptr) {
