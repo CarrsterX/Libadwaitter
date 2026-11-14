@@ -1422,9 +1422,12 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           title: const Text('Navigation View'),
           description: const Text('A page-based navigation container'),
           child: Center(
-            child: AdwButton.pill(
-              onPressed: () => _openNavigationViewDemoDialog(context, theme),
-              child: const Text('Run the Demo'),
+            child: Builder(
+              builder: (innerContext) => AdwButton.pill(
+                onPressed: () =>
+                    _openNavigationViewDemoDialog(innerContext, theme),
+                child: const Text('Run the Demo'),
+              ),
             ),
           ),
         );
