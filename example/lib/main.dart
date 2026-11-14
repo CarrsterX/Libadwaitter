@@ -107,7 +107,6 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   String _selectedEnumComboOption = 'unknown';
   bool _bannerRevealed = true;
   int _viewSwitcherIndex = 0;
-  String _appliedText = 'None';
   final AdwCarouselController _carouselController = AdwCarouselController();
   String _selectedToggleInterval = 'Day';
   int _selectedAlignment = 1;
@@ -924,7 +923,6 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                       editIcon:
                           const Icon(AdwIcons.document_edit_symbolic, size: 16),
                       onApply: (val) {
-                        setState(() => _appliedText = val);
                         AdwToastOverlay.of(context).addToast(
                           AdwToast(title: Text('Applied: "$val"')),
                         );

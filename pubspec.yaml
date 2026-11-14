@@ -1,6 +1,8 @@
 name: libadwaitter
 description: A pure Dart and Flutter implementation of GNOME's Libadwaita design system, following the GNOME Human Interface Guidelines (HIG).
 version: 0.1.0
+# Local monorepo development uses path dependencies; remove publish_to and switch to hosted versions before publishing.
+publish_to: 'none'
 homepage: https://github.com/CarrsterX/Libadwaitter
 repository: https://github.com/CarrsterX/Libadwaitter
 issue_tracker: https://github.com/CarrsterX/Libadwaitter/issues
