@@ -1439,21 +1439,24 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           description: const Text('Widgets that display sidebar and content'),
           child: Center(
             child: Builder(
-              builder: (innerContext) => Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AdwButton.pill(
-                    onPressed: () =>
-                        _openNavigationSplitViewDemoDialog(innerContext),
-                    child: const Text('Navigation Split View'),
-                  ),
-                  const SizedBox(height: 18),
-                  AdwButton.pill(
-                    onPressed: () =>
-                        _openOverlaySplitViewDemoDialog(innerContext),
-                    child: const Text('Overlay Split View'),
-                  ),
-                ],
+              builder: (innerContext) => IntrinsicWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AdwButton.pill(
+                      onPressed: () =>
+                          _openNavigationSplitViewDemoDialog(innerContext),
+                      child: const Text('Navigation Split View'),
+                    ),
+                    const SizedBox(height: 18),
+                    AdwButton.pill(
+                      onPressed: () =>
+                          _openOverlaySplitViewDemoDialog(innerContext),
+                      child: const Text('Overlay Split View'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1655,19 +1658,22 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
             child: AdwToolbarView(
               topBar: const AdwHeaderBar(isFlat: true),
               content: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AdwButton.pill(
-                      onPressed: () => navController.push(buildPage2()),
-                      child: const Text('Open Page 2'),
-                    ),
-                    const SizedBox(height: 18),
-                    AdwButton.pill(
-                      onPressed: () => navController.push(buildPage3()),
-                      child: const Text('Open Page 3'),
-                    ),
-                  ],
+                child: IntrinsicWidth(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AdwButton.pill(
+                        onPressed: () => navController.push(buildPage2()),
+                        child: const Text('Open Page 2'),
+                      ),
+                      const SizedBox(height: 18),
+                      AdwButton.pill(
+                        onPressed: () => navController.push(buildPage3()),
+                        child: const Text('Open Page 3'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
