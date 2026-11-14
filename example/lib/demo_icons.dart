@@ -67,8 +67,8 @@ class _DemoWidgetIconPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.shortestSide;
-    final strokeWidth = (s * 0.068).clamp(1.25, 6.5);
-    final thinStroke = (s * 0.048).clamp(1.1, 4.5);
+    final strokeWidth = (s * 0.115).clamp(1.85, 9.5);
+    final thinStroke = (s * 0.07).clamp(1.2, 6.0);
 
     final strokePaint = Paint()
       ..color = color
