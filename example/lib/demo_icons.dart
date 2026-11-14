@@ -67,13 +67,13 @@ class _DemoWidgetIconPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.shortestSide;
-    // Sidebar (16px) uses standard weight; 128px statuspage uses GTK4 -gtk-icon-weight: 134 (~6px)
+    // Sidebar (16px) uses standard 2px SVG weight; 128px statuspage uses ~8px
     final strokeWidth = s <= 24.0
-        ? (s * 0.112).clamp(1.6, 2.4)
-        : (s * 0.048).clamp(2.4, 6.2);
+        ? (s * 0.125).clamp(1.8, 2.5)
+        : (s * 0.0625).clamp(2.5, 8.2);
     final thinStroke = s <= 24.0
-        ? (s * 0.075).clamp(1.1, 1.8)
-        : (s * 0.036).clamp(1.8, 4.5);
+        ? (s * 0.085).clamp(1.2, 1.9)
+        : (s * 0.046).clamp(2.0, 6.0);
 
     final strokePaint = Paint()
       ..color = color
