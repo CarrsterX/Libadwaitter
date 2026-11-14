@@ -1530,6 +1530,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ? AdwButton.flat(
                         width: 34,
                         height: 34,
+                        isChecked: showSidebar,
                         padding: EdgeInsets.zero,
                         onPressed: () =>
                             setDialogState(() => showSidebar = !showSidebar),
@@ -1541,6 +1542,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ? AdwButton.flat(
                         width: 34,
                         height: 34,
+                        isChecked: showSidebar,
                         padding: EdgeInsets.zero,
                         onPressed: () =>
                             setDialogState(() => showSidebar = !showSidebar),
@@ -1556,27 +1558,28 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     setDialogState(() => showSidebar = v),
                 sidebar: AdwStatusPage(
                   title: const Text('Sidebar'),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AdwButton.pill(
-                        style: position == AdwSplitViewPosition.start
-                            ? AdwButtonStyle.suggested
-                            : AdwButtonStyle.standard,
-                        onPressed: () => setDialogState(
-                            () => position = AdwSplitViewPosition.start),
-                        child: const Text('Start'),
+                  child: Center(
+                    child: IntrinsicWidth(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AdwButton.pill(
+                            isChecked: position == AdwSplitViewPosition.start,
+                            onPressed: () => setDialogState(
+                                () => position = AdwSplitViewPosition.start),
+                            child: const Text('Start'),
+                          ),
+                          const SizedBox(height: 18),
+                          AdwButton.pill(
+                            isChecked: position == AdwSplitViewPosition.end,
+                            onPressed: () => setDialogState(
+                                () => position = AdwSplitViewPosition.end),
+                            child: const Text('End'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 18),
-                      AdwButton.pill(
-                        style: position == AdwSplitViewPosition.end
-                            ? AdwButtonStyle.suggested
-                            : AdwButtonStyle.standard,
-                        onPressed: () => setDialogState(
-                            () => position = AdwSplitViewPosition.end),
-                        child: const Text('End'),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 content: const AdwStatusPage(
