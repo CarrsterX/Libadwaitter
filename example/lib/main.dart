@@ -1433,6 +1433,32 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         );
 
       case DemoPage.splitViews:
+        return AdwStatusPage(
+          icon: const DemoWidgetIcon(DemoIconType.splitView, size: 128),
+          title: const Text('Split Views'),
+          description: const Text('Widgets that display sidebar and content'),
+          child: Center(
+            child: Builder(
+              builder: (innerContext) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AdwButton.pill(
+                    onPressed: () =>
+                        _openNavigationSplitViewDemoDialog(innerContext),
+                    child: const Text('Navigation Split View'),
+                  ),
+                  const SizedBox(height: 18),
+                  AdwButton.pill(
+                    onPressed: () =>
+                        _openOverlaySplitViewDemoDialog(innerContext),
+                    child: const Text('Overlay Split View'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
       case DemoPage.tabView:
       case DemoPage.bottomSheet:
       case DemoPage.spinner:
@@ -1447,6 +1473,118 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           description: const Text('Pending review against native demo'),
         );
     }
+  }
+
+  void _openNavigationSplitViewDemoDialog(BuildContext context) {
+    showAdwDialog<void>(
+      context: context,
+      builder: (_) => const AdwDialog(
+        contentWidth: 640,
+        contentHeight: 480,
+        title: 'Navigation Split View',
+        child: AdwNavigationSplitView(
+          sidebarWidth: 220,
+          sidebar: AdwToolbarView(
+            topBar: AdwHeaderBar(
+              isFlat: true,
+              showWindowControls: false,
+              title: SizedBox.shrink(),
+            ),
+            content: AdwStatusPage(
+              title: Text('Sidebar'),
+            ),
+          ),
+          content: AdwToolbarView(
+            topBar: AdwHeaderBar(
+              isFlat: true,
+              title: SizedBox.shrink(),
+            ),
+            content: AdwStatusPage(
+              title: Text('Content'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openOverlaySplitViewDemoDialog(BuildContext context) {
+    bool showSidebar = true;
+    AdwSplitViewPosition position = AdwSplitViewPosition.start;
+
+    showAdwDialog<void>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AdwDialog(
+            contentWidth: 640,
+            contentHeight: 480,
+            title: 'Overlay Split View',
+            child: AdwToolbarView(
+              topBar: AdwHeaderBar(
+                title: const Text('Overlay Split View'),
+                start: position == AdwSplitViewPosition.start
+                    ? AdwButton.flat(
+                        width: 34,
+                        height: 34,
+                        padding: EdgeInsets.zero,
+                        onPressed: () =>
+                            setDialogState(() => showSidebar = !showSidebar),
+                        child: const Icon(AdwIcons.sidebar_show_symbolic,
+                            size: 16),
+                      )
+                    : null,
+                end: position == AdwSplitViewPosition.end
+                    ? AdwButton.flat(
+                        width: 34,
+                        height: 34,
+                        padding: EdgeInsets.zero,
+                        onPressed: () =>
+                            setDialogState(() => showSidebar = !showSidebar),
+                        child: const Icon(AdwIcons.sidebar_show_right_symbolic,
+                            size: 16),
+                      )
+                    : null,
+              ),
+              content: AdwOverlaySplitView(
+                showSidebar: showSidebar,
+                sidebarPosition: position,
+                onShowSidebarChanged: (v) =>
+                    setDialogState(() => showSidebar = v),
+                sidebar: AdwStatusPage(
+                  title: const Text('Sidebar'),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AdwButton.pill(
+                        style: position == AdwSplitViewPosition.start
+                            ? AdwButtonStyle.suggested
+                            : AdwButtonStyle.standard,
+                        onPressed: () => setDialogState(
+                            () => position = AdwSplitViewPosition.start),
+                        child: const Text('Start'),
+                      ),
+                      const SizedBox(height: 18),
+                      AdwButton.pill(
+                        style: position == AdwSplitViewPosition.end
+                            ? AdwButtonStyle.suggested
+                            : AdwButtonStyle.standard,
+                        onPressed: () => setDialogState(
+                            () => position = AdwSplitViewPosition.end),
+                        child: const Text('End'),
+                      ),
+                    ],
+                  ),
+                ),
+                content: const AdwStatusPage(
+                  title: Text('Content'),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _openNavigationViewDemoDialog(
