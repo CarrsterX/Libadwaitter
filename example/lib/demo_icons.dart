@@ -182,26 +182,22 @@ class _DemoWidgetIconPainter extends CustomPainter {
         break;
 
       case DemoIconType.navigationView:
-        final frame = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.22, s * 0.16, s * 0.66, s * 0.68),
-          Radius.circular(s * 0.12),
-        );
-        canvas.drawRRect(frame, strokePaint);
-        canvas.drawLine(
-          Offset(s * 0.10, s * 0.50),
-          Offset(s * 0.54, s * 0.50),
-          strokePaint,
-        );
-        canvas.drawLine(
-          Offset(s * 0.40, s * 0.36),
-          Offset(s * 0.54, s * 0.50),
-          strokePaint,
-        );
-        canvas.drawLine(
-          Offset(s * 0.40, s * 0.64),
-          Offset(s * 0.54, s * 0.50),
-          strokePaint,
-        );
+        final u = s / 16.0;
+        final bracket = Path()
+          ..moveTo(5.0 * u, 2.0 * u)
+          ..lineTo(12.0 * u, 2.0 * u)
+          ..quadraticBezierTo(14.0 * u, 2.0 * u, 14.0 * u, 4.0 * u)
+          ..lineTo(14.0 * u, 12.0 * u)
+          ..quadraticBezierTo(14.0 * u, 14.0 * u, 12.0 * u, 14.0 * u)
+          ..lineTo(5.0 * u, 14.0 * u);
+        canvas.drawPath(bracket, strokePaint);
+        final arrow = Path()
+          ..moveTo(6.0 * u, 5.0 * u)
+          ..lineTo(3.0 * u, 8.0 * u)
+          ..lineTo(6.0 * u, 11.0 * u)
+          ..moveTo(9.0 * u, 8.0 * u)
+          ..lineTo(3.0 * u, 8.0 * u);
+        canvas.drawPath(arrow, strokePaint);
         break;
 
       case DemoIconType.banner:
