@@ -67,8 +67,13 @@ class _DemoWidgetIconPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final s = size.shortestSide;
-    final strokeWidth = (s * 0.115).clamp(1.85, 9.5);
-    final thinStroke = (s * 0.07).clamp(1.2, 6.0);
+    // Sidebar (16px) uses standard weight; 128px statuspage uses GTK4 -gtk-icon-weight: 134 (~6px)
+    final strokeWidth = s <= 24.0
+        ? (s * 0.112).clamp(1.6, 2.4)
+        : (s * 0.048).clamp(2.4, 6.2);
+    final thinStroke = s <= 24.0
+        ? (s * 0.075).clamp(1.1, 1.8)
+        : (s * 0.036).clamp(1.8, 4.5);
 
     final strokePaint = Paint()
       ..color = color
@@ -183,6 +188,12 @@ class _DemoWidgetIconPainter extends CustomPainter {
 
       case DemoIconType.navigationView:
         final u = s / 16.0;
+        final bracketPaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.butt
+          ..strokeJoin = StrokeJoin.round;
         final bracket = Path()
           ..moveTo(5.0 * u, 2.0 * u)
           ..lineTo(12.0 * u, 2.0 * u)
@@ -190,7 +201,7 @@ class _DemoWidgetIconPainter extends CustomPainter {
           ..lineTo(14.0 * u, 12.0 * u)
           ..quadraticBezierTo(14.0 * u, 14.0 * u, 12.0 * u, 14.0 * u)
           ..lineTo(5.0 * u, 14.0 * u);
-        canvas.drawPath(bracket, strokePaint);
+        canvas.drawPath(bracket, bracketPaint);
         final arrow = Path()
           ..moveTo(6.0 * u, 5.0 * u)
           ..lineTo(3.0 * u, 8.0 * u)
