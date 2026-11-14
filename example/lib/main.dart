@@ -1417,6 +1417,18 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         return _buildToggleGroupsPage(theme);
 
       case DemoPage.navigationView:
+        return AdwStatusPage(
+          icon: const DemoWidgetIcon(DemoIconType.navigationView, size: 128),
+          title: const Text('Navigation View'),
+          description: const Text('A page-based navigation container'),
+          child: Center(
+            child: AdwButton.pill(
+              onPressed: () => _openNavigationViewDemoDialog(context, theme),
+              child: const Text('Run the Demo'),
+            ),
+          ),
+        );
+
       case DemoPage.splitViews:
       case DemoPage.tabView:
       case DemoPage.bottomSheet:
@@ -1432,6 +1444,96 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           description: const Text('Pending review against native demo'),
         );
     }
+  }
+
+  void _openNavigationViewDemoDialog(
+      BuildContext context, AdwThemeData theme) {
+    final navController = AdwNavigationViewController();
+
+    AdwNavigationPage buildPage3() {
+      return AdwNavigationPage(
+        tag: 'page-3',
+        title: 'Page 3',
+        child: AdwToolbarView(
+          topBar: const AdwHeaderBar(isFlat: true),
+          content: Center(
+            child: Text(
+              'Page 3',
+              style: theme.typography.title1,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      );
+    }
+
+    AdwNavigationPage buildPage4() {
+      return AdwNavigationPage(
+        tag: 'page-4',
+        title: 'Page 4',
+        child: AdwToolbarView(
+          topBar: const AdwHeaderBar(isFlat: true),
+          content: Center(
+            child: AdwButton.pill(
+              onPressed: () => navController.push(buildPage3()),
+              child: const Text('Open Page 3'),
+            ),
+          ),
+        ),
+      );
+    }
+
+    AdwNavigationPage buildPage2() {
+      return AdwNavigationPage(
+        tag: 'page-2',
+        title: 'Page 2',
+        child: AdwToolbarView(
+          topBar: const AdwHeaderBar(isFlat: true),
+          content: Center(
+            child: AdwButton.pill(
+              onPressed: () => navController.push(buildPage4()),
+              child: const Text('Open Page 4'),
+            ),
+          ),
+        ),
+      );
+    }
+
+    showAdwDialog<void>(
+      context: context,
+      builder: (_) => AdwDialog(
+        contentWidth: 360,
+        contentHeight: 360,
+        title: 'AdwNavigationView Demo',
+        child: AdwNavigationView(
+          controller: navController,
+          initialPage: AdwNavigationPage(
+            tag: 'page-1',
+            title: 'Page 1',
+            child: AdwToolbarView(
+              topBar: const AdwHeaderBar(isFlat: true),
+              content: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AdwButton.pill(
+                      onPressed: () => navController.push(buildPage2()),
+                      child: const Text('Open Page 2'),
+                    ),
+                    const SizedBox(height: 18),
+                    AdwButton.pill(
+                      onPressed: () => navController.push(buildPage3()),
+                      child: const Text('Open Page 3'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildCarouselPage(AdwThemeData theme) {
