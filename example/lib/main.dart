@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
 import 'package:libadwaitter_icons/libadwaitter_icons.dart';
 
+import 'demo_icons.dart';
+
 void main() {
   runApp(const AdwaitaDemoApplication());
 }
@@ -84,11 +86,12 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   DemoPage _selectedPage = DemoPage.welcome;
   String _searchFilter = '';
   bool _searchBarVisible = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _searchFocused = false;
 
   // Interactive component demo state variables
-  bool _hardwareAcceleration = true;
-  bool _automaticUpdates = false;
-  int _counter = 0;
+  bool _switchRowValue = false;
   double _spinValue = 50.0;
   String _selectedComboOption = 'Foo';
   String _selectedEnumComboOption = 'unknown';
@@ -98,9 +101,42 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   final AdwCarouselController _carouselController = AdwCarouselController();
   String _selectedToggleInterval = 'Day';
   int _selectedAlignment = 1;
+  int _selectedPrefixOption = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(_handleSearchFocusChange);
+  }
+
+  void _handleSearchFocusChange() {
+    if (mounted) {
+      setState(() => _searchFocused = _searchFocusNode.hasFocus);
+    }
+  }
+
+  void _toggleSidebarSearch() {
+    setState(() {
+      _searchBarVisible = !_searchBarVisible;
+      if (_searchBarVisible) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _searchBarVisible) {
+            _searchFocusNode.requestFocus();
+          }
+        });
+      } else {
+        _searchFocusNode.unfocus();
+        _searchController.clear();
+        _searchFilter = '';
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _searchFocusNode.removeListener(_handleSearchFocusChange);
+    _searchFocusNode.dispose();
+    _searchController.dispose();
     _carouselController.dispose();
     super.dispose();
   }
@@ -144,6 +180,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 18),
                 AdwPreferencesGroup(
                   title: const Text('ACCENT COLOR'),
                   headerSuffix: localAccent != null
@@ -192,7 +229,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 24),
                 AdwButton.flat(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   onPressed: () {
@@ -247,9 +284,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           onPressed: () {
             Navigator.of(context).pop();
             setState(() {
-              _hardwareAcceleration = true;
-              _automaticUpdates = false;
-              _counter = 0;
+              _switchRowValue = false;
               _spinValue = 50.0;
               _selectedComboOption = 'Option Alpha';
               _bannerRevealed = true;
@@ -308,16 +343,14 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
             return AdwHeaderBar(
               isFlat: true,
               showWindowControls: isCollapsed,
-              start: AdwButton.flat(
+              start: AdwButton(
+                style: _searchBarVisible
+                    ? AdwButtonStyle.standard
+                    : AdwButtonStyle.flat,
                 width: 34,
                 height: 34,
                 padding: EdgeInsets.zero,
-                onPressed: () {
-                  setState(() {
-                    _searchBarVisible = !_searchBarVisible;
-                    if (!_searchBarVisible) _searchFilter = '';
-                  });
-                },
+                onPressed: _toggleSidebarSearch,
                 child: const Icon(AdwIcons.edit_find_symbolic, size: 16),
               ),
               title: const Text('Adwaita Demo'),
@@ -331,36 +364,119 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
             );
           },
         ),
-        if (_searchBarVisible)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colors.cardBackground,
-                borderRadius: BorderRadius.circular(AdwMetrics.buttonRadius),
-                border: Border.all(color: theme.colors.borderColor),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    AdwIcons.edit_find_symbolic,
-                    size: 14,
-                    color: theme.colors.secondaryForeground,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AdwEntryRow(
-                      placeholder: 'Find pages...',
-                      showClearButton: true,
-                      onChanged: (val) =>
-                          setState(() => _searchFilter = val.toLowerCase()),
+        ClipRect(
+          child: AnimatedAlign(
+            duration: AdwCurves.normalDuration,
+            curve: AdwCurves.standard,
+            alignment: Alignment.topCenter,
+            heightFactor: _searchBarVisible ? 1.0 : 0.0,
+            child: AnimatedOpacity(
+              duration: AdwCurves.normalDuration,
+              curve: AdwCurves.standard,
+              opacity: _searchBarVisible ? 1.0 : 0.0,
+              child: IgnorePointer(
+                ignoring: !_searchBarVisible,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+                  child: TapRegion(
+                    onTapOutside: (_) {
+                      if (_searchFocusNode.hasFocus) {
+                        _searchFocusNode.unfocus();
+                      }
+                    },
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _searchFocusNode.requestFocus(),
+                      child: AnimatedContainer(
+                        duration: AdwCurves.shortDuration,
+                        curve: AdwCurves.standard,
+                        height: 34,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _searchFocused ? 9.0 : 10.0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colors.isDark
+                              ? const Color(0xFF3E3E42)
+                              : const Color(0xFFFFFFFF),
+                          borderRadius: BorderRadius.circular(7.0),
+                          border: Border.all(
+                            color: _searchFocused
+                                ? theme.colors.accentColor
+                                    .withValues(alpha: 0.75)
+                                : theme.colors.borderColor,
+                            width: _searchFocused ? 2.0 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              AdwIcons.edit_find_symbolic,
+                              size: 15,
+                              color: theme.colors.secondaryForeground,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Stack(
+                                alignment: Alignment.centerLeft,
+                                children: [
+                                  if (_searchController.text.isEmpty)
+                                    IgnorePointer(
+                                      child: Text(
+                                        'Find pages',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.typography.body.copyWith(
+                                          color: theme
+                                              .colors.secondaryForeground
+                                              .withValues(alpha: 0.75),
+                                        ),
+                                      ),
+                                    ),
+                                  EditableText(
+                                    controller: _searchController,
+                                    focusNode: _searchFocusNode,
+                                    style: theme.typography.body.copyWith(
+                                      color: theme.colors.windowForeground,
+                                    ),
+                                    cursorColor: theme.colors.windowForeground,
+                                    backgroundCursorColor:
+                                        theme.colors.borderColor,
+                                    selectionColor: theme.colors.accentColor
+                                        .withValues(alpha: 0.35),
+                                    onChanged: (val) => setState(
+                                      () => _searchFilter = val.toLowerCase(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_searchController.text.isNotEmpty) ...[
+                              const SizedBox(width: 4),
+                              GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  setState(() => _searchFilter = '');
+                                },
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: Icon(
+                                    AdwIcons.edit_clear_symbolic,
+                                    size: 15,
+                                    color: theme.colors.secondaryForeground,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
+        ),
         Expanded(
           child: Builder(
             builder: (sidebarContext) {
@@ -377,6 +493,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                   children: [
                     if (isCollapsed)
                       AdwPreferencesGroup(
+                        margin: const EdgeInsets.only(bottom: 18),
                         children: [
                           _buildSidebarItem(
                             page: DemoPage.welcome,
@@ -399,25 +516,33 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         [
                           _buildSidebarItem(
                             page: DemoPage.navigationView,
-                            icon: AdwIcons.application_exit_rtl_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.navigationView,
+                                size: 16),
                             title: 'Navigation View',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.splitViews,
-                            icon: AdwIcons.view_dual_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.splitView,
+                                size: 16),
                             title: 'Split Views',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.viewSwitcher,
-                            icon: AdwIcons.view_paged_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.viewSwitcher,
+                                size: 16),
                             title: 'View Switcher',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.carousel,
-                            icon: AdwIcons.media_playlist_consecutive_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.carousel,
+                                size: 16),
                             title: 'Carousel',
                             isCollapsed: isCollapsed,
                           ),
@@ -429,19 +554,25 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         [
                           _buildSidebarItem(
                             page: DemoPage.boxedLists,
-                            icon: AdwIcons.view_list_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.boxedList,
+                                size: 16),
                             title: 'Boxed Lists',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.toggleGroups,
-                            icon: AdwIcons.selection_mode_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.toggleGroup,
+                                size: 16),
                             title: 'Toggle Groups',
                             isCollapsed: isCollapsed,
                           ),
                           _buildSidebarItem(
                             page: DemoPage.buttons,
-                            icon: AdwIcons.avatar_default_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.buttons,
+                                size: 16),
                             title: 'Buttons',
                             isCollapsed: isCollapsed,
                           ),
@@ -453,7 +584,9 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         [
                           _buildSidebarItem(
                             page: DemoPage.banner,
-                            icon: AdwIcons.dialog_information_symbolic,
+                            iconWidget: const DemoWidgetIcon(
+                                DemoIconType.banner,
+                                size: 16),
                             title: 'Banner',
                             isCollapsed: isCollapsed,
                           ),
@@ -544,6 +677,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       return Padding(
         padding: const EdgeInsets.only(top: 18),
         child: AdwPreferencesGroup(
+          margin: const EdgeInsets.only(bottom: 18),
           title: Text(title),
           children: visibleItems,
         ),
@@ -567,16 +701,12 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   }
 
   Widget _buildContent(AdwThemeData theme, bool isDark) {
-    final isWelcome = _selectedPage == DemoPage.welcome;
-    final pageTitle = _getPageTitle(_selectedPage);
-
     return Column(
       children: [
         // Flat content view header bar with in-app window controls on the right
-        AdwHeaderBar(
+        const AdwHeaderBar(
           isFlat: true,
           showWindowControls: true,
-          title: isWelcome ? null : Text(pageTitle),
         ),
         Expanded(
           child: _buildPageBody(theme, isDark),
@@ -625,53 +755,58 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         );
 
       case DemoPage.boxedLists:
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: AdwClamp(
-            maximumSize: 560,
-            child: Column(
-              children: [
+        return AdwPreferencesPage(
+          icon: const DemoWidgetIcon(DemoIconType.boxedList, size: 136),
+          title: const Text('Boxed Lists'),
+          description: const Text('Rows for the boxed list pattern'),
+          children: [
                 AdwPreferencesGroup(
-                  title: const Text('SYSTEM PREFERENCES'),
-                  description: const Text(
-                    'Grouped cards preserve a 12px border radius with 1px hairline dividers.',
-                  ),
                   children: [
-                    AdwSwitchRow(
-                      prefix: const Icon(AdwIcons.preferences_system_symbolic,
-                          size: 20),
-                      title: const Text('Hardware Acceleration'),
-                      subtitle: const Text(
-                          'Utilize GPU for optimal rendering and smooth transitions'),
-                      value: _hardwareAcceleration,
-                      onChanged: (val) =>
-                          setState(() => _hardwareAcceleration = val),
-                    ),
-                    AdwSwitchRow(
-                      prefix: const Icon(AdwIcons.network_wireless_symbolic,
-                          size: 20),
-                      title: const Text('Automatic Updates'),
-                      subtitle: const Text(
-                          'Download security and stability patches in background'),
-                      value: _automaticUpdates,
-                      onChanged: (val) =>
-                          setState(() => _automaticUpdates = val),
+                    const AdwActionRow(
+                      title: Text('Rows Have a Title'),
+                      subtitle: Text('They also have a subtitle'),
                     ),
                     AdwActionRow(
-                      prefix: const Icon(AdwIcons.avatar_default_symbolic,
-                          size: 20),
-                      title: const Text('Reactive Counter'),
-                      subtitle: Text('Total button clicks: $_counter'),
-                      suffix: AdwButton.suggested(
+                      title: const Text('Rows Can Have Suffix Widgets'),
+                      suffix: AdwButton(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 6),
-                        onPressed: () => setState(() => _counter++),
-                        child: const Text('Increment'),
+                        onPressed: () {
+                          AdwToastOverlay.of(context).addToast(
+                            const AdwToast(title: Text('Action clicked')),
+                          );
+                        },
+                        child: const Text('Action'),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                AdwPreferencesGroup(
+                  children: [
+                    AdwActionRow(
+                      prefix: AdwRadio<int>(
+                        value: 0,
+                        groupValue: _selectedPrefixOption,
+                        onChanged: (val) =>
+                            setState(() => _selectedPrefixOption = val ?? 0),
+                      ),
+                      title: const Text('Rows Can Have Prefix Widgets'),
+                      onPressed: () =>
+                          setState(() => _selectedPrefixOption = 0),
+                    ),
+                    AdwActionRow(
+                      prefix: AdwRadio<int>(
+                        value: 1,
+                        groupValue: _selectedPrefixOption,
+                        onChanged: (val) =>
+                            setState(() => _selectedPrefixOption = val ?? 1),
+                      ),
+                      title: const Text('Rows Can Have Prefix Widgets'),
+                      onPressed: () =>
+                          setState(() => _selectedPrefixOption = 1),
+                    ),
+                  ],
+                ),
                 AdwPreferencesGroup(
                   title: const Text('Entry Rows'),
                   separated: true,
@@ -719,25 +854,32 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
                 AdwPreferencesGroup(
-                  title: const Text('STEPPER & COMBO ROWS'),
+                  title: const Text('Spin Rows'),
                   children: [
                     AdwSpinRow(
-                      title: const Text('Numeric Stepper'),
-                      subtitle:
-                          const Text('Fine-tuned integer or decimal stepping'),
+                      title: const Text('Spin Row'),
                       value: _spinValue,
                       min: 0,
                       max: 100,
-                      step: 5,
+                      step: 1,
                       onChanged: (val) => setState(() => _spinValue = val),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
                 AdwPreferencesGroup(
-                  title: const Text('COMBO ROWS'),
+                  title: const Text('Switch Rows'),
+                  children: [
+                    AdwSwitchRow(
+                      title: const Text('Switch Row'),
+                      value: _switchRowValue,
+                      onChanged: (val) =>
+                          setState(() => _switchRowValue = val),
+                    ),
+                  ],
+                ),
+                AdwPreferencesGroup(
+                  title: const Text('Combo Rows'),
                   children: [
                     AdwComboRow<String>(
                       title: const Text('Combo Row'),
@@ -777,43 +919,140 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
                 AdwPreferencesGroup(
-                  title: const Text('EXPANDER ROWS'),
+                  title: const Text('Expander Rows'),
                   children: [
                     const AdwExpanderRow(
                       title: Text('Expander Row'),
-                      subtitle: Text('Tap to inspect nested preferences'),
                       children: [
                         AdwActionRow(
-                          title: Text('Nested Item 1'),
-                          subtitle: Text('Details for secondary option A'),
+                          title: Text('A Nested Row'),
                         ),
                         AdwActionRow(
-                          title: Text('Nested Item 2'),
-                          subtitle: Text('Details for secondary option B'),
+                          title: Text('Another Nested Row'),
+                        ),
+                      ],
+                    ),
+                    AdwExpanderRow(
+                      title: const Text('Expander Row With an Action'),
+                      suffix: AdwButton.flat(
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          AdwToastOverlay.of(context).addToast(
+                            const AdwToast(
+                                title: Text('Expander action triggered')),
+                          );
+                        },
+                        child: const Icon(
+                          AdwIcons.edit_copy_symbolic,
+                          size: 16,
+                        ),
+                      ),
+                      children: const [
+                        AdwActionRow(
+                          title: Text('A Nested Row'),
+                        ),
+                        AdwActionRow(
+                          title: Text('Another Nested Row'),
                         ),
                       ],
                     ),
                     const AdwExpanderRow(
                       title: Text('Toggleable Expander Row'),
                       showEnableSwitch: true,
+                      enabled: false,
                       children: [
                         AdwActionRow(
-                          title: Text('Feature 1'),
-                          subtitle:
-                              Text('Active only when switch is turned ON'),
+                          title: Text('A Nested Row'),
                         ),
                         AdwActionRow(
-                          title: Text('Feature 2'),
+                          title: Text('Another Nested Row'),
                         ),
                       ],
                     ),
                   ],
                 ),
+                const AdwPreferencesGroup(
+                  title: Text('Property Rows'),
+                  children: [
+                    AdwActionRow.property(
+                      title: Text('Property Row'),
+                      subtitle: Text('Value'),
+                    ),
+                  ],
+                ),
+                AdwPreferencesGroup(
+                  title: const Text('Groups With Suffix'),
+                  headerSuffix: AdwButton.flat(
+                    height: 30.0,
+                    borderRadius: BorderRadius.circular(8.0),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    onPressed: () {
+                      AdwToastOverlay.of(context).addToast(
+                        const AdwToast(title: Text('Group suffix clicked')),
+                      );
+                    },
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(AdwIcons.list_add_symbolic, size: 16),
+                        SizedBox(width: 6),
+                        Text('Suffix'),
+                      ],
+                    ),
+                  ),
+                  children: const [
+                    AdwActionRow(
+                      minHeight: 53.0,
+                      title: Text('Groups Can Have a Header Suffix'),
+                    ),
+                  ],
+                ),
+                AdwPreferencesGroup(
+                  title: const Text('Button Rows'),
+                  separated: true,
+                  separatedSpacing: 14.0,
+                  children: [
+                    AdwButtonRow(
+                      startIcon:
+                          const Icon(AdwIcons.list_add_symbolic, size: 16),
+                      title: const Text('Add Input Source'),
+                      onPressed: () {
+                        AdwToastOverlay.of(context).addToast(
+                          const AdwToast(title: Text('Add Input Source')),
+                        );
+                      },
+                    ),
+                    AdwButtonRow(
+                      title: const Text('Add Calendar'),
+                      endIcon: const Icon(AdwIcons.go_next_symbolic, size: 16),
+                      onPressed: () {
+                        AdwToastOverlay.of(context).addToast(
+                          const AdwToast(title: Text('Add Calendar')),
+                        );
+                      },
+                    ),
+                    AdwButtonRow.destructive(
+                      title: const Text('Delete Event'),
+                      onPressed: () {
+                        AdwToastOverlay.of(context).addToast(
+                          const AdwToast(title: Text('Delete Event')),
+                        );
+                      },
+                    ),
+                    AdwButtonRow.suggested(
+                      title: const Text('Search'),
+                      onPressed: () {
+                        AdwToastOverlay.of(context).addToast(
+                          const AdwToast(title: Text('Search')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ],
-            ),
-          ),
         );
 
       case DemoPage.buttons:
@@ -959,12 +1198,9 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         );
 
       case DemoPage.appearance:
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: AdwClamp(
-            maximumSize: 560,
-            child: Column(
-              children: [
+        return AdwPreferencesPage(
+          maxWidth: 560,
+          children: [
                 AdwPreferencesGroup(
                   title: const Text('APPEARANCE & ACCENT COLOR'),
                   description: const Text(
@@ -1026,9 +1262,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+          ],
         );
 
       case DemoPage.dialogs:
@@ -1238,12 +1472,10 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   }
 
   Widget _buildToggleGroupsPage(AdwThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: AdwClamp(
-        maximumSize: 560,
-        child: Column(
-          children: [
+    return AdwPreferencesPage(
+      maxWidth: 560,
+      groupSpacing: 42.0,
+      children: [
             AdwPreferencesGroup(
               title: const Text('TIME INTERVAL SELECTOR'),
               description: const Text(
@@ -1269,7 +1501,6 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
             AdwPreferencesGroup(
               title: const Text('TEXT STYLING TOGGLE'),
               children: [
@@ -1309,9 +1540,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }

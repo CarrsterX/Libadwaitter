@@ -75,7 +75,7 @@ class AdwExpanderRow extends StatefulWidget {
     this.enableExpansion = true,
     this.onEnabledChanged,
     this.onExpandedChanged,
-    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
   });
 
   Widget? get effectivePrefix => prefix ?? leading;
@@ -112,9 +112,9 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
       curve: AdwCurves.standard,
     );
 
-    // Chevron rotates 90 degrees clockwise (from pointing right to pointing down)
+    // Chevron rotates 180 degrees (from pointing down to pointing up)
     _arrowAnimation =
-        Tween<double>(begin: 0.0, end: math.pi / 2).animate(_expandAnimation);
+        Tween<double>(begin: 0.0, end: math.pi).animate(_expandAnimation);
   }
 
   @override
@@ -199,6 +199,7 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
             child: AnimatedContainer(
               duration: AdwCurves.shortDuration,
               curve: AdwCurves.standard,
+              constraints: const BoxConstraints(minHeight: AdwMetrics.rowMinHeight),
               color: _isHovered && canExpand
                   ? theme.colors.hoverBackground
                   : const Color(0x00000000),
@@ -208,10 +209,7 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                   if (prefixWidget != null) ...[
                     IconTheme(
                       data: IconThemeData(
-                        color: _isEnabled
-                            ? theme.colors.windowForeground
-                            : theme.colors.secondaryForeground
-                                .withValues(alpha: 0.5),
+                        color: theme.colors.windowForeground,
                         size: AdwMetrics.iconSizeMedium,
                       ),
                       child: prefixWidget,
@@ -225,11 +223,9 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                       children: [
                         DefaultTextStyle(
                           style: theme.typography.body.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: _isEnabled
-                                ? theme.colors.windowForeground
-                                : theme.colors.secondaryForeground
-                                    .withValues(alpha: 0.5),
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.normal,
+                            color: theme.colors.windowForeground,
                           ),
                           child: widget.title,
                         ),
@@ -237,10 +233,7 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                           const SizedBox(height: 2),
                           DefaultTextStyle(
                             style: theme.typography.subtitle.copyWith(
-                              color:
-                                  theme.colors.secondaryForeground.withValues(
-                                alpha: _isEnabled ? 1.0 : 0.5,
-                              ),
+                              color: theme.colors.secondaryForeground,
                             ),
                             child: widget.subtitle!,
                           ),
@@ -266,15 +259,21 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
                   ],
                   const SizedBox(width: AdwMetrics.spacingMedium),
                   AnimatedBuilder(
-                    animation: _arrowAnimation,
+                    animation: _expandAnimation,
                     builder: (context, child) {
                       return Transform.rotate(
-                        angle: _arrowAnimation.value,
+                        angle: -_expandAnimation.value * math.pi,
                         child: _ExpanderChevron(
-                          color: canExpand
-                              ? theme.colors.secondaryForeground
-                              : theme.colors.secondaryForeground
-                                  .withValues(alpha: 0.3),
+                          color: !canExpand
+                              ? (theme.colors.isDark
+                                      ? const Color(0xFFA3A3A5)
+                                      : const Color(0xFF8F8F92))
+                                  .withValues(alpha: 0.3)
+                              : (_isExpanded
+                                  ? const Color(0xFF81D0FF)
+                                  : (theme.colors.isDark
+                                      ? const Color(0xFFA3A3A5)
+                                      : const Color(0xFF8F8F92))),
                         ),
                       );
                     },
@@ -289,24 +288,24 @@ class _AdwExpanderRowState extends State<AdwExpanderRow>
         ClipRect(
           child: SizeTransition(
             sizeFactor: _expandAnimation,
-            child: Container(
-              color: theme.colors.isDark
-                  ? const Color(0x0AFFFFFF) // ~4% subtle nested tint
-                  : const Color(0x06000000), // ~2.5% subtle nested tint
+            child: ColoredBox(
+              color: theme.colors.windowBackground,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (int i = 0; i < widget.children.length; i++) ...[
-                    Container(
-                      height: 1,
-                      color: theme.colors.dividerColor,
+                    const SizedBox(height: 1),
+                    ColoredBox(
+                      color: theme.colors.isDark
+                          ? const Color(0xFF2A2A2E)
+                          : const Color(0xFFF6F6F6),
+                      child: widget.children[i],
                     ),
-                    widget.children[i],
                   ],
                 ],
               ),
             ),
-            alignment: AlignmentDirectional(-1.0, -1.0),
+            alignment: const AlignmentDirectional(-1.0, -1.0),
           ),
         ),
       ],
@@ -323,8 +322,8 @@ class _ExpanderChevron extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 14,
-      height: 14,
+      width: 16,
+      height: 16,
       child: CustomPaint(
         painter: _ChevronPainter(color: color),
       ),
@@ -342,15 +341,15 @@ class _ChevronPainter extends CustomPainter {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
+      ..strokeWidth = 1.8
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
     final path = Path();
-    // Paints a right-pointing chevron '>' that rotates to down-pointing 'v'
-    path.moveTo(size.width * 0.35, size.height * 0.15);
-    path.lineTo(size.width * 0.70, size.height * 0.50);
-    path.lineTo(size.width * 0.35, size.height * 0.85);
+    // Paints a down-pointing chevron 'v' that rotates 180deg to up-pointing '^'
+    path.moveTo(size.width * 0.18, size.height * 0.34);
+    path.lineTo(size.width * 0.50, size.height * 0.66);
+    path.lineTo(size.width * 0.82, size.height * 0.34);
 
     canvas.drawPath(path, paint);
   }

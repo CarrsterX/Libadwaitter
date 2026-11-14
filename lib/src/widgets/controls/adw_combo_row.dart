@@ -150,7 +150,7 @@ class _AdwComboRowState<T> extends State<AdwComboRow<T>> {
           curve: AdwCurves.standard,
           constraints: const BoxConstraints(minHeight: AdwMetrics.rowMinHeight),
           color: rowBg,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               if (widget.prefix != null) ...[
@@ -170,7 +170,8 @@ class _AdwComboRowState<T> extends State<AdwComboRow<T>> {
                   children: [
                     DefaultTextStyle(
                       style: theme.typography.body.copyWith(
-                        fontWeight: FontWeight.w500,
+                        fontSize: 14.0,
+                        fontWeight: FontWeight.normal,
                       ),
                       child: widget.title,
                     ),

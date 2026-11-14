@@ -14,6 +14,7 @@ class AdwPreferencesGroup extends StatelessWidget {
   final List<Widget> children;
   final EdgeInsetsGeometry margin;
   final bool separated;
+  final double separatedSpacing;
 
   const AdwPreferencesGroup({
     super.key,
@@ -21,9 +22,9 @@ class AdwPreferencesGroup extends StatelessWidget {
     this.description,
     this.headerSuffix,
     this.children = const <Widget>[],
-    this.margin =
-        const EdgeInsets.only(bottom: AdwMetrics.preferencesGroupSpacing),
+    this.margin = EdgeInsets.zero,
     this.separated = false,
+    this.separatedSpacing = 12.0,
   });
 
   @override
@@ -52,8 +53,13 @@ class AdwPreferencesGroup extends StatelessWidget {
         children: [
           if (title != null || headerSuffix != null)
             Padding(
-              padding: const EdgeInsets.only(left: 2, right: 2, bottom: 10),
+              padding: EdgeInsets.only(
+                left: 2,
+                right: 0,
+                bottom: headerSuffix != null ? 8 : 12,
+              ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   if (title != null)
                     Expanded(
@@ -112,7 +118,7 @@ class AdwPreferencesGroup extends StatelessWidget {
             for (int i = 0; i < children.length; i++)
               Padding(
                 padding: EdgeInsets.only(
-                  bottom: i < children.length - 1 ? 12.0 : 0.0,
+                  bottom: i < children.length - 1 ? separatedSpacing : 0.0,
                 ),
                 child: Container(
                   decoration: BoxDecoration(

@@ -29,18 +29,18 @@ abstract final class AdwMetrics {
   static const double spacingLarge = 18.0;
   static const double spacingExtraLarge = 24.0;
 
-  /// Recommended vertical spacing between consecutive preference groups.
-  static const double preferencesGroupSpacing = 18.0;
+  /// Recommended vertical spacing between consecutive preference groups (46px).
+  static const double preferencesGroupSpacing = 46.0;
 
-  /// Standard maximum width for preference pages and centered form layouts (640px).
-  static const double preferencesPageMaxWidth = 640.0;
+  /// Standard maximum width for preference pages and centered list layouts (450px).
+  static const double preferencesPageMaxWidth = 450.0;
 
   // --- Component Dimensions ---
   /// Standard height of a Libadwaita header bar (46px).
   static const double headerBarHeight = 46.0;
 
-  /// Standard minimum height of a preference action row (48px).
-  static const double rowMinHeight = 54.0;
+  /// Standard minimum height of a preference action row (55px).
+  static const double rowMinHeight = 55.0;
 
   /// Standard minimum height of interactive push buttons (34px).
   static const double buttonMinHeight = 34.0;

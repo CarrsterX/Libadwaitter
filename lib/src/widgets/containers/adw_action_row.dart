@@ -19,6 +19,7 @@ class AdwActionRow extends StatefulWidget {
   final EdgeInsetsGeometry padding;
   final double minHeight;
   final bool isActivatable;
+  final bool isProperty;
 
   const AdwActionRow({
     super.key,
@@ -29,10 +30,27 @@ class AdwActionRow extends StatefulWidget {
     this.trailing,
     this.suffix,
     this.onPressed,
-    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     this.minHeight = AdwMetrics.rowMinHeight,
     this.isActivatable = true,
+    this.isProperty = false,
   });
+
+  /// Property row variant (`.property` in Libadwaita) where [title] is rendered
+  /// as a muted caption label above a prominent [subtitle] value.
+  const AdwActionRow.property({
+    super.key,
+    this.leading,
+    this.prefix,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.suffix,
+    this.onPressed,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    this.minHeight = AdwMetrics.rowMinHeight,
+    this.isActivatable = true,
+  }) : isProperty = true;
 
   Widget? get effectivePrefix => prefix ?? leading;
   Widget? get effectiveSuffix => suffix ?? trailing;
@@ -84,16 +102,23 @@ class _AdwActionRowState extends State<AdwActionRow> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   DefaultTextStyle(
-                    style: theme.typography.body.copyWith(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.normal,
-                    ),
+                    style: widget.isProperty
+                        ? theme.typography.subtitle
+                        : theme.typography.body.copyWith(
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.normal,
+                          ),
                     child: widget.title,
                   ),
                   if (widget.subtitle != null) ...[
                     const SizedBox(height: 2),
                     DefaultTextStyle(
-                      style: theme.typography.subtitle,
+                      style: widget.isProperty
+                          ? theme.typography.body.copyWith(
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.normal,
+                            )
+                          : theme.typography.subtitle,
                       child: widget.subtitle!,
                     ),
                   ],
@@ -129,6 +154,7 @@ class _AdwActionRowState extends State<AdwActionRow> {
         }
       },
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTapDown: (_) {
           if (_isClickable) setState(() => _isPressed = true);
         },

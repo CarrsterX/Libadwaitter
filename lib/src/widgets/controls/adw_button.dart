@@ -21,6 +21,7 @@ class AdwButton extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
   final double? width;
   final double? height;
+  final BorderRadius? borderRadius;
 
   const AdwButton({
     super.key,
@@ -32,6 +33,7 @@ class AdwButton extends StatefulWidget {
     this.padding,
     this.width,
     this.height,
+    this.borderRadius,
   });
 
   /// Flat button variant (transparent until hovered or active).
@@ -42,6 +44,7 @@ class AdwButton extends StatefulWidget {
     this.padding,
     this.width,
     this.height,
+    this.borderRadius,
   })  : style = AdwButtonStyle.flat,
         isPill = false,
         isCircular = false;
@@ -55,6 +58,7 @@ class AdwButton extends StatefulWidget {
     this.padding,
     this.width,
     this.height,
+    this.borderRadius,
   })  : style = AdwButtonStyle.suggested,
         isCircular = false;
 
@@ -67,6 +71,7 @@ class AdwButton extends StatefulWidget {
     this.padding,
     this.width,
     this.height,
+    this.borderRadius,
   })  : style = AdwButtonStyle.destructive,
         isCircular = false;
 
@@ -79,6 +84,7 @@ class AdwButton extends StatefulWidget {
     this.padding,
     this.width,
     this.height,
+    this.borderRadius,
   })  : isPill = true,
         isCircular = false;
 
@@ -93,7 +99,8 @@ class AdwButton extends StatefulWidget {
   })  : isPill = false,
         isCircular = true,
         width = size,
-        height = size;
+        height = size,
+        borderRadius = null;
 
   @override
   State<AdwButton> createState() => _AdwButtonState();
@@ -190,9 +197,9 @@ class _AdwButtonState extends State<AdwButton> {
 
     Widget buttonContent = AnimatedDefaultTextStyle(
       duration: AdwCurves.shortDuration,
-      style: theme.typography.body.copyWith(
+      style: theme.typography.heading.copyWith(
+        fontSize: 14.0,
         color: foregroundColor,
-        fontWeight: FontWeight.w500,
       ),
       child: IconTheme(
         data: IconThemeData(
@@ -244,7 +251,7 @@ class _AdwButtonState extends State<AdwButton> {
           padding: widget.padding ?? defaultPadding,
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: borderRadius,
+            borderRadius: widget.borderRadius ?? borderRadius,
             border: Border.all(
               color: borderColor,
               width: 1,

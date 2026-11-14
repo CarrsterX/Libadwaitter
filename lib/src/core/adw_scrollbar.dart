@@ -156,10 +156,10 @@ class _AdwScrollbarState extends State<AdwScrollbar> {
         isScrollable && (_isViewHovered || _isThumbHovered || _isScrolling || _isDragging);
     final isExpanded = _isThumbHovered || _isDragging;
 
-    // GTK4 `scrollbar slider`: 3px idle (5px with 1px dark border), 8px hovered (10px with border).
+    // GTK4 `scrollbar slider`: slim idle pill, 7px hovered (9px with border).
     final thickness = isExpanded
-        ? (isDark ? 10.0 : 8.0)
-        : (isDark ? 5.0 : 3.0);
+        ? (isDark ? 9.0 : 7.0)
+        : (isDark ? 4.0 : 2.5);
     final troughThickness = isExpanded ? 8.0 : 0.0;
     final troughColor = isExpanded
         ? (isDark ? const Color(0x19FFFFFF) : const Color(0x19000000))
@@ -199,9 +199,9 @@ class _AdwScrollbarState extends State<AdwScrollbar> {
               if (isScrollable)
                 Positioned(
                   top: axis == Axis.vertical ? 6.0 : null,
-                  bottom: axis == Axis.vertical ? 6.0 : 5.0,
+                  bottom: axis == Axis.vertical ? 6.0 : 2.0,
                   left: axis == Axis.horizontal ? 6.0 : null,
-                  right: axis == Axis.vertical ? 5.0 : 6.0,
+                  right: axis == Axis.vertical ? 2.0 : 6.0,
                   child: AnimatedOpacity(
                     opacity: isVisible ? 1.0 : 0.0,
                     duration: animDuration,
@@ -255,16 +255,22 @@ class _AdwScrollbarState extends State<AdwScrollbar> {
                             onHorizontalDragEnd:
                                 axis == Axis.horizontal ? _onDragEnd : null,
                             child: SizedBox(
-                              width: axis == Axis.vertical ? 14.0 : trackLength,
-                              height: axis == Axis.vertical ? trackLength : 14.0,
+                              width: axis == Axis.vertical ? 18.0 : trackLength,
+                              height: axis == Axis.vertical ? trackLength : 18.0,
                               child: Stack(
                                 children: [
                                   // Trough (track) revealed on scrollbar hover to show full scroll range
-                                  Positioned(
+                                  AnimatedPositioned(
+                                    duration: animDuration,
+                                    curve: AdwCurves.easeOutQuad,
                                     top: axis == Axis.vertical ? 1.0 : null,
-                                    bottom: axis == Axis.vertical ? 1.0 : 1.0,
+                                    bottom: axis == Axis.vertical
+                                        ? 1.0
+                                        : (isExpanded ? 6.0 : 0.0),
                                     left: axis == Axis.horizontal ? 1.0 : null,
-                                    right: axis == Axis.vertical ? 1.0 : 1.0,
+                                    right: axis == Axis.vertical
+                                        ? (isExpanded ? (isDark ? 7.0 : 6.0) : 0.0)
+                                        : 1.0,
                                     child: AnimatedContainer(
                                       duration: animDuration,
                                       curve: AdwCurves.easeOutQuad,
@@ -285,19 +291,32 @@ class _AdwScrollbarState extends State<AdwScrollbar> {
                                     bottom: axis == Axis.horizontal ? 0.0 : null,
                                     left: axis == Axis.horizontal ? thumbOffset : null,
                                     right: axis == Axis.vertical ? 0.0 : null,
-                                    child: AnimatedContainer(
+                                    child: AnimatedPadding(
                                       duration: animDuration,
                                       curve: AdwCurves.easeOutQuad,
-                                      width: axis == Axis.vertical
-                                          ? thickness
-                                          : thumbLength,
-                                      height: axis == Axis.vertical
-                                          ? thumbLength
-                                          : thickness,
-                                      decoration: BoxDecoration(
-                                        color: thumbColor,
-                                        border: darkBorder,
-                                        borderRadius: BorderRadius.circular(999.0),
+                                      padding: EdgeInsets.only(
+                                        right: axis == Axis.vertical
+                                            ? (isExpanded ? 6.0 : 0.0)
+                                            : 0.0,
+                                        bottom: axis == Axis.horizontal
+                                            ? (isExpanded ? 6.0 : 0.0)
+                                            : 0.0,
+                                      ),
+                                      child: AnimatedContainer(
+                                        duration: animDuration,
+                                        curve: AdwCurves.easeOutQuad,
+                                        width: axis == Axis.vertical
+                                            ? thickness
+                                            : thumbLength,
+                                        height: axis == Axis.vertical
+                                            ? thumbLength
+                                            : thickness,
+                                        decoration: BoxDecoration(
+                                          color: thumbColor,
+                                          border: darkBorder,
+                                          borderRadius:
+                                              BorderRadius.circular(999.0),
+                                        ),
                                       ),
                                     ),
                                   ),

@@ -18,6 +18,8 @@ export 'src/theme/adw_typography.dart';
 
 // Widgets: Controls
 export 'src/widgets/controls/adw_button.dart';
+export 'src/widgets/controls/adw_button_row.dart';
+export 'src/widgets/controls/adw_check_button.dart';
 export 'src/widgets/controls/adw_combo_row.dart';
 export 'src/widgets/controls/adw_entry_row.dart';
 export 'src/widgets/controls/adw_spin_row.dart';
