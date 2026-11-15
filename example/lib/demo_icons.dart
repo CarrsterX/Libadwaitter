@@ -267,15 +267,22 @@ class _DemoWidgetIconPainter extends CustomPainter {
       case DemoIconType.tabView:
         final u = s / 16.0;
         final frame = RRect.fromRectAndRadius(
-          Rect.fromLTWH(1.5 * u, 1.5 * u, 13.0 * u, 13.0 * u),
-          Radius.circular(2.0 * u),
+          Rect.fromLTRB(1.0 * u, 1.0 * u, 15.0 * u, 15.0 * u),
+          Radius.circular(2.05 * u),
         );
         canvas.drawRRect(frame, strokePaint);
         final tabPath = Path()
-          ..moveTo(6.0 * u, 1.5 * u)
-          ..lineTo(6.6 * u, 4.4 * u)
-          ..quadraticBezierTo(6.9 * u, 6.0 * u, 8.6 * u, 6.0 * u)
-          ..lineTo(14.5 * u, 6.0 * u);
+          ..moveTo(6.0 * u, 1.0 * u)
+          ..lineTo(6.67 * u, 4.36 * u)
+          ..cubicTo(
+            6.86 * u,
+            5.31 * u,
+            7.70 * u,
+            6.0 * u,
+            8.68 * u,
+            6.0 * u,
+          )
+          ..lineTo(15.0 * u, 6.0 * u);
         canvas.drawPath(tabPath, strokePaint);
         break;
 

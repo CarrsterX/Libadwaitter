@@ -362,6 +362,33 @@ static void style_method_call_handler(FlMethodChannel* channel,
   }
 }
 
+static GHashTable* g_windows_by_view_id = nullptr;
+
+static gboolean window_draw_cb(GtkWidget* widget, cairo_t* cr, gpointer user_data);
+
+static void on_sub_window_destroyed(GtkWidget* widget, gpointer user_data) {
+  if (g_windows_by_view_id != nullptr) {
+    g_hash_table_remove(g_windows_by_view_id, user_data);
+  }
+}
+
+static GtkWindow* resolve_target_window(GtkWindow* default_window,
+                                        FlValue* args) {
+  if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP &&
+      g_windows_by_view_id != nullptr) {
+    FlValue* v = fl_value_lookup_string(args, "viewId");
+    if (v != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_INT) {
+      gint view_id = static_cast<gint>(fl_value_get_int(v));
+      gpointer found =
+          g_hash_table_lookup(g_windows_by_view_id, GINT_TO_POINTER(view_id));
+      if (found != nullptr) {
+        return GTK_WINDOW(found);
+      }
+    }
+  }
+  return default_window;
+}
+
 static gboolean is_gdk_window_tiled(GtkWindow* window) {
   GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
   if (gdk_win == nullptr) return FALSE;
@@ -379,6 +406,8 @@ static gboolean on_window_state_changed(GtkWidget* widget,
                                         gpointer user_data) {
   FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
   if (channel == nullptr || event == nullptr) return FALSE;
+  gint view_id = GPOINTER_TO_INT(
+      g_object_get_data(G_OBJECT(widget), "libadwaitter-view-id"));
   GdkWindowState state = event->new_window_state;
   gboolean is_max = (state & GDK_WINDOW_STATE_MAXIMIZED) != 0;
   gboolean is_tiled =
@@ -389,6 +418,7 @@ static gboolean on_window_state_changed(GtkWidget* widget,
                 GDK_WINDOW_STATE_LEFT_TILED |
                 GDK_WINDOW_STATE_FULLSCREEN)) != 0;
   g_autoptr(FlValue) args = fl_value_new_map();
+  fl_value_set_string_take(args, "viewId", fl_value_new_int(view_id));
   fl_value_set_string_take(args, "isMaximized", fl_value_new_bool(is_max));
   fl_value_set_string_take(args, "isTiled", fl_value_new_bool(is_tiled));
   fl_method_channel_invoke_method(channel, "onWindowStateChanged", args,
@@ -399,6 +429,8 @@ static gboolean on_window_state_changed(GtkWidget* widget,
 static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointer user_data) {
   GtkWindow* window = GTK_WINDOW(object);
   FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+  gint view_id = GPOINTER_TO_INT(
+      g_object_get_data(G_OBJECT(window), "libadwaitter-view-id"));
   gboolean active = gtk_window_is_active(window);
   gboolean is_dragging =
       GPOINTER_TO_INT(g_object_get_data(G_OBJECT(window), "libadwaitter-interactive-drag")) != 0;
@@ -411,8 +443,10 @@ static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointe
     return;
   }
 
-  g_autoptr(FlValue) val = fl_value_new_bool(active);
-  fl_method_channel_invoke_method(channel, "onWindowActiveChanged", val, nullptr, nullptr, nullptr);
+  g_autoptr(FlValue) args = fl_value_new_map();
+  fl_value_set_string_take(args, "viewId", fl_value_new_int(view_id));
+  fl_value_set_string_take(args, "isActive", fl_value_new_bool(active));
+  fl_method_channel_invoke_method(channel, "onWindowActiveChanged", args, nullptr, nullptr, nullptr);
 }
 
 static gboolean on_window_post_drag_event(GtkWidget* widget, GdkEvent* event, gpointer user_data) {
@@ -422,10 +456,14 @@ static gboolean on_window_post_drag_event(GtkWidget* widget, GdkEvent* event, gp
     g_object_set_data(G_OBJECT(widget), "libadwaitter-interactive-drag", GINT_TO_POINTER(0));
     GtkWindow* window = GTK_WINDOW(widget);
     FlMethodChannel* channel = FL_METHOD_CHANNEL(user_data);
+    gint view_id = GPOINTER_TO_INT(
+        g_object_get_data(G_OBJECT(window), "libadwaitter-view-id"));
     gboolean active = gtk_window_is_active(window);
     if (!active) {
-      g_autoptr(FlValue) val = fl_value_new_bool(FALSE);
-      fl_method_channel_invoke_method(channel, "onWindowActiveChanged", val, nullptr, nullptr, nullptr);
+      g_autoptr(FlValue) args = fl_value_new_map();
+      fl_value_set_string_take(args, "viewId", fl_value_new_int(view_id));
+      fl_value_set_string_take(args, "isActive", fl_value_new_bool(FALSE));
+      fl_method_channel_invoke_method(channel, "onWindowActiveChanged", args, nullptr, nullptr, nullptr);
     }
   }
   return FALSE;
@@ -509,10 +547,55 @@ static void release_fl_view_pointer_state(GtkWindow* window,
 static void window_method_call_handler(FlMethodChannel* channel,
                                        FlMethodCall* method_call,
                                        gpointer user_data) {
-  GtkWindow* window = GTK_WINDOW(user_data);
+  GtkWindow* default_window = GTK_WINDOW(user_data);
+  FlValue* call_args = fl_method_call_get_args(method_call);
+  GtkWindow* window = resolve_target_window(default_window, call_args);
   const gchar* method = fl_method_call_get_name(method_call);
 
-  if (strcmp(method, "startDragging") == 0) {
+  if (strcmp(method, "attachSubWindow") == 0) {
+    if (call_args != nullptr &&
+        fl_value_get_type(call_args) == FL_VALUE_TYPE_MAP) {
+      FlValue* win_val = fl_value_lookup_string(call_args, "windowHandle");
+      FlValue* view_val = fl_value_lookup_string(call_args, "viewHandle");
+      FlValue* id_val = fl_value_lookup_string(call_args, "viewId");
+      if (win_val != nullptr && view_val != nullptr && id_val != nullptr) {
+        GtkWindow* sub_win = GTK_WINDOW(
+            reinterpret_cast<gpointer>(fl_value_get_int(win_val)));
+        FlView* sub_view = FL_VIEW(
+            reinterpret_cast<gpointer>(fl_value_get_int(view_val)));
+        gint view_id = static_cast<gint>(fl_value_get_int(id_val));
+        if (g_windows_by_view_id == nullptr) {
+          g_windows_by_view_id =
+              g_hash_table_new(g_direct_hash, g_direct_equal);
+        }
+        g_hash_table_insert(g_windows_by_view_id, GINT_TO_POINTER(view_id),
+                            sub_win);
+        g_object_set_data(G_OBJECT(sub_win), "libadwaitter-view-id",
+                          GINT_TO_POINTER(view_id));
+        g_object_set_data(G_OBJECT(sub_win), "libadwaitter-fl-view", sub_view);
+        g_signal_connect(sub_win, "destroy",
+                         G_CALLBACK(on_sub_window_destroyed),
+                         GINT_TO_POINTER(view_id));
+        g_signal_connect(sub_win, "draw", G_CALLBACK(window_draw_cb), nullptr);
+        g_signal_connect(sub_win, "notify::is-active",
+                         G_CALLBACK(on_window_active_changed), channel);
+        g_signal_connect(sub_win, "window-state-event",
+                         G_CALLBACK(on_window_state_changed), channel);
+        gtk_widget_add_events(
+            GTK_WIDGET(sub_win),
+            GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_RELEASE_MASK);
+        g_signal_connect(sub_view, "button-press-event",
+                         G_CALLBACK(on_capture_pointer_event), sub_win);
+        g_signal_connect(sub_view, "motion-notify-event",
+                         G_CALLBACK(on_capture_pointer_event), sub_win);
+        g_signal_connect(sub_win, "enter-notify-event",
+                         G_CALLBACK(on_window_post_drag_event), channel);
+        g_signal_connect(sub_win, "button-release-event",
+                         G_CALLBACK(on_window_post_drag_event), channel);
+      }
+    }
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
+  } else if (strcmp(method, "startDragging") == 0) {
     g_object_set_data(G_OBJECT(window), "libadwaitter-interactive-drag", GINT_TO_POINTER(1));
     LastPointerState* state = static_cast<LastPointerState*>(
         g_object_get_data(G_OBJECT(window), "libadwaitter-last-pointer"));
@@ -1030,6 +1113,13 @@ static void my_application_activate(GApplication* application) {
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
   gtk_window_set_default_size(window, 1080, 720);
 
+  // Enforce Libadwaita's standard minimum window dimensions (360x294)
+  GdkGeometry min_geometry = {};
+  min_geometry.min_width = 360;
+  min_geometry.min_height = 294;
+  gtk_window_set_geometry_hints(window, nullptr, &min_geometry,
+                                GDK_HINT_MIN_SIZE);
+
   // Configure RGBA visual for alpha transparency and rounded corners
   GdkScreen* screen = gtk_window_get_screen(window);
   GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
@@ -1079,6 +1169,15 @@ static void my_application_activate(GApplication* application) {
                    G_CALLBACK(on_window_active_changed), window_channel);
   g_signal_connect(window, "window-state-event",
                    G_CALLBACK(on_window_state_changed), window_channel);
+  if (g_windows_by_view_id == nullptr) {
+    g_windows_by_view_id = g_hash_table_new(g_direct_hash, g_direct_equal);
+  }
+  gint main_view_id = static_cast<gint>(fl_view_get_id(view));
+  g_hash_table_insert(g_windows_by_view_id, GINT_TO_POINTER(0), window);
+  g_hash_table_insert(g_windows_by_view_id, GINT_TO_POINTER(main_view_id),
+                      window);
+  g_object_set_data(G_OBJECT(window), "libadwaitter-view-id",
+                    GINT_TO_POINTER(0));
   g_object_set_data(G_OBJECT(window), "libadwaitter-fl-view", view);
   gtk_widget_add_events(GTK_WIDGET(window),
                         GDK_ENTER_NOTIFY_MASK | GDK_BUTTON_RELEASE_MASK);
