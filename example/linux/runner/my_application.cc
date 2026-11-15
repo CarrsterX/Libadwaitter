@@ -570,6 +570,17 @@ static void window_method_call_handler(FlMethodChannel* channel,
         }
         g_hash_table_insert(g_windows_by_view_id, GINT_TO_POINTER(view_id),
                             sub_win);
+        FlValue* parent_val = fl_value_lookup_string(call_args, "parentViewId");
+        if (parent_val != nullptr &&
+            fl_value_get_type(parent_val) == FL_VALUE_TYPE_INT) {
+          gint parent_view_id =
+              static_cast<gint>(fl_value_get_int(parent_val));
+          GtkWindow* parent_win = GTK_WINDOW(g_hash_table_lookup(
+              g_windows_by_view_id, GINT_TO_POINTER(parent_view_id)));
+          if (parent_win != nullptr && parent_win != sub_win) {
+            gtk_window_set_transient_for(sub_win, parent_win);
+          }
+        }
         g_object_set_data(G_OBJECT(sub_win), "libadwaitter-view-id",
                           GINT_TO_POINTER(view_id));
         g_object_set_data(G_OBJECT(sub_win), "libadwaitter-fl-view", sub_view);

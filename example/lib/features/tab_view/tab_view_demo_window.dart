@@ -88,6 +88,9 @@ class _TabViewDemoWindowContentState extends State<_TabViewDemoWindowContent> {
     widget.controller.onIndicatorActivated = _handleIndicatorActivated;
     if (widget.createInitialTab && widget.controller.nPages == 0) {
       _addNewTab();
+      _addNewTab();
+      _addNewTab();
+      widget.controller.selectPage(widget.controller.pages.first);
     }
   }
 
@@ -247,68 +250,88 @@ class _TabViewDemoWindowContentState extends State<_TabViewDemoWindowContent> {
               onContextMenu: (_, page, pos) =>
                   _showContextMenu(context, page, pos),
               child: AdwToolbarView(
-                topBar: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AdwHeaderBar(
-                      title: const Text('Tab View Demo'),
-                      start: AdwButton.flat(
-                        width: 34,
-                        height: 34,
-                        padding: EdgeInsets.zero,
-                        onPressed: () =>
-                            widget.onOpenNewWindow(createInitialTab: true),
-                        child: CustomPaint(
-                          size: const Size(16, 16),
-                          painter: _WindowNewSymbolicPainter(color: fg),
-                        ),
+                topBar: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.colors.headerBarBackground,
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colors.isDark
+                            ? const Color(0x4D000000)
+                            : const Color(0x1F000006),
+                        blurRadius: 0,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 1),
                       ),
-                      end: isNarrow
-                          ? AdwTabButton(
-                              controller: widget.controller,
-                              onPressed: () =>
-                                  setState(() => _overviewOpen = true),
-                            )
-                          : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AdwButton.flat(
-                                  width: 34,
-                                  height: 34,
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () =>
-                                      setState(() => _overviewOpen = true),
-                                  child: CustomPaint(
-                                    size: const Size(16, 16),
-                                    painter: _ViewGridSymbolicPainter(color: fg),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AdwHeaderBar(
+                        isFlat: true,
+                        windowControls: const AdwWindowControls(
+                          showMinimize: false,
+                          showMaximize: false,
+                          showClose: true,
+                        ),
+                        title: const Text('Tab View Demo'),
+                        start: AdwButton.flat(
+                          width: 34,
+                          height: 34,
+                          padding: EdgeInsets.zero,
+                          onPressed: () =>
+                              widget.onOpenNewWindow(createInitialTab: true),
+                          child: CustomPaint(
+                            size: const Size(16, 16),
+                            painter: _WindowNewSymbolicPainter(color: fg),
+                          ),
+                        ),
+                        end: isNarrow
+                            ? AdwTabButton(
+                                controller: widget.controller,
+                                onPressed: () =>
+                                    setState(() => _overviewOpen = true),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AdwButton.flat(
+                                    width: 34,
+                                    height: 34,
+                                    padding: EdgeInsets.zero,
+                                    onPressed: _addNewTab,
+                                    child: CustomPaint(
+                                      size: const Size(16, 16),
+                                      painter:
+                                          _TabNewSymbolicPainter(color: fg),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                AdwButton.flat(
-                                  width: 34,
-                                  height: 34,
-                                  padding: EdgeInsets.zero,
-                                  onPressed: _addNewTab,
-                                  child: CustomPaint(
-                                    size: const Size(16, 16),
-                                    painter: _TabNewSymbolicPainter(color: fg),
+                                  const SizedBox(width: 6),
+                                  AdwButton.flat(
+                                    width: 34,
+                                    height: 34,
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () =>
+                                        setState(() => _overviewOpen = true),
+                                    child: CustomPaint(
+                                      size: const Size(16, 16),
+                                      painter:
+                                          _ViewGridSymbolicPainter(color: fg),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                    ),
-                    if (!isNarrow)
-                      Container(
-                        color: theme.colors.headerBarBackground,
-                        child: AdwTabBar(
+                                ],
+                              ),
+                      ),
+                      if (!isNarrow)
+                        AdwTabBar(
                           controller: widget.controller,
                           autohide: true,
                           isInline: true,
                           onContextMenu: (_, page, pos) =>
                               _showContextMenu(context, page, pos),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
                 content: AdwTabView(
                   controller: widget.controller,
@@ -631,11 +654,11 @@ class _TabViewDemoPageBodyState extends State<_TabViewDemoPageBody> {
         ? const Color(0xFFFFFFFF)
         : const Color(0xFF1E1E1E);
     final entryBg = widget.isDark
-        ? const Color(0x22FFFFFF)
-        : const Color(0xCCFFFFFF);
+        ? const Color(0x1AFFFFFF)
+        : const Color(0x1A000000);
     final focusRing = widget.isDark
-        ? const Color(0xBFFFFFFF)
-        : const Color(0xBF000000);
+        ? const Color(0x60FFFFFF)
+        : const Color(0x60000000);
 
     return ColoredBox(
       color: widget.backgroundColor,
@@ -644,16 +667,18 @@ class _TabViewDemoPageBodyState extends State<_TabViewDemoPageBody> {
           onTap: () => _focusNode.requestFocus(),
           child: AnimatedContainer(
             duration: AdwCurves.shortDuration,
-            width: 210,
-            height: 36,
+            width: 192,
+            height: 34,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               color: entryBg,
               borderRadius: BorderRadius.circular(AdwMetrics.entryRadius),
-              border: Border.all(
-                color: _focused ? focusRing : fg.withValues(alpha: 0.16),
-                width: _focused ? 2.0 : 1.0,
-              ),
+              border: _focused
+                  ? Border.all(
+                      color: focusRing,
+                      width: 2.0,
+                    )
+                  : null,
             ),
             alignment: Alignment.centerLeft,
             child: EditableText(
@@ -685,27 +710,53 @@ class _WindowNewSymbolicPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final u = size.width / 16.0;
+    canvas.save();
+    canvas.scale(u, u);
     final paint = Paint()
       ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8 * u
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final path = Path()
-      ..moveTo(9.0 * u, 14.0 * u)
-      ..lineTo(3.0 * u, 14.0 * u)
-      ..quadraticBezierTo(1.5 * u, 14.0 * u, 1.5 * u, 12.5 * u)
-      ..lineTo(1.5 * u, 3.5 * u)
-      ..quadraticBezierTo(1.5 * u, 2.0 * u, 3.0 * u, 2.0 * u)
-      ..lineTo(13.0 * u, 2.0 * u)
-      ..quadraticBezierTo(14.5 * u, 2.0 * u, 14.5 * u, 3.5 * u)
-      ..lineTo(14.5 * u, 8.5 * u);
-    canvas.drawPath(path, paint);
-    canvas.drawLine(Offset(1.5 * u, 5.2 * u), Offset(14.5 * u, 5.2 * u), paint);
-    canvas.drawLine(
-        Offset(12.5 * u, 10.5 * u), Offset(12.5 * u, 15.0 * u), paint);
-    canvas.drawLine(
-        Offset(10.25 * u, 12.75 * u), Offset(14.75 * u, 12.75 * u), paint);
+      ..style = PaintingStyle.fill;
+
+    // Exact geometry from Adwaita `window-new-symbolic.svg` (16x16):
+    // Outer frame with solid 4px top headerbar strip and bottom-right cutout.
+    final frame = Path()
+      ..moveTo(3, 0)
+      ..cubicTo(1.355469, 0, 0, 1.355469, 0, 3)
+      ..lineTo(0, 11)
+      ..cubicTo(0, 12.644531, 1.355469, 14, 3, 14)
+      ..lineTo(6, 14)
+      ..cubicTo(6.550781, 14, 7, 13.550781, 7, 13)
+      ..cubicTo(7, 12.449219, 6.550781, 12, 6, 12)
+      ..lineTo(3, 12)
+      ..cubicTo(2.429688, 12, 2, 11.570312, 2, 11)
+      ..lineTo(2, 5)
+      ..cubicTo(2, 4.445312, 2.445312, 4, 3, 4)
+      ..lineTo(13, 4)
+      ..cubicTo(13.554688, 4, 14, 4.445312, 14, 5)
+      ..lineTo(14, 8)
+      ..cubicTo(14, 8.550781, 14.449219, 9, 15, 9)
+      ..cubicTo(15.550781, 9, 16, 8.550781, 16, 8)
+      ..lineTo(16, 3)
+      ..cubicTo(16, 1.355469, 14.644531, 0, 13, 0)
+      ..close();
+    canvas.drawPath(frame, paint);
+
+    // Bottom-right '+' glyph
+    final plus = Path()
+      ..moveTo(11, 8)
+      ..lineTo(11, 11)
+      ..lineTo(8, 11)
+      ..lineTo(8, 13)
+      ..lineTo(11, 13)
+      ..lineTo(11, 16)
+      ..lineTo(13, 16)
+      ..lineTo(13, 13)
+      ..lineTo(16, 13)
+      ..lineTo(16, 11)
+      ..lineTo(13, 11)
+      ..lineTo(13, 8)
+      ..close();
+    canvas.drawPath(plus, paint);
+    canvas.restore();
   }
 
   @override
@@ -721,31 +772,22 @@ class _ViewGridSymbolicPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final u = size.width / 16.0;
+    canvas.save();
+    canvas.scale(u, u);
     final paint = Paint()
       ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8 * u
-      ..strokeJoin = StrokeJoin.round;
-    final r = Radius.circular(1.2 * u);
+      ..style = PaintingStyle.fill;
+    // Exact geometry from Adwaita `view-grid-symbolic.svg` (4 filled 6x6 squares)
+    const r = Radius.circular(1.0);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(2 * u, 2 * u, 4.8 * u, 4.8 * u), r),
-      paint,
-    );
+        RRect.fromRectAndRadius(const Rect.fromLTWH(1, 1, 6, 6), r), paint);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(9.2 * u, 2 * u, 4.8 * u, 4.8 * u), r),
-      paint,
-    );
+        RRect.fromRectAndRadius(const Rect.fromLTWH(9, 1, 6, 6), r), paint);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(2 * u, 9.2 * u, 4.8 * u, 4.8 * u), r),
-      paint,
-    );
+        RRect.fromRectAndRadius(const Rect.fromLTWH(1, 9, 6, 6), r), paint);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-          Rect.fromLTWH(9.2 * u, 9.2 * u, 4.8 * u, 4.8 * u), r),
-      paint,
-    );
+        RRect.fromRectAndRadius(const Rect.fromLTWH(9, 9, 6, 6), r), paint);
+    canvas.restore();
   }
 
   @override
@@ -761,21 +803,37 @@ class _TabNewSymbolicPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final u = size.width / 16.0;
+    canvas.save();
+    canvas.scale(u, u);
     final paint = Paint()
       ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0 * u
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTRB(1.0 * u, 1.0 * u, 15.0 * u, 15.0 * u),
-        Radius.circular(2.96 * u),
-      ),
-      paint,
-    );
-    canvas.drawLine(Offset(8.0 * u, 5.0 * u), Offset(8.0 * u, 11.0 * u), paint);
-    canvas.drawLine(Offset(5.0 * u, 8.0 * u), Offset(11.0 * u, 8.0 * u), paint);
+      ..style = PaintingStyle.fill;
+
+    // Exact geometry from Adwaita `tab-new-symbolic.svg` (16x16):
+    final frame = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRRect(RRect.fromRectAndRadius(
+          const Rect.fromLTWH(0, 0, 16, 16), const Radius.circular(3.0)))
+      ..addRRect(RRect.fromRectAndRadius(
+          const Rect.fromLTWH(2, 2, 12, 12), const Radius.circular(1.0)));
+    canvas.drawPath(frame, paint);
+
+    final plus = Path()
+      ..moveTo(7, 4)
+      ..lineTo(7, 7)
+      ..lineTo(4, 7)
+      ..lineTo(4, 9)
+      ..lineTo(7, 9)
+      ..lineTo(7, 12)
+      ..lineTo(9, 12)
+      ..lineTo(9, 9)
+      ..lineTo(12, 9)
+      ..lineTo(12, 7)
+      ..lineTo(9, 7)
+      ..lineTo(9, 4)
+      ..close();
+    canvas.drawPath(plus, paint);
+    canvas.restore();
   }
 
   @override
