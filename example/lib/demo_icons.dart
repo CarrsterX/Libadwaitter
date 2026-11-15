@@ -142,21 +142,35 @@ class _DemoWidgetIconPainter extends CustomPainter {
         break;
 
       case DemoIconType.carousel:
+        final u = s / 16.0;
+        final carouselPaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = s <= 24 ? strokeWidth : s * 0.0625
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
         final center = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.28, s * 0.16, s * 0.44, s * 0.68),
-          Radius.circular(s * 0.10),
+          Rect.fromLTRB(4.0 * u, 2.0 * u, 12.0 * u, 12.0 * u),
+          Radius.circular(2.0 * u),
         );
-        canvas.drawRRect(center, strokePaint);
+        canvas.drawRRect(center, carouselPaint);
         canvas.drawLine(
-          Offset(s * 0.12, s * 0.32),
-          Offset(s * 0.12, s * 0.68),
-          strokePaint,
+          Offset(1.0 * u, 4.0 * u),
+          Offset(1.0 * u, 10.0 * u),
+          carouselPaint,
         );
         canvas.drawLine(
-          Offset(s * 0.88, s * 0.32),
-          Offset(s * 0.88, s * 0.68),
-          strokePaint,
+          Offset(15.0 * u, 4.0 * u),
+          Offset(15.0 * u, 10.0 * u),
+          carouselPaint,
         );
+        final dotPaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
+        final dotRadius = carouselPaint.strokeWidth * 0.55;
+        canvas.drawCircle(Offset(5.0 * u, 15.0 * u), dotRadius, dotPaint);
+        canvas.drawCircle(Offset(8.0 * u, 15.0 * u), dotRadius, dotPaint);
+        canvas.drawCircle(Offset(11.0 * u, 15.0 * u), dotRadius, dotPaint);
         break;
 
       case DemoIconType.viewSwitcher:

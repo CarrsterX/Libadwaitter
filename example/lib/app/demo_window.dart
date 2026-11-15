@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../demo_icons.dart';
 import '../features/appearance/appearance_page.dart';
+import '../features/bottom_sheet/bottom_sheet_page.dart';
 import '../features/boxed_lists/boxed_lists_page.dart';
 import '../features/buttons/buttons_page.dart';
 import '../features/carousel/carousel_page.dart';
@@ -43,6 +44,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   bool _searchBarVisible = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final GlobalKey _menuButtonKey = GlobalKey();
   bool _searchFocused = false;
 
   @override
@@ -97,8 +99,75 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     );
   }
 
+  void _showMainMenu() {
+    final RenderBox? buttonBox =
+        _menuButtonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (buttonBox == null || !buttonBox.hasSize) return;
+
+    final Rect anchorRect =
+        buttonBox.localToGlobal(Offset.zero) & buttonBox.size;
+
+    showAdwPopover(
+      context: context,
+      anchorRect: anchorRect,
+      owner: _menuButtonKey,
+      parentAnchor: AdwPopoverAnchor.bottom,
+      childAnchor: AdwPopoverAnchor.top,
+      offset: const Offset(0, 4),
+      constraints: const BoxConstraints(
+        minWidth: 240,
+        maxWidth: 260,
+        maxHeight: 340,
+      ),
+      builder: (popoverContext, handle) {
+        final theme = AdwTheme.of(popoverContext);
+        final shortcutStyle = theme.typography.body.copyWith(
+          color: theme.colors.secondaryForeground,
+          fontSize: 13.5,
+        );
+
+        return AdwPopoverSurface(
+          arrowSide: AdwPopoverArrowSide.top,
+          child: SizedBox(
+            width: 240,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdwPopoverMenuItem(
+                  label: 'Inspector',
+                  onTap: handle.dismiss,
+                ),
+                AdwPopoverMenuItem(
+                  label: 'Adaptive Preview',
+                  onTap: handle.dismiss,
+                ),
+                const AdwPopoverDivider(),
+                AdwPopoverMenuItem(
+                  label: 'Preferences',
+                  trailing: Text('Ctrl+,', style: shortcutStyle),
+                  onTap: handle.dismiss,
+                ),
+                AdwPopoverMenuItem(
+                  label: 'Keyboard Shortcuts',
+                  trailing: Text('Ctrl+?', style: shortcutStyle),
+                  onTap: handle.dismiss,
+                ),
+                AdwPopoverMenuItem(
+                  label: 'About Adwaitter Demo',
+                  onTap: handle.dismiss,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildSidebar(AdwThemeData theme) {
-    return Column(
+    final topBar = Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Flat sidebar header bar (matching adwaita-1-demo; shows window controls when collapsed)
         Builder(
@@ -124,16 +193,11 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
               ),
               title: const Text('Adwaitter Demo'),
               end: AdwButton.flat(
+                key: _menuButtonKey,
                 width: 34,
                 height: 34,
                 padding: EdgeInsets.zero,
-                onPressed: () => showDemoPreferencesDialog(
-                  context: context,
-                  currentThemeMode: widget.currentThemeMode,
-                  currentAccent: widget.currentAccent,
-                  onThemeModeChanged: widget.onThemeModeChanged,
-                  onAccentChanged: widget.onAccentChanged,
-                ),
+                onPressed: _showMainMenu,
                 child: const Icon(AdwIcons.open_menu_symbolic, size: 16),
               ),
             );
@@ -266,23 +330,27 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
             ),
           ),
         ),
-        Expanded(
-          child: Builder(
-            builder: (sidebarContext) {
+      ],
+    );
+
+    return AdwToolbarView(
+      topBar: topBar,
+      content: Builder(
+        builder: (sidebarContext) {
               final isCollapsed =
                   AdwNavigationSplitViewScope.maybeOf(sidebarContext)
                           ?.isCollapsed ??
                       false;
               return SingleChildScrollView(
                 padding: isCollapsed
-                    ? const EdgeInsets.fromLTRB(12, 18, 12, 24)
-                    : const EdgeInsets.symmetric(vertical: 4),
+                    ? const EdgeInsets.fromLTRB(12, 24, 12, 0)
+                    : const EdgeInsets.fromLTRB(0, 8, 0, 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (isCollapsed)
                       AdwPreferencesGroup(
-                        margin: const EdgeInsets.only(bottom: 24),
+                        margin: const EdgeInsets.only(bottom: 28),
                         children: [
                           _buildSidebarItem(
                             page: DemoPage.welcome,
@@ -505,9 +573,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 ),
               );
             },
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -562,7 +628,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
 
     if (isCollapsed) {
       return AdwPreferencesGroup(
-        margin: const EdgeInsets.only(bottom: 24),
+        margin: const EdgeInsets.only(bottom: 28),
         title: Text(title),
         children: visibleItems,
       );
@@ -573,7 +639,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 18, 12, 14),
+          padding: const EdgeInsets.fromLTRB(12, 22, 12, 14),
           child: Text(
             title,
             style: theme.typography.sectionTitle,
@@ -585,27 +651,29 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   }
 
   Widget _buildContent() {
-    return Column(
-      children: [
-        // Flat content view header bar with window controls on end (and start when collapsed)
-        Builder(
-          builder: (contentContext) {
-            final isCollapsed =
-                AdwNavigationSplitViewScope.maybeOf(contentContext)
-                        ?.isCollapsed ??
-                    false;
-            return AdwHeaderBar(
-              isFlat: true,
-              showWindowControls: true,
-              showStartWindowControls: isCollapsed,
-              showEndWindowControls: true,
-            );
-          },
-        ),
-        Expanded(
-          child: _buildPageBody(),
-        ),
-      ],
+    if (_selectedPage == DemoPage.bottomSheet) {
+      return const BottomSheetPage();
+    }
+
+    return AdwToolbarView(
+      topBar: Builder(
+        builder: (contentContext) {
+          final isCollapsed =
+              AdwNavigationSplitViewScope.maybeOf(contentContext)
+                      ?.isCollapsed ??
+                  false;
+          return AdwHeaderBar(
+            isFlat: true,
+            showWindowControls: true,
+            showStartWindowControls: isCollapsed,
+            showEndWindowControls: true,
+          );
+        },
+      ),
+      content: KeyedSubtree(
+        key: ValueKey(_selectedPage),
+        child: _buildPageBody(),
+      ),
     );
   }
 
@@ -616,6 +684,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.splitViews => const SplitViewsPage(),
       DemoPage.viewSwitcher => const ViewSwitcherPage(),
       DemoPage.tabView => const TabViewPage(),
+      DemoPage.bottomSheet => const BottomSheetPage(),
       DemoPage.carousel => const CarouselPage(),
       DemoPage.boxedLists => const BoxedListsPage(),
       DemoPage.toggleGroups => const ToggleGroupsPage(),
@@ -630,7 +699,6 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           onThemeModeChanged: widget.onThemeModeChanged,
           onAccentChanged: widget.onAccentChanged,
         ),
-      DemoPage.bottomSheet ||
       DemoPage.spinner ||
       DemoPage.avatar ||
       DemoPage.clamp ||

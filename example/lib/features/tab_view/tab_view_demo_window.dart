@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
 
@@ -79,8 +77,14 @@ class _TabViewDemoWindowContentState extends State<_TabViewDemoWindowContent> {
   ];
 
   bool _overviewOpen = false;
-  AdwTabPage? _contextMenuPage;
-  Offset? _contextMenuPosition;
+  AdwPopoverHandle? _contextMenuHandle;
+
+  @override
+  void dispose() {
+    _contextMenuHandle?.dismiss();
+    _contextMenuHandle = null;
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -211,22 +215,164 @@ class _TabViewDemoWindowContentState extends State<_TabViewDemoWindowContent> {
     AdwTabPage page,
     Offset globalPosition,
   ) {
-    final RenderBox? box = context.findRenderObject() as RenderBox?;
-    final localPos =
-        box != null ? box.globalToLocal(globalPosition) : globalPosition;
-    setState(() {
-      _contextMenuPage = page;
-      _contextMenuPosition = localPos;
-    });
+    _dismissContextMenu();
+    final theme = AdwTheme.of(context);
+    final isDark = theme.colors.isDark;
+    final meta = page.userData as _TabPageMeta?;
+
+    final handle = showAdwPopover(
+      context: context,
+      anchorRect: Rect.fromLTWH(globalPosition.dx, globalPosition.dy, 1, 1),
+      parentAnchor: AdwPopoverAnchor.bottomLeft,
+      childAnchor: AdwPopoverAnchor.topLeft,
+      offset: Offset.zero,
+      constraints: const BoxConstraints(
+        minWidth: 220,
+        maxWidth: 220,
+        maxHeight: 420,
+      ),
+      onDismiss: () {
+        if (mounted) {
+          _contextMenuHandle = null;
+        }
+      },
+      builder: (popoverContext, handle) {
+        return AdwPopoverSurface(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!page.pinned) ...[
+                _TabMenuItem(
+                  label: 'Move to New Window',
+                  enabled: widget.controller.nPages > 1,
+                  onTap: () {
+                    handle.dismiss();
+                    final target =
+                        widget.onOpenNewWindow(createInitialTab: false);
+                    widget.controller.transferPage(page, target);
+                  },
+                ),
+                _TabMenuItem(
+                  label: 'Duplicate',
+                  onTap: () {
+                    handle.dismiss();
+                    _duplicateTab(page);
+                  },
+                ),
+                _buildMenuDivider(theme),
+              ],
+              _TabMenuItem(
+                label: page.pinned ? 'Unpin Tab' : 'Pin Tab',
+                onTap: () {
+                  handle.dismiss();
+                  widget.controller.setPagePinned(page, !page.pinned);
+                },
+              ),
+              _buildMenuDivider(theme),
+              _TabMenuItem(
+                label: 'Icon',
+                checked: meta?.hasIcon ?? false,
+                onTap: () {
+                  if (meta != null) {
+                    meta.hasIcon = !meta.hasIcon;
+                    _syncPageAppearance(page, isDark);
+                  }
+                  handle.dismiss();
+                },
+              ),
+              _TabMenuItem(
+                label: 'Refresh Icon',
+                enabled: meta?.hasIcon ?? false,
+                onTap: () {
+                  if (meta != null) {
+                    meta.iconIndex++;
+                    _syncPageAppearance(page, isDark);
+                  }
+                  handle.dismiss();
+                },
+              ),
+              _buildMenuDivider(theme),
+              _TabMenuItem(
+                label: 'Loading',
+                checked: page.loading,
+                onTap: () {
+                  page.loading = !page.loading;
+                  handle.dismiss();
+                },
+              ),
+              _TabMenuItem(
+                label: 'Needs Attention',
+                checked: page.needsAttention,
+                onTap: () {
+                  page.needsAttention = !page.needsAttention;
+                  handle.dismiss();
+                },
+              ),
+              _TabMenuItem(
+                label: 'Indicator',
+                checked: meta?.hasIndicator ?? false,
+                onTap: () {
+                  if (meta != null) {
+                    meta.hasIndicator = !meta.hasIndicator;
+                    _syncPageAppearance(page, isDark);
+                  }
+                  handle.dismiss();
+                },
+              ),
+              if (!page.pinned) ...[
+                _buildMenuDivider(theme),
+                _TabMenuItem(
+                  label: 'Close Other Tabs',
+                  enabled: widget.controller.unpinnedPages.length > 1,
+                  onTap: () {
+                    handle.dismiss();
+                    widget.controller.closeOtherPages(page);
+                  },
+                ),
+                _TabMenuItem(
+                  label: 'Close Tabs to the Left',
+                  enabled: widget.controller.unpinnedPages.indexOf(page) > 0,
+                  onTap: () {
+                    handle.dismiss();
+                    widget.controller.closePagesBefore(page);
+                  },
+                ),
+                _TabMenuItem(
+                  label: 'Close Tabs to the Right',
+                  enabled: widget.controller.unpinnedPages.indexOf(page) <
+                      widget.controller.unpinnedPages.length - 1,
+                  onTap: () {
+                    handle.dismiss();
+                    widget.controller.closePagesAfter(page);
+                  },
+                ),
+                _buildMenuDivider(theme),
+                _TabMenuItem(
+                  label: 'Close',
+                  onTap: () {
+                    handle.dismiss();
+                    widget.controller.closePage(page);
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+
+    if (mounted && handle.isOpen) {
+      _contextMenuHandle = handle;
+    } else {
+      handle.dismiss();
+    }
   }
 
   void _dismissContextMenu() {
-    if (_contextMenuPage != null) {
-      setState(() {
-        _contextMenuPage = null;
-        _contextMenuPosition = null;
-      });
-    }
+    _contextMenuHandle?.dismiss();
+    _contextMenuHandle = null;
   }
 
   @override
@@ -339,191 +485,9 @@ class _TabViewDemoWindowContentState extends State<_TabViewDemoWindowContent> {
                 ),
               ),
             ),
-            if (_contextMenuPage != null && _contextMenuPosition != null)
-              _buildTabContextMenuOverlay(
-                context: context,
-                constraints: constraints,
-                theme: theme,
-                page: _contextMenuPage!,
-                position: _contextMenuPosition!,
-              ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildTabContextMenuOverlay({
-    required BuildContext context,
-    required BoxConstraints constraints,
-    required AdwThemeData theme,
-    required AdwTabPage page,
-    required Offset position,
-  }) {
-    final meta = page.userData as _TabPageMeta?;
-    final isDark = theme.colors.isDark;
-    const menuWidth = 220.0;
-    const menuHeight = 360.0;
-    final double left = position.dx
-        .clamp(8.0, math.max(8.0, constraints.maxWidth - menuWidth - 8.0))
-        .toDouble();
-    final double top = position.dy
-        .clamp(8.0, math.max(8.0, constraints.maxHeight - menuHeight - 8.0))
-        .toDouble();
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) => _dismissContextMenu(),
-          child: const SizedBox.expand(),
-        ),
-        Positioned(
-          left: left,
-          top: top,
-          width: menuWidth,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: theme.colors.popoverBackground,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colors.dividerColor,
-                width: 1,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x26000000),
-                  blurRadius: 14,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (!page.pinned) ...[
-                  _TabMenuItem(
-                    label: 'Move to New Window',
-                    enabled: widget.controller.nPages > 1,
-                    onTap: () {
-                      _dismissContextMenu();
-                      final target =
-                          widget.onOpenNewWindow(createInitialTab: false);
-                      widget.controller.transferPage(page, target);
-                    },
-                  ),
-                  _TabMenuItem(
-                    label: 'Duplicate',
-                    onTap: () {
-                      _dismissContextMenu();
-                      _duplicateTab(page);
-                    },
-                  ),
-                  _buildMenuDivider(theme),
-                ],
-                _TabMenuItem(
-                  label: page.pinned ? 'Unpin Tab' : 'Pin Tab',
-                  onTap: () {
-                    _dismissContextMenu();
-                    widget.controller.setPagePinned(page, !page.pinned);
-                  },
-                ),
-                _buildMenuDivider(theme),
-                _TabMenuItem(
-                  label: 'Icon',
-                  checked: meta?.hasIcon ?? false,
-                  onTap: () {
-                    if (meta != null) {
-                      meta.hasIcon = !meta.hasIcon;
-                      _syncPageAppearance(page, isDark);
-                    }
-                    _dismissContextMenu();
-                  },
-                ),
-                _TabMenuItem(
-                  label: 'Refresh Icon',
-                  enabled: meta?.hasIcon ?? false,
-                  onTap: () {
-                    if (meta != null) {
-                      meta.iconIndex++;
-                      _syncPageAppearance(page, isDark);
-                    }
-                    _dismissContextMenu();
-                  },
-                ),
-                _buildMenuDivider(theme),
-                _TabMenuItem(
-                  label: 'Loading',
-                  checked: page.loading,
-                  onTap: () {
-                    page.loading = !page.loading;
-                    _dismissContextMenu();
-                  },
-                ),
-                _TabMenuItem(
-                  label: 'Needs Attention',
-                  checked: page.needsAttention,
-                  onTap: () {
-                    page.needsAttention = !page.needsAttention;
-                    _dismissContextMenu();
-                  },
-                ),
-                _TabMenuItem(
-                  label: 'Indicator',
-                  checked: meta?.hasIndicator ?? false,
-                  onTap: () {
-                    if (meta != null) {
-                      meta.hasIndicator = !meta.hasIndicator;
-                      _syncPageAppearance(page, isDark);
-                    }
-                    _dismissContextMenu();
-                  },
-                ),
-                if (!page.pinned) ...[
-                  _buildMenuDivider(theme),
-                  _TabMenuItem(
-                    label: 'Close Other Tabs',
-                    enabled: widget.controller.unpinnedPages.length > 1,
-                    onTap: () {
-                      _dismissContextMenu();
-                      widget.controller.closeOtherPages(page);
-                    },
-                  ),
-                  _TabMenuItem(
-                    label: 'Close Tabs to the Left',
-                    enabled:
-                        widget.controller.unpinnedPages.indexOf(page) > 0,
-                    onTap: () {
-                      _dismissContextMenu();
-                      widget.controller.closePagesBefore(page);
-                    },
-                  ),
-                  _TabMenuItem(
-                    label: 'Close Tabs to the Right',
-                    enabled: widget.controller.unpinnedPages.indexOf(page) <
-                        widget.controller.unpinnedPages.length - 1,
-                    onTap: () {
-                      _dismissContextMenu();
-                      widget.controller.closePagesAfter(page);
-                    },
-                  ),
-                  _buildMenuDivider(theme),
-                  _TabMenuItem(
-                    label: 'Close',
-                    onTap: () {
-                      _dismissContextMenu();
-                      widget.controller.closePage(page);
-                    },
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 

@@ -703,6 +703,34 @@ static void window_method_call_handler(FlMethodChannel* channel,
     gboolean is_act = gtk_window_is_active(window);
     g_autoptr(FlValue) result = fl_value_new_bool(is_act);
     fl_method_call_respond_success(method_call, result, nullptr);
+  } else if (strcmp(method, "getWindowHandles") == 0) {
+    FlView* view_widget = FL_VIEW(
+        g_object_get_data(G_OBJECT(window), "libadwaitter-fl-view"));
+    gint view_id = GPOINTER_TO_INT(
+        g_object_get_data(G_OBJECT(window), "libadwaitter-view-id"));
+    g_autoptr(FlValue) map = fl_value_new_map();
+    fl_value_set_string_take(
+        map, "windowHandle",
+        fl_value_new_int(reinterpret_cast<int64_t>(window)));
+    fl_value_set_string_take(
+        map, "viewHandle",
+        fl_value_new_int(reinterpret_cast<int64_t>(view_widget)));
+    fl_value_set_string_take(map, "viewId", fl_value_new_int(view_id));
+    fl_method_call_respond_success(method_call, map, nullptr);
+  } else if (strcmp(method, "attachPopupWindow") == 0) {
+    if (call_args != nullptr &&
+        fl_value_get_type(call_args) == FL_VALUE_TYPE_MAP) {
+      FlValue* win_val = fl_value_lookup_string(call_args, "windowHandle");
+      if (win_val != nullptr) {
+        GtkWindow* popup_win = GTK_WINDOW(
+            reinterpret_cast<gpointer>(fl_value_get_int(win_val)));
+        if (popup_win != nullptr) {
+          g_signal_connect(popup_win, "draw", G_CALLBACK(window_draw_cb),
+                           nullptr);
+        }
+      }
+    }
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
   } else {
     fl_method_call_respond_not_implemented(method_call, nullptr);
   }
