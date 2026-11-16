@@ -93,6 +93,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       showBorder: true,
       child: AdwNavigationSplitView(
         sidebarWidth: 240.0,
+        breakpoint: 600.0,
         sidebar: _buildSidebar(theme),
         content: _buildContent(),
       ),

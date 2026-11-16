@@ -125,26 +125,31 @@ class _DemoWidgetIconPainter extends CustomPainter {
         break;
 
       case DemoIconType.toggleGroup:
+        final u = s / 16.0;
+        final inner = RRect.fromRectAndRadius(
+          Rect.fromLTWH(3.0 * u, 4.0 * u, 7.0 * u, 8.0 * u),
+          Radius.circular(1.04 * u),
+        );
+        final toggleFill = Paint()
+          ..color = color.withValues(alpha: 0.30)
+          ..style = PaintingStyle.fill;
+        canvas.drawRRect(inner, toggleFill);
         final outer = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.10, s * 0.20, s * 0.80, s * 0.60),
-          Radius.circular(s * 0.16),
+          Rect.fromLTWH(1.0 * u, 2.0 * u, 14.0 * u, 12.0 * u),
+          Radius.circular(3.31 * u),
         );
         canvas.drawRRect(outer, strokePaint);
-        final inner = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.22, s * 0.32, s * 0.26, s * 0.36),
-          Radius.circular(s * 0.08),
-        );
-        canvas.drawRRect(inner, fillPaint);
         break;
 
       case DemoIconType.buttons:
+        final u = s / 16.0;
         final topPill = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.12, s * 0.16, s * 0.76, s * 0.28),
-          Radius.circular(s * 0.14),
+          Rect.fromLTRB(1.0 * u, 2.0 * u, 15.0 * u, 6.0 * u),
+          Radius.circular(2.0 * u),
         );
         final bottomPill = RRect.fromRectAndRadius(
-          Rect.fromLTWH(s * 0.12, s * 0.56, s * 0.76, s * 0.28),
-          Radius.circular(s * 0.14),
+          Rect.fromLTRB(1.0 * u, 9.0 * u, 15.0 * u, 13.0 * u),
+          Radius.circular(2.0 * u),
         );
         canvas.drawRRect(topPill, strokePaint);
         canvas.drawRRect(bottomPill, strokePaint);
