@@ -21,9 +21,13 @@ class _BoxedListsPageState extends State<BoxedListsPage> {
   @override
   Widget build(BuildContext context) {
     return AdwPreferencesPage(
-      icon: const DemoWidgetIcon(DemoIconType.boxedList, size: 136),
+      icon: const DemoWidgetIcon(DemoIconType.boxedList, size: 128),
       title: const Text('Boxed Lists'),
       description: const Text('Rows for the boxed list pattern'),
+      padding: const EdgeInsets.fromLTRB(0, 36, 0, 36),
+      maxWidth: 400.0,
+      minimumMargin: 14.0,
+      groupSpacing: 46.0,
       children: [
         AdwPreferencesGroup(
           children: [
@@ -297,4 +301,3 @@ class _BoxedListsPageState extends State<BoxedListsPage> {
     );
   }
 }
-

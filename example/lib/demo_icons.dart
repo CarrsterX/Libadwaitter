@@ -99,19 +99,28 @@ class _DemoWidgetIconPainter extends CustomPainter {
 
     switch (type) {
       case DemoIconType.boxedList:
-        final rect = Rect.fromLTWH(s * 0.09, s * 0.13, s * 0.82, s * 0.74);
-        final rrect = RRect.fromRectAndRadius(rect, Radius.circular(s * 0.14));
+        final u = s / 16.0;
+        final rect = Rect.fromLTRB(1.0 * u, 1.0 * u, 15.0 * u, 14.0 * u);
+        final rrect = RRect.fromRectAndRadius(
+          rect,
+          Radius.circular(1.92 * u),
+        );
         canvas.drawRRect(rrect, strokePaint);
-        final inset = strokeWidth * 0.45;
+        final listLinePaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth * 0.5
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
         canvas.drawLine(
-          Offset(s * 0.09 + inset, s * 0.377),
-          Offset(s * 0.91 - inset, s * 0.377),
-          thinPaint,
+          Offset(1.0 * u, 5.5 * u),
+          Offset(15.0 * u, 5.5 * u),
+          listLinePaint,
         );
         canvas.drawLine(
-          Offset(s * 0.09 + inset, s * 0.623),
-          Offset(s * 0.91 - inset, s * 0.623),
-          thinPaint,
+          Offset(1.0 * u, 9.5 * u),
+          Offset(15.0 * u, 9.5 * u),
+          listLinePaint,
         );
         break;
 

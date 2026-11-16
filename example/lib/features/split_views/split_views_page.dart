@@ -42,29 +42,48 @@ class SplitViewsPage extends StatelessWidget {
   void _openNavigationSplitViewDemoDialog(BuildContext context) {
     showAdwDialog<void>(
       context: context,
-      builder: (_) => const AdwDialog(
+      builder: (_) => AdwDialog(
         contentWidth: 640,
         contentHeight: 480,
         title: 'Navigation Split View',
         child: AdwNavigationSplitView(
           sidebarWidth: 220,
-          breakpoint: 400,
+          breakpoint: 451,
+          sidebarTitle: 'Sidebar',
+          contentTitle: 'Content',
           sidebar: AdwToolbarView(
-            topBar: AdwHeaderBar(
-              isFlat: true,
-              title: Text('Sidebar'),
+            topBar: Builder(
+              builder: (ctx) {
+                final isCollapsed =
+                    AdwNavigationSplitViewScope.maybeOf(ctx)?.isCollapsed ??
+                        false;
+                return AdwHeaderBar(
+                  isFlat: true,
+                  showTitle: false,
+                  showWindowControls: isCollapsed,
+                );
+              },
             ),
-            content: Center(
-              child: Text('Sidebar'),
+            content: Builder(
+              builder: (ctx) {
+                final scope = AdwNavigationSplitViewScope.maybeOf(ctx);
+                final isCollapsed = scope?.isCollapsed ?? false;
+                return AdwStatusPage(
+                  title: const Text('Sidebar'),
+                  child: isCollapsed
+                      ? AdwButton.pill(
+                          onPressed: scope?.showContentPage,
+                          child: const Text('Open Content'),
+                        )
+                      : null,
+                );
+              },
             ),
           ),
-          content: AdwToolbarView(
-            topBar: AdwHeaderBar(
-              isFlat: true,
+          content: const AdwToolbarView(
+            topBar: AdwHeaderBar(isFlat: true, showTitle: false),
+            content: AdwStatusPage(
               title: Text('Content'),
-            ),
-            content: Center(
-              child: Text('Content'),
             ),
           ),
         ),
@@ -73,65 +92,74 @@ class SplitViewsPage extends StatelessWidget {
   }
 
   void _openOverlaySplitViewDemoDialog(BuildContext context) {
-    bool showSidebar = true;
+    bool showSidebar = MediaQuery.sizeOf(context).width >= 450;
     AdwSplitViewPosition sidebarPosition = AdwSplitViewPosition.start;
 
     showAdwDialog<void>(
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
+          final toggleButton = AdwButton.flat(
+            width: 34,
+            height: 34,
+            padding: EdgeInsets.zero,
+            isChecked: showSidebar,
+            onPressed: () =>
+                setDialogState(() => showSidebar = !showSidebar),
+            child: const Icon(
+              AdwIcons.sidebar_show_symbolic,
+              size: 16,
+            ),
+          );
+
           return AdwDialog(
             contentWidth: 640,
             contentHeight: 480,
             title: 'Overlay Split View',
-            child: AdwOverlaySplitView(
-              sidebarWidth: 220,
-              collapseBreakpoint: 450,
-              showSidebar: showSidebar,
-              sidebarPosition: sidebarPosition,
-              onShowSidebarChanged: (visible) =>
-                  setDialogState(() => showSidebar = visible),
-              sidebar: const AdwToolbarView(
-                topBar: AdwHeaderBar(
-                  isFlat: true,
-                  title: Text('Sidebar'),
-                ),
-                content: Center(
-                  child: Text('Sidebar'),
-                ),
+            child: AdwToolbarView(
+              topBar: AdwHeaderBar(
+                title: const Text('Overlay Split View'),
+                start: sidebarPosition == AdwSplitViewPosition.start
+                    ? toggleButton
+                    : null,
+                end: sidebarPosition == AdwSplitViewPosition.end
+                    ? toggleButton
+                    : null,
               ),
-              content: AdwToolbarView(
-                topBar: AdwHeaderBar(
-                  title: const Text('Content'),
-                  start: AdwButton.flat(
-                    width: 34,
-                    height: 34,
-                    padding: EdgeInsets.zero,
-                    isChecked: showSidebar,
-                    onPressed: () =>
-                        setDialogState(() => showSidebar = !showSidebar),
-                    child: const Icon(
-                      AdwIcons.sidebar_show_symbolic,
-                      size: 16,
-                    ),
-                  ),
-                ),
-                content: Center(
-                  child: AdwToggleGroup<AdwSplitViewPosition>(
-                    selectedValue: sidebarPosition,
-                    onChanged: (pos) =>
-                        setDialogState(() => sidebarPosition = pos),
-                    items: const [
-                      AdwToggleItem(
-                        value: AdwSplitViewPosition.start,
-                        label: Text('Start'),
+              content: AdwOverlaySplitView(
+                sidebarWidth: 220,
+                collapseBreakpoint: 451,
+                showSidebar: showSidebar,
+                sidebarPosition: sidebarPosition,
+                onShowSidebarChanged: (visible) =>
+                    setDialogState(() => showSidebar = visible),
+                sidebar: AdwStatusPage(
+                  title: const Text('Sidebar'),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AdwButton.pill(
+                        isChecked:
+                            sidebarPosition == AdwSplitViewPosition.start,
+                        onPressed: () => setDialogState(
+                          () => sidebarPosition = AdwSplitViewPosition.start,
+                        ),
+                        child: const Text('Start'),
                       ),
-                      AdwToggleItem(
-                        value: AdwSplitViewPosition.end,
-                        label: Text('End'),
+                      const SizedBox(height: 18),
+                      AdwButton.pill(
+                        isChecked:
+                            sidebarPosition == AdwSplitViewPosition.end,
+                        onPressed: () => setDialogState(
+                          () => sidebarPosition = AdwSplitViewPosition.end,
+                        ),
+                        child: const Text('End'),
                       ),
                     ],
                   ),
+                ),
+                content: const AdwStatusPage(
+                  title: Text('Content'),
                 ),
               ),
             ),
