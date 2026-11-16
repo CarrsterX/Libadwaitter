@@ -639,7 +639,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 22, 12, 14),
+          padding: const EdgeInsets.fromLTRB(12, 18, 12, 10),
           child: Text(
             title,
             style: theme.typography.sectionTitle,
