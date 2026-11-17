@@ -10,6 +10,7 @@ import '../features/buttons/buttons_page.dart';
 import '../features/carousel/carousel_page.dart';
 import '../features/dialogs/dialogs_pages.dart';
 import '../features/display/banner_page.dart';
+import '../features/display/spinner_page.dart';
 import '../features/display/toast_page.dart';
 import '../features/navigation_view/navigation_view_page.dart';
 import '../features/pending/pending_page.dart';
@@ -772,7 +773,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           onThemeModeChanged: widget.onThemeModeChanged,
           onAccentChanged: widget.onAccentChanged,
         ),
-      DemoPage.spinner ||
+      DemoPage.spinner => const SpinnerPage(),
       DemoPage.avatar ||
       DemoPage.clamp ||
       DemoPage.wrapBox ||
