@@ -346,6 +346,36 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                       false;
               final double bottomSafeInset =
                   MediaQuery.maybePaddingOf(sidebarContext)?.bottom ?? 0.0;
+              if (_searchFilter.isNotEmpty && !_hasSidebarResults()) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          AdwIcons.edit_find_symbolic,
+                          size: 96,
+                          color: theme.colors.windowForeground
+                              .withValues(alpha: 0.55),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'No Results Found',
+                          style: theme.typography.title2,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Try a different search',
+                          style: theme.typography.body,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
               return SingleChildScrollView(
                 padding: isCollapsed
                     ? EdgeInsets.fromLTRB(12, 24, 12, bottomSafeInset)
@@ -580,6 +610,31 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
             },
       ),
     );
+  }
+
+  bool _hasSidebarResults() {
+    const titles = [
+      'welcome',
+      'navigation view',
+      'split views',
+      'view switcher',
+      'tab view',
+      'bottom sheet',
+      'styles',
+      'boxed lists',
+      'buttons',
+      'toggles',
+      'toggle groups',
+      'sliders & spinners',
+      'avatar',
+      'dialogs',
+      'toasts',
+      'carousel',
+      'clamp',
+      'banner',
+      'animations',
+    ];
+    return titles.any((t) => t.contains(_searchFilter));
   }
 
   Widget _buildSidebarItem({
