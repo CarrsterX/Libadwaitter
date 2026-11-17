@@ -2,9 +2,12 @@ import 'package:adwaitter_icons/adwaitter_icons.dart';
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
 
+import '../../app/adwaitter_logo.dart';
+
 void showDemoAboutDialog(BuildContext context) {
   showAdwAboutDialog(
     context: context,
+    applicationIcon: const AdwaitterSymbolicLogo(size: 64),
     applicationName: 'Adwaitter Demo',
     version: '1.0.0',
     developerName: 'Libadwaitter Contributors',

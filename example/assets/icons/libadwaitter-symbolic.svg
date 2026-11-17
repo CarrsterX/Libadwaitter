@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <g transform="translate(8, 8) scale(0.25) translate(-60, -64)" fill="#241f31">
+    <!-- 1. Cinta superior separada (alineada a 45°) -->
+    <polygon points="48,53.5 66,35.5 82,35.5 56,61.5" />
+
+    <!-- 2. Bloque inferior unificado: triángulo izquierdo + diamante + triángulos derechos tocándose exactamente -->
+    <polygon points="35,66.5 61,66.5 69,58.5 85,58.5 77,66.5 85,74.5 69,74.5 61,66.5 61,92.5" />
+  </g>
+</svg>

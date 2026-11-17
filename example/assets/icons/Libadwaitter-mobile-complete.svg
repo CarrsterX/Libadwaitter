@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Degradado principal de Libadwaita a sangre completa (sin transparencia) -->
+    <linearGradient id="adw-ios-bg" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3584E4" />
+      <stop offset="52%" stop-color="#45B2C5" />
+      <stop offset="100%" stop-color="#6CE09C" />
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo cuadrado sólido sin esquinas redondeadas (iOS aplica su propia máscara squircle) -->
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#adw-ios-bg)" />
+
+  <!-- Isotipo blanco translúcido centrado con margen óptico para iOS (~56% del lienzo) -->
+  <g transform="translate(512, 512) scale(10.2) translate(-60, -64)">
+    <polygon points="48,53.5 66,35.5 82,35.5 56,61.5" fill="#FFFFFF" fill-opacity="0.92" />
+    <polygon points="35,66.5 61,66.5 61,92.5" fill="#FFFFFF" fill-opacity="0.96" />
+    <polygon points="61,66.5 69,58.5 77,66.5 69,74.5" fill="#FFFFFF" fill-opacity="0.96" />
+    <polygon points="69,58.5 85,58.5 77,66.5" fill="#FFFFFF" fill-opacity="0.72" />
+    <polygon points="69,74.5 77,66.5 85,74.5" fill="#FFFFFF" fill-opacity="0.45" />
+  </g>
+</svg>

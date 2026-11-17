@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <g transform="translate(8, 8) scale(0.25) translate(-60, -64)" fill="none" stroke="#241f31" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke">
+    <!-- 1. Cinta superior estilizada de Flutter -->
+    <polygon points="48,53.5 66,35.5 82,35.5 56,61.5" />
+
+    <!-- 2. Triángulo grande izquierdo de Libadwaita -->
+    <polygon points="35,66.5 61,66.5 61,92.5" />
+
+    <!-- 3. Cuadrado/diamante central de intersección de Flutter -->
+    <polygon points="61,66.5 69,58.5 77,66.5 69,74.5" />
+
+    <!-- 4. Triángulo superior derecho de Flutter -->
+    <polygon points="69,58.5 85,58.5 77,66.5" />
+
+    <!-- 5. Triángulo inferior de Adwaita -->
+    <polygon points="69,74.5 77,66.5 85,74.5" />
+  </g>
+</svg>

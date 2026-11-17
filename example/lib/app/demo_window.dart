@@ -19,6 +19,7 @@ import '../features/toggle_groups/toggle_groups_page.dart';
 import '../features/view_switcher/view_switcher_page.dart';
 import '../features/welcome/welcome_page.dart';
 import 'demo_page.dart';
+import 'adwaitter_logo.dart';
 
 class AdwaitaDemoWindow extends StatefulWidget {
   final AdwThemeMode currentThemeMode;
@@ -359,7 +360,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           _buildSidebarItem(
                             page: DemoPage.welcome,
                             iconWidget:
-                                const AdwEmblem(size: 16, strokeWidth: 1.25),
+                                const AdwaitterSymbolicLogo(size: 16),
                             title: 'Welcome',
                             isCollapsed: true,
                           ),
@@ -369,7 +370,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                       _buildSidebarItem(
                         page: DemoPage.welcome,
                         iconWidget:
-                            const AdwEmblem(size: 16, strokeWidth: 1.25),
+                            const AdwaitterSymbolicLogo(size: 16),
                         title: 'Welcome',
                         isCollapsed: false,
                       ),
