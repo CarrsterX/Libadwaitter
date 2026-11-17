@@ -335,6 +335,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     );
 
     return AdwToolbarView(
+      bottomSafeArea: false,
       topBar: topBar,
       content: Builder(
         builder: (sidebarContext) {
@@ -342,10 +343,12 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                   AdwNavigationSplitViewScope.maybeOf(sidebarContext)
                           ?.isCollapsed ??
                       false;
+              final double bottomSafeInset =
+                  MediaQuery.maybePaddingOf(sidebarContext)?.bottom ?? 0.0;
               return SingleChildScrollView(
                 padding: isCollapsed
-                    ? const EdgeInsets.fromLTRB(12, 24, 12, 0)
-                    : const EdgeInsets.fromLTRB(0, 8, 0, 4),
+                    ? EdgeInsets.fromLTRB(12, 24, 12, bottomSafeInset)
+                    : EdgeInsets.fromLTRB(0, 8, 0, 4 + bottomSafeInset),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -651,12 +654,24 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     );
   }
 
+  bool _isScrollablePage(DemoPage page) {
+    return switch (page) {
+      DemoPage.boxedLists ||
+      DemoPage.toggleGroups ||
+      DemoPage.buttons ||
+      DemoPage.appearance =>
+        true,
+      _ => false,
+    };
+  }
+
   Widget _buildContent() {
     if (_selectedPage == DemoPage.bottomSheet) {
       return const BottomSheetPage();
     }
 
     return AdwToolbarView(
+      bottomSafeArea: !_isScrollablePage(_selectedPage),
       topBar: Builder(
         builder: (contentContext) {
           final isCollapsed =
