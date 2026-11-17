@@ -273,22 +273,37 @@ class _DemoWidgetIconPainter extends CustomPainter {
 
       case DemoIconType.banner:
         final u = s / 16.0;
-        final frame = RRect.fromRectAndRadius(
-          Rect.fromLTWH(1.5 * u, 1.5 * u, 13.0 * u, 13.0 * u),
-          Radius.circular(2.0 * u),
-        );
-        canvas.drawRRect(frame, strokePaint);
+        final openFrame = Path()
+          ..moveTo(1.5 * u, 1.5 * u)
+          ..lineTo(12.5 * u, 1.5 * u)
+          ..arcToPoint(
+            Offset(14.5 * u, 3.5 * u),
+            radius: Radius.circular(2.0 * u),
+          )
+          ..lineTo(14.5 * u, 12.5 * u)
+          ..arcToPoint(
+            Offset(12.5 * u, 14.5 * u),
+            radius: Radius.circular(2.0 * u),
+          )
+          ..lineTo(8.5 * u, 14.5 * u);
+        canvas.drawPath(openFrame, strokePaint);
+        final bannerDetailPaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = thinPaint.strokeWidth * 0.65
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
         canvas.drawLine(
           Offset(1.5 * u, 10.5 * u),
           Offset(14.5 * u, 10.5 * u),
-          thinPaint,
+          bannerDetailPaint,
         );
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(4.5 * u, 4.5 * u, 7.0 * u, 3.0 * u),
+            Rect.fromLTWH(5.0 * u, 4.5 * u, 6.5 * u, 3.0 * u),
             Radius.circular(1.5 * u),
           ),
-          thinPaint,
+          bannerDetailPaint,
         );
         break;
 
