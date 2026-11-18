@@ -42,9 +42,37 @@ Add `libadwaitter` to your `pubspec.yaml`:
 dependencies:
   flutter:
     sdk: flutter
-  libadwaitter: ^0.1.0
-  libadwaitter_icons: ^0.1.0 # Optional: official Adwaita symbolic icons
+  libadwaitter: ^1.0.0-alpha
+  adwaitter_icons: ^0.1.0 # Optional: official Adwaita symbolic icons
 ```
+
+### Linux Native Setup (Automatic Generator)
+
+Run the built-in CLI generator from the root of your Flutter project (ensure Linux support is enabled first with `flutter create --platforms=linux .`):
+
+```bash
+dart run libadwaitter:setup
+```
+
+This automatically configures `linux/runner/my_application.cc` with frameless CSD, RGBA transparency for rounded corners, `GTK_USE_PORTAL=1`, Wayland `app_id`, and the native platform channels (`libadwaitter/window`, `libadwaitter/settings`, `libadwaitter/style`, `libadwaitter/portal`, and `PopupWindow`). A backup (`linux/runner/my_application.cc.bak`) is created before overwriting.
+
+**Available options:**
+
+```bash
+dart run libadwaitter:setup [options]
+```
+
+* `--title <name>`: Initial GTK window title (defaults to `pubspec.yaml` `name`).
+* `--app-id <reverse.dns>`: Freedesktop/Wayland application ID (e.g. `io.github.user.myapp`) and updates `linux/CMakeLists.txt`.
+* `--width <px>` / `--height <px>`: Initial window dimensions (default: `1080x720`).
+* `--counter`: Also generate a starter Libadwaitter counter app in `lib/main.dart`.
+* `--flatpak`: Generate Flatpak manifest, `.desktop`, `.metainfo.xml`, and bundle script under `linux/packaging/flatpak/`.
+* `--snap`: Generate `snap/snapcraft.yaml` with strict confinement and GNOME extension.
+* `--all-packaging`: Generate both Flatpak and Snap packaging.
+* `--channel <stable|beta>`: Release channel (`stable` by default).
+* `--dry-run`: Preview changes without writing files.
+* `--no-backup`: Skip creating `.bak` files.
+* `-h`, `--help`: Show full CLI help.
 
 ### Basic Example
 
@@ -123,6 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
 * **`main`**: Stable releases and tags.
 * **`rc`**: Release candidates undergoing final stabilization.
 * **`beta`**: Pre-release testing and integration.
+* **`alpha`**: Early feature-complete testing builds (e.g. `1.0.0-alpha`).
 * **`dev`**: Active day-to-day development.
 
 Releases follow semantic versioning starting from `0.x.y`, tracking upstream Libadwaita milestones:

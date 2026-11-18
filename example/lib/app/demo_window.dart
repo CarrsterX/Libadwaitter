@@ -123,6 +123,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     return AdwWindow(
       showShadow: true,
       showBorder: true,
+      delegateSafeAreaToChild: true,
       child: Builder(
         builder: (windowContext) => CallbackShortcuts(
           bindings: <ShortcutActivator, VoidCallback>{

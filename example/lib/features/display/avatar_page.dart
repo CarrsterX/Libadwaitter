@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:adwaitter_icons/adwaitter_icons.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
 
@@ -94,38 +95,62 @@ class _AvatarPageState extends State<AvatarPage> {
     super.dispose();
   }
 
+  static const MethodChannel _portalChannel =
+      MethodChannel('libadwaitter/portal');
+
   Future<void> _pickAvatarFile() async {
-    final result = await AdwPortal.openFiles(
-      title: 'Select an Avatar',
-      multiple: false,
-    );
-    if (!mounted) return;
-    if (result.status == AdwPortalStatus.granted &&
-        result.value != null &&
-        result.value!.isNotEmpty) {
-      final path = result.value!.first;
-      final lower = path.toLowerCase();
-      const imageExts = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'];
-      if (!imageExts.any(lower.endsWith)) {
-        AdwToastOverlay.of(context).addToast(
-          const AdwToast(title: Text('Please select a valid image file')),
-        );
-        return;
+    String? path;
+    if (Platform.isAndroid) {
+      final raw = await _portalChannel.invokeMethod<List<dynamic>>(
+        'openFiles',
+        const {'title': 'Select an Avatar', 'multiple': false},
+      );
+      if (raw != null && raw.isNotEmpty && raw.first is String) {
+        path = raw.first as String;
       }
-      setState(() {
-        _customImageFile = File(path);
-      });
+    } else {
+      final result = await AdwPortal.openFiles(
+        title: 'Select an Avatar',
+        multiple: false,
+      );
+      if (result.status == AdwPortalStatus.granted &&
+          result.value != null &&
+          result.value!.isNotEmpty) {
+        path = result.value!.first;
+      }
     }
+    if (!mounted || path == null || path.isEmpty) return;
+
+    final lower = path.toLowerCase();
+    const imageExts = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'];
+    if (!imageExts.any(lower.endsWith)) {
+      AdwToastOverlay.of(context).addToast(
+        const AdwToast(title: Text('Please select a valid image file')),
+      );
+      return;
+    }
+    setState(() {
+      _customImageFile = File(path!);
+    });
   }
 
   Future<void> _exportAvatarToFile() async {
-    final result = await AdwPortal.saveFile(
-      title: 'Save Avatar',
-      currentName: 'avatar.png',
-    );
-    if (!mounted ||
-        result.status != AdwPortalStatus.granted ||
-        result.value == null) {
+    String? targetPath;
+    if (Platform.isAndroid) {
+      targetPath = await _portalChannel.invokeMethod<String>(
+        'saveFile',
+        const {'title': 'Save Avatar', 'currentName': 'avatar.png'},
+      );
+    } else {
+      final result = await AdwPortal.saveFile(
+        title: 'Save Avatar',
+        currentName: 'avatar.png',
+      );
+      if (result.status == AdwPortalStatus.granted) {
+        targetPath = result.value;
+      }
+    }
+    if (!mounted || targetPath == null || targetPath.isEmpty) {
       return;
     }
 
@@ -137,11 +162,22 @@ class _AvatarPageState extends State<AvatarPage> {
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) return;
 
-    final file = File(result.value!);
-    await file.writeAsBytes(byteData.buffer.asUint8List());
-    if (!mounted) return;
+    final bytes = byteData.buffer.asUint8List();
+    if (targetPath.startsWith('content://')) {
+      final ok = await _portalChannel.invokeMethod<bool>(
+        'writeUriBytes',
+        {'uri': targetPath, 'bytes': bytes},
+      );
+      if (ok != true || !mounted) return;
+    } else {
+      final file = File(targetPath);
+      await file.writeAsBytes(bytes);
+      if (!mounted) return;
+    }
 
-    final fileName = result.value!.split('/').last;
+    final fileName = targetPath.startsWith('content://')
+        ? 'avatar.png'
+        : targetPath.split('/').last;
     AdwToastOverlay.of(context).addToast(
       AdwToast(title: Text('Exported to $fileName')),
     );
@@ -207,24 +243,35 @@ class _AvatarPageState extends State<AvatarPage> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          AdwButton(
-                            onPressed: _pickAvatarFile,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  AdwIcons.document_open_symbolic,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _customImageFile != null
-                                      ? _customImageFile!.path.split('/').last
-                                      : '(None)',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 180),
+                            child: AdwButton(
+                              onPressed: _pickAvatarFile,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    AdwIcons.document_open_symbolic,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      _customImageFile != null
+                                          ? _customImageFile!.path
+                                              .split('/')
+                                              .last
+                                              .replaceFirst(
+                                                RegExp(r'^adw_portal_\d+_'),
+                                                '',
+                                              )
+                                          : '(None)',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(width: 6),
