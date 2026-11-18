@@ -1,9 +1,11 @@
 import 'package:libadwaitter/libadwaitter.dart';
 import 'package:adwaitter_icons/adwaitter_icons.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../demo_icons.dart';
 import '../features/appearance/appearance_page.dart';
+import '../features/appearance/demo_colors_dialog.dart';
 import '../features/bottom_sheet/bottom_sheet_page.dart';
 import '../features/boxed_lists/boxed_lists_page.dart';
 import '../features/buttons/buttons_page.dart';
@@ -19,6 +21,7 @@ import '../features/layout/wrap_box_page.dart';
 import '../features/miscellaneous/animations_page.dart';
 import '../features/miscellaneous/style_classes_page.dart';
 import '../features/navigation_view/navigation_view_page.dart';
+import '../features/preferences/demo_preferences_dialog.dart';
 import '../features/split_views/split_views_page.dart';
 import '../features/tab_view/tab_view_page.dart';
 import '../features/toggle_groups/toggle_groups_page.dart';
@@ -83,6 +86,28 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     });
   }
 
+  void _openSidebarSearch() {
+    setState(() {
+      if (!_searchBarVisible) {
+        _searchBarVisible = true;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _searchBarVisible) {
+          _searchFocusNode.requestFocus();
+        }
+      });
+    });
+  }
+
+  void _closeWindowOrQuit(BuildContext windowContext) {
+    final controller = AdwWindowScope.maybeOf(windowContext)?.controller;
+    if (controller != null) {
+      controller.close();
+    } else {
+      SystemNavigator.pop();
+    }
+  }
+
   @override
   void dispose() {
     _searchFocusNode.removeListener(_handleSearchFocusChange);
@@ -98,16 +123,54 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
     return AdwWindow(
       showShadow: true,
       showBorder: true,
-      child: AdwNavigationSplitView(
-        sidebarWidth: 270.0,
-        breakpoint: 600.0,
-        sidebar: _buildSidebar(theme),
-        content: _buildContent(),
+      child: Builder(
+        builder: (windowContext) => CallbackShortcuts(
+          bindings: <ShortcutActivator, VoidCallback>{
+            const SingleActivator(LogicalKeyboardKey.f10):
+                () => _showMainMenu(windowContext),
+            const SingleActivator(LogicalKeyboardKey.comma, control: true):
+                () => showAdwDemoPreferencesDialog(windowContext),
+            const SingleActivator(
+              LogicalKeyboardKey.slash,
+              control: true,
+              shift: true,
+            ): () => _showShortcutsDialog(windowContext),
+            const SingleActivator(
+              LogicalKeyboardKey.question,
+              control: true,
+            ): () => _showShortcutsDialog(windowContext),
+            const SingleActivator(
+              LogicalKeyboardKey.question,
+              control: true,
+              shift: true,
+            ): () => _showShortcutsDialog(windowContext),
+            const SingleActivator(LogicalKeyboardKey.slash, control: true):
+                () => _showShortcutsDialog(windowContext),
+            const SingleActivator(LogicalKeyboardKey.keyF, control: true):
+                _openSidebarSearch,
+            if (_searchBarVisible)
+              const SingleActivator(LogicalKeyboardKey.escape):
+                  _toggleSidebarSearch,
+            const SingleActivator(LogicalKeyboardKey.keyW, control: true): () =>
+                _closeWindowOrQuit(windowContext),
+            const SingleActivator(LogicalKeyboardKey.keyQ, control: true): () =>
+                _closeWindowOrQuit(windowContext),
+          },
+          child: Focus(
+            autofocus: true,
+            child: AdwNavigationSplitView(
+              sidebarWidth: 270.0,
+              breakpoint: 600.0,
+              sidebar: _buildSidebar(theme),
+              content: _buildContent(),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  void _showMainMenu() {
+  void _showMainMenu(BuildContext dialogContext) {
     final RenderBox? buttonBox =
         _menuButtonKey.currentContext?.findRenderObject() as RenderBox?;
     if (buttonBox == null || !buttonBox.hasSize) return;
@@ -116,7 +179,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         buttonBox.localToGlobal(Offset.zero) & buttonBox.size;
 
     showAdwPopover(
-      context: context,
+      context: dialogContext,
       anchorRect: anchorRect,
       owner: _menuButtonKey,
       parentAnchor: AdwPopoverAnchor.bottom,
@@ -144,32 +207,213 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
               children: [
                 AdwPopoverMenuItem(
                   label: 'Inspector',
-                  onTap: handle.dismiss,
+                  onTap: () {
+                    handle.dismiss();
+                    _showToast('Resize or use Flutter DevTools to inspect');
+                  },
                 ),
                 AdwPopoverMenuItem(
                   label: 'Adaptive Preview',
-                  onTap: handle.dismiss,
+                  onTap: () {
+                    handle.dismiss();
+                    _showToast('Resize the window to preview adaptive layouts');
+                  },
                 ),
                 const AdwPopoverDivider(),
                 AdwPopoverMenuItem(
+                  label: 'Colors',
+                  onTap: () {
+                    handle.dismiss();
+                    showDemoColorsDialog(
+                      context: dialogContext,
+                      currentThemeMode: widget.currentThemeMode,
+                      currentAccent: widget.currentAccent,
+                      onThemeModeChanged: widget.onThemeModeChanged,
+                      onAccentChanged: widget.onAccentChanged,
+                    );
+                  },
+                ),
+                AdwPopoverMenuItem(
                   label: 'Preferences',
                   trailing: Text('Ctrl+,', style: shortcutStyle),
-                  onTap: handle.dismiss,
+                  onTap: () {
+                    handle.dismiss();
+                    showAdwDemoPreferencesDialog(dialogContext);
+                  },
                 ),
                 AdwPopoverMenuItem(
                   label: 'Keyboard Shortcuts',
                   trailing: Text('Ctrl+?', style: shortcutStyle),
-                  onTap: handle.dismiss,
+                  onTap: () {
+                    handle.dismiss();
+                    _showShortcutsDialog(dialogContext);
+                  },
                 ),
                 AdwPopoverMenuItem(
                   label: 'About Adwaitter Demo',
-                  onTap: handle.dismiss,
+                  onTap: () {
+                    handle.dismiss();
+                    _showAboutAppDialog(dialogContext);
+                  },
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  void _showToast(String title) {
+    AdwToastOverlay.maybeOf(context)?.addToast(
+      AdwToast(title: Text(title)),
+    );
+  }
+
+  void _showShortcutsDialog(BuildContext dialogContext) {
+    showAdwShortcutsDialog(
+      context: dialogContext,
+      sections: const [
+        AdwShortcutsSection(
+          title: 'General',
+          items: [
+            AdwShortcutsItem(
+              title: 'Open Menu',
+              accelerator: 'F10',
+            ),
+            AdwShortcutsItem(
+              title: 'Preferences',
+              accelerator: '<Control>comma',
+            ),
+            AdwShortcutsItem(
+              title: 'Keyboard Shortcuts',
+              accelerator: '<Control>question',
+            ),
+            AdwShortcutsItem(
+              title: 'Close Current Window',
+              accelerator: '<Control>W',
+            ),
+            AdwShortcutsItem(
+              title: 'Quit',
+              accelerator: '<Control>Q',
+            ),
+          ],
+        ),
+        AdwShortcutsSection(
+          title: 'Tab View',
+          items: [
+            AdwShortcutsItem(
+              title: 'New Tab',
+              accelerator: '<Control>T',
+            ),
+            AdwShortcutsItem(
+              title: 'New Window',
+              accelerator: '<Control>N',
+            ),
+            AdwShortcutsItem(
+              title: 'Close Tab',
+              accelerator: '<Control>W',
+            ),
+          ],
+        ),
+        AdwShortcutsSection(
+          items: [
+            AdwShortcutsItem(
+              title: 'Previous Tab',
+              accelerator: '<Shift><Ctrl>Tab <Ctrl>Page_Up',
+            ),
+            AdwShortcutsItem(
+              title: 'Next Tab',
+              accelerator: '<Ctrl>Tab <Ctrl>Page_Down',
+            ),
+            AdwShortcutsItem(
+              title: 'First Tab',
+              accelerator: '<Ctrl>Home',
+            ),
+            AdwShortcutsItem(
+              title: 'Last Tab',
+              accelerator: '<Ctrl>End',
+            ),
+          ],
+        ),
+        AdwShortcutsSection(
+          items: [
+            AdwShortcutsItem(
+              title: 'Move Tab Left',
+              accelerator: '<Shift><Ctrl>Page_Up',
+              direction: TextDirection.ltr,
+            ),
+            AdwShortcutsItem(
+              title: 'Move Tab Right',
+              accelerator: '<Shift><Ctrl>Page_Down',
+              direction: TextDirection.ltr,
+            ),
+            AdwShortcutsItem(
+              title: 'Move Tab Right',
+              accelerator: '<Shift><Ctrl>Page_Up',
+              direction: TextDirection.rtl,
+            ),
+            AdwShortcutsItem(
+              title: 'Move Tab Left',
+              accelerator: '<Shift><Ctrl>Page_Down',
+              direction: TextDirection.rtl,
+            ),
+          ],
+        ),
+        AdwShortcutsSection(
+          items: [
+            AdwShortcutsItem(
+              title: 'Switch to Tab 1–9',
+              accelerator: '<Alt>1...9',
+            ),
+            AdwShortcutsItem(
+              title: 'Switch to Tab 10',
+              accelerator: '<Alt>0',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showAboutAppDialog(BuildContext dialogContext) {
+    showAdwAboutDialog(
+      context: dialogContext,
+      applicationIcon: const AdwaitterAppLogo(size: 140),
+      applicationName: 'Adwaitter Demo',
+      developerName: 'Claudio Carrasco',
+      version: '1.0.0-alpha',
+      comments: 'Tour of the features in Adwaitter.',
+      website: 'https://github.com/CarrsterX/Libadwaitter',
+      issueUrl: 'https://github.com/CarrsterX/Libadwaitter/issues',
+      copyright: '© 2026 Claudio Carrasco',
+      license: 'GNU Lesser General Public License v2.1',
+      developers: const ['Claudio Carrasco'],
+      artists: const ['GNOME Design Team'],
+      acknowledgements: const [
+        AdwAboutAcknowledgement(
+          title: 'Special thanks to',
+          people: ['Flutter Team', 'Dart Team'],
+        ),
+      ],
+      otherAppsTitle: 'Inspired by',
+      onOpenUrl: (url) => AdwPortal.openUri(url),
+      otherApps: const [
+        AdwAboutOtherApp(
+          appId: 'dev.flutter.Flutter',
+          name: 'Flutter',
+          summary: 'Build apps for any screen',
+          icon: FlutterLogo(size: 32),
+          url: 'https://flutter.dev',
+        ),
+        AdwAboutOtherApp(
+          appId: 'org.gnome.Adwaita1.Demo',
+          name: 'Libadwaita',
+          summary: 'Building blocks for modern GNOME apps',
+          icon: LibadwaitaAppLogo(size: 32),
+          url: 'https://gnome.pages.gitlab.gnome.org/libadwaita/',
+        ),
+      ],
     );
   }
 
@@ -205,7 +449,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 width: 34,
                 height: 34,
                 padding: EdgeInsets.zero,
-                onPressed: _showMainMenu,
+                onPressed: () => _showMainMenu(sidebarContext),
                 child: const Icon(AdwIcons.open_menu_symbolic, size: 16),
               ),
             );

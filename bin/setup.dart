@@ -1724,6 +1724,7 @@ static void first_frame_cb(MyApplication* self, FlView* view) {
 
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
+  g_setenv("GTK_USE_PORTAL", "1", FALSE);
   MyApplication* self = MY_APPLICATION(application);
 
   // Set Wayland xdg_toplevel app_id / prgname so compositors match .desktop & icon

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show FontFeature;
 
 import 'package:adwaitter_icons/adwaitter_icons.dart';
 import 'package:flutter/widgets.dart';

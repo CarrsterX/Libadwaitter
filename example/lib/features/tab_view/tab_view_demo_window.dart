@@ -482,6 +482,8 @@ class _TabViewDemoWindowContentState extends State<_TabViewDemoWindowContent> {
                 content: AdwTabView(
                   controller: widget.controller,
                   onNewTabShortcut: _addNewTab,
+                  onNewWindowShortcut: () =>
+                      widget.onOpenNewWindow(createInitialTab: true),
                 ),
               ),
             ),
