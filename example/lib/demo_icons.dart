@@ -354,11 +354,18 @@ class _DemoWidgetIconPainter extends CustomPainter {
 
       case DemoIconType.avatar:
         final u = s / 16.0;
-        canvas.drawCircle(Offset(8.0 * u, 5.25 * u), 2.75 * u, strokePaint);
+        canvas.drawCircle(Offset(8.0 * u, 5.0 * u), 3.75 * u, strokePaint);
         final shoulders = Path()
-          ..moveTo(2.75 * u, 13.75 * u)
-          ..quadraticBezierTo(3.25 * u, 9.75 * u, 8.0 * u, 9.75 * u)
-          ..quadraticBezierTo(12.75 * u, 9.75 * u, 13.25 * u, 13.75 * u);
+          ..moveTo(1.5 * u, 14.5 * u)
+          ..arcToPoint(
+            Offset(5.25 * u, 10.75 * u),
+            radius: Radius.circular(3.75 * u),
+          )
+          ..lineTo(10.75 * u, 10.75 * u)
+          ..arcToPoint(
+            Offset(14.5 * u, 14.5 * u),
+            radius: Radius.circular(3.75 * u),
+          );
         canvas.drawPath(shoulders, strokePaint);
         break;
 
