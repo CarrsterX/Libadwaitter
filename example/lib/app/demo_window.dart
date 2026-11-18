@@ -13,6 +13,9 @@ import '../features/display/avatar_page.dart';
 import '../features/display/banner_page.dart';
 import '../features/display/spinner_page.dart';
 import '../features/display/toast_page.dart';
+import '../features/layout/clamp_page.dart';
+import '../features/layout/multi_layout_view_page.dart';
+import '../features/layout/wrap_box_page.dart';
 import '../features/navigation_view/navigation_view_page.dart';
 import '../features/pending/pending_page.dart';
 import '../features/split_views/split_views_page.dart';
@@ -779,9 +782,9 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
         ),
       DemoPage.spinner => const SpinnerPage(),
       DemoPage.avatar => const AvatarPage(),
-      DemoPage.clamp ||
-      DemoPage.wrapBox ||
-      DemoPage.multiLayoutView ||
+      DemoPage.clamp => const ClampPage(),
+      DemoPage.wrapBox => const WrapBoxPage(),
+      DemoPage.multiLayoutView => const MultiLayoutViewPage(),
       DemoPage.styleClasses ||
       DemoPage.animations =>
         PendingPage(title: _selectedPage.title),
