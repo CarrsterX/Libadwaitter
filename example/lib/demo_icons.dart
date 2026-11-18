@@ -44,8 +44,7 @@ class DemoWidgetIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
     final resolvedSize = size ?? iconTheme.size ?? 16.0;
-    final resolvedColor =
-        color ?? iconTheme.color ?? const Color(0xFFFFFFFF);
+    final resolvedColor = color ?? iconTheme.color ?? const Color(0xFFFFFFFF);
 
     return SizedBox(
       width: resolvedSize,
@@ -73,12 +72,10 @@ class _DemoWidgetIconPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final s = size.shortestSide;
     // Sidebar (16px) uses standard 2px SVG weight; 128px statuspage uses ~8px
-    final strokeWidth = s <= 24.0
-        ? (s * 0.125).clamp(1.8, 2.5)
-        : (s * 0.0625).clamp(2.5, 8.2);
-    final thinStroke = s <= 24.0
-        ? (s * 0.085).clamp(1.2, 1.9)
-        : (s * 0.046).clamp(2.0, 6.0);
+    final strokeWidth =
+        s <= 24.0 ? (s * 0.125).clamp(1.8, 2.5) : (s * 0.0625).clamp(2.5, 8.2);
+    final thinStroke =
+        s <= 24.0 ? (s * 0.085).clamp(1.2, 1.9) : (s * 0.046).clamp(2.0, 6.0);
 
     final strokePaint = Paint()
       ..color = color
@@ -423,19 +420,26 @@ class _DemoWidgetIconPainter extends CustomPainter {
           Radius.circular(2.0 * u),
         );
         canvas.drawRRect(frame, strokePaint);
+        final innerPillPaint = Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokePaint.strokeWidth * 0.5
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(4.5 * u, 9.5 * u, 7.0 * u, 3.0 * u),
-            Radius.circular(1.5 * u),
+            Rect.fromLTWH(4.8 * u, 9.3 * u, 6.4 * u, 2.9 * u),
+            const Radius.circular(999),
           ),
-          thinPaint,
+          innerPillPaint,
         );
         break;
 
       case DemoIconType.aboutDialog:
         final u = s / 16.0;
         canvas.drawCircle(Offset(8.0 * u, 8.0 * u), 6.5 * u, strokePaint);
-        canvas.drawCircle(Offset(8.0 * u, 5.0 * u), strokeWidth * 0.55, fillPaint);
+        canvas.drawCircle(
+            Offset(8.0 * u, 5.0 * u), strokeWidth * 0.55, fillPaint);
         final iPath = Path()
           ..moveTo(7.0 * u, 8.0 * u)
           ..lineTo(8.0 * u, 8.0 * u)
@@ -459,9 +463,12 @@ class _DemoWidgetIconPainter extends CustomPainter {
 
       case DemoIconType.wrapBox:
         final u = s / 16.0;
-        canvas.drawLine(Offset(3.0 * u, 4.0 * u), Offset(11.0 * u, 4.0 * u), strokePaint);
-        canvas.drawLine(Offset(3.0 * u, 8.0 * u), Offset(13.0 * u, 8.0 * u), strokePaint);
-        canvas.drawLine(Offset(3.0 * u, 12.0 * u), Offset(7.0 * u, 12.0 * u), strokePaint);
+        canvas.drawLine(
+            Offset(3.0 * u, 4.0 * u), Offset(11.0 * u, 4.0 * u), strokePaint);
+        canvas.drawLine(
+            Offset(3.0 * u, 8.0 * u), Offset(13.0 * u, 8.0 * u), strokePaint);
+        canvas.drawLine(
+            Offset(3.0 * u, 12.0 * u), Offset(7.0 * u, 12.0 * u), strokePaint);
         break;
 
       case DemoIconType.multiLayoutView:
@@ -619,4 +626,3 @@ class _DemoWidgetIconPainter extends CustomPainter {
   bool shouldRepaint(covariant _DemoWidgetIconPainter oldDelegate) =>
       oldDelegate.type != type || oldDelegate.color != color;
 }
-

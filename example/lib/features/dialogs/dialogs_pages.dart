@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
 
 import '../../app/adwaitter_logo.dart';
+import '../../demo_icons.dart';
 
 void showDemoAboutDialog(BuildContext context) {
   showAdwAboutDialog(
@@ -137,44 +138,95 @@ void showDemoPreferencesDialog({
   );
 }
 
-class AlertDialogPage extends StatelessWidget {
+class AlertDialogPage extends StatefulWidget {
   const AlertDialogPage({super.key});
+
+  @override
+  State<AlertDialogPage> createState() => _AlertDialogPageState();
+}
+
+class _AlertDialogPageState extends State<AlertDialogPage> {
+  AdwToast? _lastToast;
+
+  void _showResponseToast(String response) {
+    final overlay = AdwToastOverlay.of(context);
+    if (_lastToast != null) {
+      overlay.dismissToast(_lastToast!);
+    }
+    final toast = AdwToast(title: Text('Dialog response: $response'));
+    _lastToast = toast;
+    overlay.addToast(toast);
+  }
 
   @override
   Widget build(BuildContext context) {
     return AdwStatusPage(
+      icon: const DemoWidgetIcon(DemoIconType.alertDialog, size: 134),
       title: const Text('Alert Dialog'),
+      description: const Text('Adaptive alert dialog'),
       child: Center(
-        child: AdwButton(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        child: AdwButton.pill(
           onPressed: () {
             showAdwAlertDialog(
               context: context,
-              heading: const Text('Reset Demo Settings?'),
+              barrierDismissible: false,
+              heading: const Text('Save Changes?'),
               body: const Text(
-                'Are you sure you want to reset all controls to their default state? '
-                'This action is reversible by changing the controls again.',
+                'Open document contains unsaved changes. '
+                'Changes which are not saved will be permanently lost.',
               ),
               actions: [
-                AdwButton.flat(
-                  onPressed: () => Navigator.of(context).pop(),
+                AdwButton(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 10.5),
+                  borderRadius: BorderRadius.circular(12),
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    _showResponseToast('cancel');
+                  },
                   child: const Text('Cancel'),
                 ),
-                AdwButton.destructive(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    AdwToastOverlay.of(context).addToast(
-                      const AdwToast(
-                        title: Text('Settings restored to defaults'),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AdwTheme.of(context).colors.isDark
+                        ? const Color(0xFF5D4446)
+                        : const Color(0xFFF2D5D6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: AdwButton.flat(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    onPressed: () {
+                      Navigator.of(context, rootNavigator: true).pop();
+                      _showResponseToast('discard');
+                    },
+                    child: Text(
+                      'Discard',
+                      style: TextStyle(
+                        color: AdwTheme.of(context).colors.isDark
+                            ? const Color(0xFFFF938C)
+                            : const Color(0xFFDC7272),
                       ),
-                    );
+                    ),
+                  ),
+                ),
+                AdwButton.suggested(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 10.5),
+                  borderRadius: BorderRadius.circular(12),
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    _showResponseToast('save');
                   },
-                  child: const Text('Reset'),
+                  child: const Text('Save'),
                 ),
               ],
             );
           },
-          child: const Text('Open Alert Dialog'),
+          child: const Text('Alert Dialog'),
         ),
       ),
     );
@@ -198,4 +250,3 @@ class AboutDialogPage extends StatelessWidget {
     );
   }
 }
-
