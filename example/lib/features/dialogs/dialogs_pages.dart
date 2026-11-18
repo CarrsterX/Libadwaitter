@@ -239,12 +239,76 @@ class AboutDialogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AdwStatusPage(
+      icon: const DemoWidgetIcon(DemoIconType.aboutDialog, size: 128),
       title: const Text('About Dialog'),
+      description: const Text('An about dialog'),
       child: Center(
-        child: AdwButton.suggested(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-          onPressed: () => showDemoAboutDialog(context),
-          child: const Text('Open About Dialog'),
+        child: AdwButton.pill(
+          onPressed: () {
+            showAdwAboutDialog(
+              context: context,
+              applicationIcon: const AdwaitterAppLogo(size: 140),
+              applicationName: 'Adwaitter',
+              developerName: 'Claudio Carrasco',
+              version: '1.2.3',
+              releaseNotesVersion: '1.2.0',
+              releaseNotes: 'This release adds the following features:\n\n'
+                  '• Added a way to export fonts.\n'
+                  '• Better support for monospace fonts.\n'
+                  '• Added a way to preview italic text.\n'
+                  '• Bug fixes and performance improvements.\n'
+                  '• Translation updates.',
+              comments:
+                  'Typeset is an app that doesn’t exist and is used as an '
+                  'example content for this about dialog.',
+              website: 'https://example.org',
+              issueUrl: 'https://example.org',
+              supportUrl: 'https://example.org',
+              copyright: '© 2026 Claudio Carrasco',
+              license: 'GNU Lesser General Public License v2.1',
+              developers: const ['Claudio Carrasco <claudio@example.com>'],
+              artists: const ['GNOME Design Team'],
+              links: const [
+                AdwAboutLink(
+                  title: 'Documentation',
+                  url:
+                      'https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.AboutDialog.html',
+                ),
+              ],
+              legalSections: const [
+                AdwAboutLegalSection(
+                  title: 'Fonts',
+                  license:
+                      "This application uses font data from <a href='https://example.org'>somewhere</a>.",
+                ),
+              ],
+              acknowledgements: const [
+                AdwAboutAcknowledgement(
+                  title: 'Special thanks to',
+                  people: ['My cat'],
+                ),
+              ],
+              otherAppsTitle: 'Inspired by',
+              onOpenUrl: (url) => AdwPortal.openUri(url),
+              otherApps: const [
+                AdwAboutOtherApp(
+                  appId: 'dev.flutter.Flutter',
+                  name: 'Flutter',
+                  summary: 'Build apps for any screen',
+                  icon: FlutterLogo(size: 32),
+                  url: 'https://flutter.dev',
+                ),
+                AdwAboutOtherApp(
+                  appId: 'org.gnome.Adwaita1.Demo',
+                  name: 'Libadwaita',
+                  summary: 'Building blocks for modern GNOME apps',
+                  icon: LibadwaitaAppLogo(size: 32),
+                  url: 'https://gnome.pages.gitlab.gnome.org/libadwaita/',
+                ),
+              ],
+            );
+          },
+          child: const Text('Run Demo'),
         ),
       ),
     );
