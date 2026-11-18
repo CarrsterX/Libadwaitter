@@ -16,6 +16,7 @@ import '../features/display/toast_page.dart';
 import '../features/layout/clamp_page.dart';
 import '../features/layout/multi_layout_view_page.dart';
 import '../features/layout/wrap_box_page.dart';
+import '../features/miscellaneous/style_classes_page.dart';
 import '../features/navigation_view/navigation_view_page.dart';
 import '../features/pending/pending_page.dart';
 import '../features/split_views/split_views_page.dart';
@@ -785,9 +786,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.clamp => const ClampPage(),
       DemoPage.wrapBox => const WrapBoxPage(),
       DemoPage.multiLayoutView => const MultiLayoutViewPage(),
-      DemoPage.styleClasses ||
-      DemoPage.animations =>
-        PendingPage(title: _selectedPage.title),
+      DemoPage.styleClasses => const StyleClassesPage(),
+      DemoPage.animations => PendingPage(title: _selectedPage.title),
     };
   }
 }
