@@ -12,6 +12,7 @@ enum DemoIconType {
   buttons,
   banner,
   toasts,
+  avatar,
   spinner,
   alertDialog,
   aboutDialog,
@@ -349,6 +350,16 @@ class _DemoWidgetIconPainter extends CustomPainter {
           Offset(9.5 * u, 10.5 * u),
           thinPaint,
         );
+        break;
+
+      case DemoIconType.avatar:
+        final u = s / 16.0;
+        canvas.drawCircle(Offset(8.0 * u, 5.25 * u), 2.75 * u, strokePaint);
+        final shoulders = Path()
+          ..moveTo(2.75 * u, 13.75 * u)
+          ..quadraticBezierTo(3.25 * u, 9.75 * u, 8.0 * u, 9.75 * u)
+          ..quadraticBezierTo(12.75 * u, 9.75 * u, 13.25 * u, 13.75 * u);
+        canvas.drawPath(shoulders, strokePaint);
         break;
 
       case DemoIconType.toasts:

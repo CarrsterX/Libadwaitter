@@ -9,6 +9,7 @@ import '../features/boxed_lists/boxed_lists_page.dart';
 import '../features/buttons/buttons_page.dart';
 import '../features/carousel/carousel_page.dart';
 import '../features/dialogs/dialogs_pages.dart';
+import '../features/display/avatar_page.dart';
 import '../features/display/banner_page.dart';
 import '../features/display/spinner_page.dart';
 import '../features/display/toast_page.dart';
@@ -521,7 +522,9 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         ),
                         _buildSidebarItem(
                           page: DemoPage.avatar,
-                          icon: AdwIcons.avatar_default_symbolic,
+                          iconWidget: const DemoWidgetIcon(
+                              DemoIconType.avatar,
+                              size: 16),
                           title: 'Avatar',
                           isCollapsed: isCollapsed,
                         ),
@@ -717,6 +720,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.toggleGroups ||
       DemoPage.buttons ||
       DemoPage.banner ||
+      DemoPage.avatar ||
       DemoPage.appearance =>
         true,
       _ => false,
@@ -774,7 +778,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           onAccentChanged: widget.onAccentChanged,
         ),
       DemoPage.spinner => const SpinnerPage(),
-      DemoPage.avatar ||
+      DemoPage.avatar => const AvatarPage(),
       DemoPage.clamp ||
       DemoPage.wrapBox ||
       DemoPage.multiLayoutView ||
