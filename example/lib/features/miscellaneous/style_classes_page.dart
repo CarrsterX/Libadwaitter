@@ -2116,7 +2116,9 @@ class _CardSampleState extends State<_CardSample> {
             : null,
         onTapCancel:
             widget.activatable ? () => setState(() => _pressed = false) : null,
-        child: Container(
+        child: AnimatedContainer(
+          duration: AdwCurves.normalDuration,
+          curve: AdwCurves.standard,
           padding: const EdgeInsets.all(12.0),
           decoration: BoxDecoration(
             color: bg,
