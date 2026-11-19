@@ -9,7 +9,7 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AdwStatusPage(
-      icon: AdwaitterSymbolicLogo(size: 128),
+      icon: AdwaitterSymbolicLogo(size: 128, strokeWidth: 1.1),
       title: Text('Welcome to Adwaitter Demo'),
       description:
           Text('This is a tour of the features the library has to offer'),

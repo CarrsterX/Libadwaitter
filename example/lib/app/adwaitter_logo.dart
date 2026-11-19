@@ -8,7 +8,7 @@ class AdwaitterSymbolicLogo extends StatelessWidget {
     super.key,
     this.size = 128,
     this.color,
-    this.strokeWidth = 1.1,
+    this.strokeWidth = 1.45,
   });
 
   final double size;
