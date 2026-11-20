@@ -158,12 +158,13 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _OsdIconButton(
-                  icon: AdwIcons.list_add_symbolic,
+                AdwButton.osd(
+                  isFlat: true,
                   onPressed: () {
                     _volumeNotifier.value =
                         (_volumeNotifier.value + 0.1).clamp(0.0, 1.0);
                   },
+                  child: const Icon(AdwIcons.list_add_symbolic, size: 16.0),
                 ),
                 const SizedBox(height: 6.0),
                 SizedBox(
@@ -171,20 +172,22 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                   height: 100.0,
                   child: ValueListenableBuilder<double>(
                     valueListenable: _volumeNotifier,
-                    builder: (_, vol, __) => _OsdSlider(
+                    builder: (_, vol, __) => AdwSlider(
                       orientation: Axis.vertical,
+                      isOsd: true,
                       value: vol,
                       onChanged: (v) => _volumeNotifier.value = v,
                     ),
                   ),
                 ),
                 const SizedBox(height: 6.0),
-                _OsdIconButton(
-                  icon: AdwIcons.list_remove_symbolic,
+                AdwButton.osd(
+                  isFlat: true,
                   onPressed: () {
                     _volumeNotifier.value =
                         (_volumeNotifier.value - 0.1).clamp(0.0, 1.0);
                   },
+                  child: const Icon(AdwIcons.list_remove_symbolic, size: 16.0),
                 ),
               ],
             ),
@@ -441,7 +444,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _OsdButton(
+                          AdwButton.osd(
                             onPressed: () {},
                             child: const Icon(
                               AdwIcons.go_previous_symbolic,
@@ -449,7 +452,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                             ),
                           ),
                           const SizedBox(width: 6.0),
-                          _OsdButton(
+                          AdwButton.osd(
                             onPressed: () {},
                             child: const Icon(
                               AdwIcons.go_next_symbolic,
@@ -470,32 +473,36 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
   }
 
   Widget _buildEntriesGroup(AdwThemeData theme, bool isNarrow) {
-    final regularEntry = _StyledEntry(
+    final regularEntry = AdwEntry(
       controller: _entryRegular,
       placeholder: 'Regular',
+      suffix: const Icon(AdwIcons.edit_copy_symbolic),
     );
     final successEntry = _StyleTooltip(
       message: 'success',
-      child: _StyledEntry(
+      child: AdwEntry(
         controller: _entrySuccess,
         placeholder: 'Success',
-        semanticColor: _standaloneSuccessColor(theme),
+        style: AdwEntryStyle.success,
+        suffix: const Icon(AdwIcons.edit_copy_symbolic),
       ),
     );
     final warningEntry = _StyleTooltip(
       message: 'warning',
-      child: _StyledEntry(
+      child: AdwEntry(
         controller: _entryWarning,
         placeholder: 'Warning',
-        semanticColor: _standaloneWarningColor(theme),
+        style: AdwEntryStyle.warning,
+        suffix: const Icon(AdwIcons.edit_copy_symbolic),
       ),
     );
     final errorEntry = _StyleTooltip(
       message: 'error',
-      child: _StyledEntry(
+      child: AdwEntry(
         controller: _entryError,
         placeholder: 'Error',
-        semanticColor: _standaloneErrorColor(theme),
+        style: AdwEntryStyle.error,
+        suffix: const Icon(AdwIcons.edit_copy_symbolic),
       ),
     );
 
@@ -672,18 +679,24 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _LinkedIconButton(
-                        icon: AdwIcons.view_grid_symbolic,
-                        isSelected: _linkedViewToggle == 0,
+                      AdwButton(
+                        width: 34.0,
+                        height: 34.0,
+                        padding: EdgeInsets.zero,
+                        isChecked: _linkedViewToggle == 0,
                         borderRadius: const BorderRadius.horizontal(left: r),
-                        onTap: () => setState(() => _linkedViewToggle = 0),
+                        onPressed: () => setState(() => _linkedViewToggle = 0),
+                        child: const Icon(AdwIcons.view_grid_symbolic, size: 16.0),
                       ),
                       Container(width: 1.0, height: 34.0, color: gapColor),
-                      _LinkedIconButton(
-                        icon: AdwIcons.view_list_symbolic,
-                        isSelected: _linkedViewToggle == 1,
+                      AdwButton(
+                        width: 34.0,
+                        height: 34.0,
+                        padding: EdgeInsets.zero,
+                        isChecked: _linkedViewToggle == 1,
                         borderRadius: const BorderRadius.horizontal(right: r),
-                        onTap: () => setState(() => _linkedViewToggle = 1),
+                        onPressed: () => setState(() => _linkedViewToggle = 1),
+                        child: const Icon(AdwIcons.view_list_symbolic, size: 16.0),
                       ),
                     ],
                   ),
@@ -697,7 +710,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                       child: Row(
                         children: [
                           Expanded(
-                            child: _LinkedEntry(
+                            child: AdwEntry(
                               controller: _linkedEntry1,
                               placeholder: 'Entry',
                               borderRadius:
@@ -706,18 +719,21 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                           ),
                           Container(width: 1.0, color: gapColor),
                           Expanded(
-                            child: _LinkedEntry(
+                            child: AdwEntry(
                               controller: _linkedEntry2,
                               placeholder: 'Entry',
                               borderRadius: BorderRadius.zero,
                             ),
                           ),
                           Container(width: 1.0, color: gapColor),
-                          _LinkedTextButton(
-                            label: 'Button',
+                          AdwButton(
+                            height: 34.0,
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 17.0),
                             borderRadius:
                                 const BorderRadius.horizontal(right: r),
-                            onTap: () {},
+                            onPressed: () {},
+                            child: const Text('Button'),
                           ),
                         ],
                       ),
@@ -737,25 +753,34 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _LinkedIconButton(
-                          icon: AdwIcons.edit_cut_symbolic,
-                          isSelected: false,
+                        AdwButton(
+                          width: 34.0,
+                          height: 34.0,
+                          padding: EdgeInsets.zero,
                           borderRadius: const BorderRadius.vertical(top: r),
-                          onTap: () {},
+                          onPressed: () {},
+                          child:
+                              const Icon(AdwIcons.edit_cut_symbolic, size: 16.0),
                         ),
                         Container(height: 1.0, color: gapColor),
-                        _LinkedIconButton(
-                          icon: AdwIcons.edit_copy_symbolic,
-                          isSelected: false,
+                        AdwButton(
+                          width: 34.0,
+                          height: 34.0,
+                          padding: EdgeInsets.zero,
                           borderRadius: BorderRadius.zero,
-                          onTap: () {},
+                          onPressed: () {},
+                          child: const Icon(AdwIcons.edit_copy_symbolic,
+                              size: 16.0),
                         ),
                         Container(height: 1.0, color: gapColor),
-                        _LinkedIconButton(
-                          icon: AdwIcons.edit_paste_symbolic,
-                          isSelected: false,
+                        AdwButton(
+                          width: 34.0,
+                          height: 34.0,
+                          padding: EdgeInsets.zero,
                           borderRadius: const BorderRadius.vertical(bottom: r),
-                          onTap: () {},
+                          onPressed: () {},
+                          child: const Icon(AdwIcons.edit_paste_symbolic,
+                              size: 16.0),
                         ),
                       ],
                     ),
@@ -768,32 +793,23 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          height: 34.0,
-                          child: _LinkedEntry(
-                            controller: _streetEntry,
-                            placeholder: 'Street',
-                            borderRadius: const BorderRadius.vertical(top: r),
-                          ),
+                        AdwEntry(
+                          controller: _streetEntry,
+                          placeholder: 'Street',
+                          borderRadius: const BorderRadius.vertical(top: r),
                         ),
                         Container(height: 1.0, color: gapColor),
-                        SizedBox(
-                          height: 34.0,
-                          child: _LinkedEntry(
-                            controller: _cityEntry,
-                            placeholder: 'City',
-                            borderRadius: BorderRadius.zero,
-                          ),
+                        AdwEntry(
+                          controller: _cityEntry,
+                          placeholder: 'City',
+                          borderRadius: BorderRadius.zero,
                         ),
                         Container(height: 1.0, color: gapColor),
-                        SizedBox(
-                          height: 34.0,
-                          child: _LinkedEntry(
-                            controller: _provinceEntry,
-                            placeholder: 'Province',
-                            borderRadius:
-                                const BorderRadius.vertical(bottom: r),
-                          ),
+                        AdwEntry(
+                          controller: _provinceEntry,
+                          placeholder: 'Province',
+                          borderRadius:
+                              const BorderRadius.vertical(bottom: r),
                         ),
                       ],
                     ),
@@ -975,12 +991,16 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               height: 100.0,
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: _StyleTooltip(
                       message: 'card',
-                      child: _CardSample(
-                        label: 'Card',
-                        activatable: false,
+                      child: AdwCard(
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Card',
+                          textAlign: TextAlign.center,
+                          style: theme.typography.body,
+                        ),
                       ),
                     ),
                   ),
@@ -988,10 +1008,15 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                   Expanded(
                     child: _StyleTooltip(
                       message: 'card, activatable',
-                      child: _CardSample(
-                        label: 'Card (Activatable)',
+                      child: AdwCard(
                         activatable: true,
-                        onTap: () {},
+                        onPressed: () {},
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Card (Activatable)',
+                          textAlign: TextAlign.center,
+                          style: theme.typography.body,
+                        ),
                       ),
                     ),
                   ),
@@ -999,10 +1024,15 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                   Expanded(
                     child: _StyleTooltip(
                       message: 'card',
-                      child: _CardSample(
-                        label: 'Card (Button)',
+                      child: AdwCard(
                         activatable: true,
-                        onTap: () {},
+                        onPressed: () {},
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Card (Button)',
+                          textAlign: TextAlign.center,
+                          style: theme.typography.body,
+                        ),
                       ),
                     ),
                   ),
@@ -1139,7 +1169,8 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                       children: [
                         _StyleTooltip(
                           message: 'selection-mode',
-                          child: _SelectionModeCheckbox(
+                          child: AdwCheckbox(
+                            selectionMode: true,
                             value: _selCheck1,
                             onChanged: (v) => setState(() => _selCheck1 = v),
                           ),
@@ -1147,7 +1178,8 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                         const SizedBox(width: 12.0),
                         _StyleTooltip(
                           message: 'selection-mode',
-                          child: _SelectionModeCheckbox(
+                          child: AdwCheckbox(
+                            selectionMode: true,
                             value: _selCheck2,
                             onChanged: (v) => setState(() => _selCheck2 = v),
                           ),
@@ -1256,25 +1288,38 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 ),
                 child: Row(
                   children: [
-                    _OsdIconButton(
-                      icon: AdwIcons.media_skip_backward_symbolic,
+                    AdwButton.osd(
+                      isFlat: true,
                       onPressed: () {},
+                      child: const Icon(
+                        AdwIcons.media_skip_backward_symbolic,
+                        size: 16.0,
+                      ),
                     ),
                     const SizedBox(width: 6.0),
-                    _OsdIconButton(
-                      icon: _isPlaying
-                          ? AdwIcons.media_playback_pause_symbolic
-                          : AdwIcons.media_playback_start_symbolic,
+                    AdwButton.osd(
+                      isFlat: true,
                       onPressed: () => setState(() => _isPlaying = !_isPlaying),
+                      child: Icon(
+                        _isPlaying
+                            ? AdwIcons.media_playback_pause_symbolic
+                            : AdwIcons.media_playback_start_symbolic,
+                        size: 16.0,
+                      ),
                     ),
                     const SizedBox(width: 6.0),
-                    _OsdIconButton(
-                      icon: AdwIcons.media_skip_forward_symbolic,
+                    AdwButton.osd(
+                      isFlat: true,
                       onPressed: () {},
+                      child: const Icon(
+                        AdwIcons.media_skip_forward_symbolic,
+                        size: 16.0,
+                      ),
                     ),
                     const SizedBox(width: 12.0),
                     Expanded(
-                      child: _OsdSlider(
+                      child: AdwSlider(
+                        isOsd: true,
                         value: _mediaProgress,
                         onChanged: (v) => setState(() => _mediaProgress = v),
                       ),
@@ -1282,10 +1327,11 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                     const SizedBox(width: 12.0),
                     ValueListenableBuilder<double>(
                       valueListenable: _volumeNotifier,
-                      builder: (_, vol, __) => _OsdIconButton(
+                      builder: (_, vol, __) => AdwButton.osd(
                         key: _volumeBtnKey,
-                        icon: _volumeIcon(vol),
+                        isFlat: true,
                         onPressed: _showVolumePopover,
+                        child: Icon(_volumeIcon(vol), size: 16.0),
                       ),
                     ),
                   ],
@@ -1703,776 +1749,3 @@ class _StyleTooltipState extends State<_StyleTooltip> {
   }
 }
 
-class _OsdButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onPressed;
-
-  const _OsdButton({
-    required this.child,
-    required this.onPressed,
-  });
-
-  @override
-  State<_OsdButton> createState() => _OsdButtonState();
-}
-
-class _OsdButtonState extends State<_OsdButton> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    // Matches `_buttons.scss` `button.osd`: 32x32 min + 5px padding = 34x34,
-    // border-radius: $button_radius (9px), background-color: RGB(0 0 0 / 65%).
-    final bg = _pressed
-        ? const Color(0xB33F3F3F)
-        : (_hovered ? const Color(0xA6262626) : const Color(0xA6000000));
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() {
-        _hovered = false;
-        _pressed = false;
-      }),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onPressed();
-        },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: Container(
-          width: 42.0,
-          height: 42.0,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(9.0),
-          ),
-          alignment: Alignment.center,
-          child: IconTheme(
-            data: const IconThemeData(color: Color(0xE6FFFFFF), size: 16.0),
-            child: widget.child,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StyledEntry extends StatefulWidget {
-  final TextEditingController controller;
-  final String placeholder;
-  final Color? semanticColor;
-
-  const _StyledEntry({
-    required this.controller,
-    required this.placeholder,
-    this.semanticColor,
-  });
-
-  @override
-  State<_StyledEntry> createState() => _StyledEntryState();
-}
-
-class _StyledEntryState extends State<_StyledEntry> {
-  final FocusNode _focusNode = FocusNode();
-  bool _focused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(_onFocusChange);
-  }
-
-  @override
-  void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (mounted) {
-      setState(() => _focused = _focusNode.hasFocus);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AdwTheme.of(context);
-    // Matches `_entries.scss` + `_labels.scss`:
-    // `currentColor` becomes `--success-color`, `--warning-color`, or `--error-color`,
-    // `background-color: color-mix(in srgb, currentColor 10%, transparent)`,
-    // NO border unless focused (`focus-ring` = 2px outline at 50% accent/semantic color).
-    final currentColor = widget.semanticColor ?? theme.colors.windowForeground;
-    final focusColor = widget.semanticColor ?? theme.colors.accentColor;
-    final bgColor = currentColor.withValues(alpha: 0.10);
-
-    return GestureDetector(
-      onTap: () => _focusNode.requestFocus(),
-      child: AnimatedContainer(
-        duration: AdwCurves.shortDuration,
-        curve: AdwCurves.standard,
-        height: 34.0,
-        padding: const EdgeInsets.symmetric(horizontal: 9.0),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(9.0),
-          border: _focused
-              ? Border.all(
-                  color: focusColor.withValues(alpha: 0.50),
-                  width: 2.0,
-                )
-              : null,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: EditableText(
-                controller: widget.controller,
-                focusNode: _focusNode,
-                style: theme.typography.body.copyWith(color: currentColor),
-                cursorColor: currentColor,
-                backgroundCursorColor: theme.colors.windowBackground,
-              ),
-            ),
-            const SizedBox(width: 6.0),
-            Icon(
-              AdwIcons.edit_copy_symbolic,
-              size: 16.0,
-              color: currentColor.withValues(alpha: 0.70),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LinkedIconButton extends StatefulWidget {
-  final IconData icon;
-  final bool isSelected;
-  final BorderRadius borderRadius;
-  final VoidCallback onTap;
-
-  const _LinkedIconButton({
-    required this.icon,
-    required this.isSelected,
-    required this.borderRadius,
-    required this.onTap,
-  });
-
-  @override
-  State<_LinkedIconButton> createState() => _LinkedIconButtonState();
-}
-
-class _LinkedIconButtonState extends State<_LinkedIconButton> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AdwTheme.of(context);
-    final fg = theme.colors.windowForeground;
-    final double alpha;
-    if (_pressed) {
-      alpha = widget.isSelected ? 0.40 : 0.30;
-    } else if (widget.isSelected) {
-      alpha = _hovered ? 0.35 : 0.30;
-    } else if (_hovered) {
-      alpha = 0.15;
-    } else {
-      alpha = 0.10;
-    }
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() {
-        _hovered = false;
-        _pressed = false;
-      }),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onTap();
-        },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: AdwCurves.normalDuration,
-          curve: AdwCurves.standard,
-          width: 34.0,
-          height: 34.0,
-          decoration: BoxDecoration(
-            color: fg.withValues(alpha: alpha),
-            borderRadius: widget.borderRadius,
-          ),
-          alignment: Alignment.center,
-          child: Icon(
-            widget.icon,
-            size: 16.0,
-            color: fg,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LinkedTextButton extends StatefulWidget {
-  final String label;
-  final BorderRadius borderRadius;
-  final VoidCallback onTap;
-
-  const _LinkedTextButton({
-    required this.label,
-    required this.borderRadius,
-    required this.onTap,
-  });
-
-  @override
-  State<_LinkedTextButton> createState() => _LinkedTextButtonState();
-}
-
-class _LinkedTextButtonState extends State<_LinkedTextButton> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AdwTheme.of(context);
-    final fg = theme.colors.windowForeground;
-    final alpha = _pressed ? 0.30 : (_hovered ? 0.15 : 0.10);
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() {
-        _hovered = false;
-        _pressed = false;
-      }),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onTap();
-        },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: AdwCurves.normalDuration,
-          curve: AdwCurves.standard,
-          height: 34.0,
-          padding: const EdgeInsets.symmetric(horizontal: 17.0),
-          decoration: BoxDecoration(
-            color: fg.withValues(alpha: alpha),
-            borderRadius: widget.borderRadius,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            widget.label,
-            style: theme.typography.heading,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LinkedEntry extends StatefulWidget {
-  final TextEditingController controller;
-  final String placeholder;
-  final BorderRadius borderRadius;
-
-  const _LinkedEntry({
-    required this.controller,
-    required this.placeholder,
-    required this.borderRadius,
-  });
-
-  @override
-  State<_LinkedEntry> createState() => _LinkedEntryState();
-}
-
-class _LinkedEntryState extends State<_LinkedEntry> {
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onChanged);
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _onChanged() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AdwTheme.of(context);
-    final fg = theme.colors.windowForeground;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _focusNode.requestFocus(),
-      child: Container(
-        decoration: BoxDecoration(
-          color: fg.withValues(alpha: 0.10),
-          borderRadius: widget.borderRadius,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 9.0),
-        alignment: Alignment.centerLeft,
-        child: Stack(
-          alignment: Alignment.centerLeft,
-          children: [
-            if (widget.controller.text.isEmpty)
-              Text(
-                widget.placeholder,
-                style: theme.typography.body.copyWith(
-                  color: fg.withValues(alpha: 0.55),
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            EditableText(
-              controller: widget.controller,
-              focusNode: _focusNode,
-              style: theme.typography.body,
-              cursorColor: fg,
-              backgroundCursorColor: theme.colors.windowBackground,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CardSample extends StatefulWidget {
-  final String label;
-  final bool activatable;
-  final VoidCallback? onTap;
-
-  const _CardSample({
-    required this.label,
-    required this.activatable,
-    this.onTap,
-  });
-
-  @override
-  State<_CardSample> createState() => _CardSampleState();
-}
-
-class _CardSampleState extends State<_CardSample> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AdwTheme.of(context);
-    // Matches `_misc.scss` `%card`:
-    // `background-color: var(--card-bg-color)` (no bright border),
-    // hover adds 3% currentColor, active adds 8% currentColor.
-    Color bg = theme.colors.cardBackground;
-    if (widget.activatable) {
-      if (_pressed) {
-        bg = Color.alphaBlend(
-          theme.colors.windowForeground.withValues(alpha: 0.08),
-          bg,
-        );
-      } else if (_hovered) {
-        bg = Color.alphaBlend(
-          theme.colors.windowForeground.withValues(alpha: 0.03),
-          bg,
-        );
-      }
-    }
-
-    return MouseRegion(
-      cursor: widget.activatable
-          ? SystemMouseCursors.click
-          : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() {
-        _hovered = false;
-        _pressed = false;
-      }),
-      child: GestureDetector(
-        onTapDown:
-            widget.activatable ? (_) => setState(() => _pressed = true) : null,
-        onTapUp: widget.activatable
-            ? (_) {
-                setState(() => _pressed = false);
-                widget.onTap?.call();
-              }
-            : null,
-        onTapCancel:
-            widget.activatable ? () => setState(() => _pressed = false) : null,
-        child: AnimatedContainer(
-          duration: AdwCurves.normalDuration,
-          curve: AdwCurves.standard,
-          padding: const EdgeInsets.all(12.0),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(AdwMetrics.cardRadius),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x08000006),
-                blurRadius: 0.0,
-                spreadRadius: 1.0,
-              ),
-              BoxShadow(
-                color: Color(0x12000006),
-                blurRadius: 3.0,
-                spreadRadius: 1.0,
-                offset: Offset(0, 1),
-              ),
-              BoxShadow(
-                color: Color(0x08000006),
-                blurRadius: 6.0,
-                spreadRadius: 2.0,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            widget.label,
-            textAlign: TextAlign.center,
-            style: theme.typography.body,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SelectionModeCheckbox extends StatefulWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SelectionModeCheckbox({
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  State<_SelectionModeCheckbox> createState() => _SelectionModeCheckboxState();
-}
-
-class _SelectionModeCheckboxState extends State<_SelectionModeCheckbox> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AdwTheme.of(context);
-    // Matches `_checks.scss` `checkbutton.selection-mode`:
-    // 14px icon + 7px padding = 28x28 circle, 2px inset trough border when unchecked.
-    final fg = theme.colors.windowForeground;
-    final isChecked = widget.value;
-    final borderAlpha = _hovered ? 0.20 : 0.15;
-    final fillColor = isChecked
-        ? (_hovered
-            ? Color.alphaBlend(
-                theme.colors.accentForeground.withValues(alpha: 0.10),
-                theme.colors.accentColor,
-              )
-            : theme.colors.accentColor)
-        : (_hovered ? fg.withValues(alpha: 0.06) : const Color(0x00000000));
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => widget.onChanged(!isChecked),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: AnimatedContainer(
-          duration: AdwCurves.shortDuration,
-          curve: AdwCurves.standard,
-          width: 28.0,
-          height: 28.0,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: fillColor,
-            border: isChecked
-                ? null
-                : Border.all(
-                    color: fg.withValues(alpha: borderAlpha),
-                    width: 2.0,
-                  ),
-          ),
-          alignment: Alignment.center,
-          child: AnimatedScale(
-            scale: isChecked ? 1.0 : 0.6,
-            duration: AdwCurves.shortDuration,
-            curve: AdwCurves.standard,
-            child: AnimatedOpacity(
-              opacity: isChecked ? 1.0 : 0.0,
-              duration: AdwCurves.shortDuration,
-              curve: AdwCurves.standard,
-              child: Icon(
-                AdwIcons.object_select_symbolic,
-                size: 14.0,
-                color: theme.colors.accentForeground,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _OsdIconButton extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const _OsdIconButton({
-    super.key,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  State<_OsdIconButton> createState() => _OsdIconButtonState();
-}
-
-class _OsdIconButtonState extends State<_OsdIconButton> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = _pressed
-        ? const Color(0x29FFFFFF)
-        : (_hovered ? const Color(0x12FFFFFF) : const Color(0x00000000));
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() {
-        _hovered = false;
-        _pressed = false;
-      }),
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) {
-          setState(() => _pressed = false);
-          widget.onPressed();
-        },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: Container(
-          width: 42.0,
-          height: 42.0,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(9.0),
-          ),
-          alignment: Alignment.center,
-          child: Icon(widget.icon, size: 16.0, color: const Color(0xE6FFFFFF)),
-        ),
-      ),
-    );
-  }
-}
-
-class _OsdSlider extends StatefulWidget {
-  final double value;
-  final Axis orientation;
-  final ValueChanged<double> onChanged;
-
-  const _OsdSlider({
-    required this.value,
-    this.orientation = Axis.horizontal,
-    required this.onChanged,
-  });
-
-  @override
-  State<_OsdSlider> createState() => _OsdSliderState();
-}
-
-class _OsdSliderState extends State<_OsdSlider> {
-  bool _hovered = false;
-  bool _active = false;
-
-  @override
-  Widget build(BuildContext context) {
-    // Matches `_scale.scss` + `_common.scss` `.osd`:
-    // - trough: 6px, `$trough_color` (15% white) -> `$trough_hover_color` (20% white) on hover/active
-    // - highlight: `--accent-bg-color` (75% white) -> illuminated (85% white) on hover/active
-    // - slider thumb: 24x18 pill (`$slider_color` #D2D2D3) -> pure white (`#FFFFFF`) on hover/active
-    final isLit = _hovered || _active;
-    final troughColor =
-        isLit ? const Color(0x33FFFFFF) : const Color(0x26FFFFFF);
-    final highlightColor =
-        isLit ? const Color(0xD9FFFFFF) : const Color(0xBFFFFFFF);
-    final thumbColor =
-        isLit ? const Color(0xFFFFFFFF) : const Color(0xFFD2D2D3);
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (widget.orientation == Axis.vertical) {
-            final height = constraints.maxHeight;
-            void updateVertical(Offset localPosition) {
-              if (height <= 0) return;
-              // Inverted vertical scale: top = 1.0, bottom = 0.0
-              final next = (1.0 - (localPosition.dy / height)).clamp(0.0, 1.0);
-              widget.onChanged(next);
-            }
-
-            return GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapDown: (d) {
-                setState(() => _active = true);
-                updateVertical(d.localPosition);
-              },
-              onTapUp: (_) => setState(() => _active = false),
-              onTapCancel: () => setState(() => _active = false),
-              onVerticalDragStart: (d) {
-                setState(() => _active = true);
-                updateVertical(d.localPosition);
-              },
-              onVerticalDragUpdate: (d) => updateVertical(d.localPosition),
-              onVerticalDragEnd: (_) => setState(() => _active = false),
-              onVerticalDragCancel: () => setState(() => _active = false),
-              child: SizedBox(
-                width: 30.0,
-                height: height,
-                child: Stack(
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    Container(
-                      width: 6.0,
-                      height: height,
-                      decoration: BoxDecoration(
-                        color: troughColor,
-                        borderRadius: BorderRadius.circular(99.0),
-                      ),
-                    ),
-                    FractionallySizedBox(
-                      heightFactor: widget.value,
-                      child: Container(
-                        width: 6.0,
-                        decoration: BoxDecoration(
-                          color: highlightColor,
-                          borderRadius: BorderRadius.circular(99.0),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: (height - 18.0) * widget.value,
-                      child: Container(
-                        width: 18.0,
-                        height: 18.0,
-                        decoration: BoxDecoration(
-                          color: thumbColor,
-                          shape: BoxShape.circle,
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x1A000006),
-                              blurRadius: 0.0,
-                              spreadRadius: 1.0,
-                            ),
-                            BoxShadow(
-                              color: Color(0x33000006),
-                              blurRadius: 4.0,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final width = constraints.maxWidth;
-          void updateHorizontal(Offset localPosition) {
-            if (width <= 0) return;
-            widget.onChanged((localPosition.dx / width).clamp(0.0, 1.0));
-          }
-
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: (d) {
-              setState(() => _active = true);
-              updateHorizontal(d.localPosition);
-            },
-            onTapUp: (_) => setState(() => _active = false),
-            onTapCancel: () => setState(() => _active = false),
-            onHorizontalDragStart: (d) {
-              setState(() => _active = true);
-              updateHorizontal(d.localPosition);
-            },
-            onHorizontalDragUpdate: (d) => updateHorizontal(d.localPosition),
-            onHorizontalDragEnd: (_) => setState(() => _active = false),
-            onHorizontalDragCancel: () => setState(() => _active = false),
-            child: SizedBox(
-              height: 30.0,
-              child: Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  Container(
-                    height: 6.0,
-                    decoration: BoxDecoration(
-                      color: troughColor,
-                      borderRadius: BorderRadius.circular(99.0),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: widget.value,
-                    child: Container(
-                      height: 6.0,
-                      decoration: BoxDecoration(
-                        color: highlightColor,
-                        borderRadius: BorderRadius.circular(99.0),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: (width - 18.0) * widget.value,
-                    child: Container(
-                      width: 18.0,
-                      height: 18.0,
-                      decoration: BoxDecoration(
-                        color: thumbColor,
-                        shape: BoxShape.circle,
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x1A000006),
-                            blurRadius: 0.0,
-                            spreadRadius: 1.0,
-                          ),
-                          BoxShadow(
-                            color: Color(0x33000006),
-                            blurRadius: 4.0,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
