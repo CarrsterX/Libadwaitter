@@ -1195,7 +1195,13 @@ static gboolean window_draw_cb(GtkWidget* widget, cairo_t* cr, gpointer user_dat
 
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
-  gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+  GtkWidget* toplevel = gtk_widget_get_toplevel(GTK_WIDGET(view));
+  gtk_widget_show(toplevel);
+  gint margin = GPOINTER_TO_INT(
+      g_object_get_data(G_OBJECT(toplevel), "libadwaitter-shadow-margin"));
+  if (margin > 0) {
+    apply_window_shadow_margin(GTK_WINDOW(toplevel), margin);
+  }
 }
 
 // Implements GApplication::activate.
@@ -1210,10 +1216,13 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
   // Account for 24px CSD shadow margin on each side so the visible window
-  // starts at 900x625 (matching adwaita-1-demo) with a 360x294 minimum size.
+  // starts at 1000x720 (exact adwaita-1-demo default-width/default-height)
+  // identically in both debug and release builds.
   constexpr gint kInitialShadowMargin = 24;
-  gtk_window_set_default_size(window, 900 + kInitialShadowMargin * 2,
-                              625 + kInitialShadowMargin * 2);
+  g_object_set_data(G_OBJECT(window), "libadwaitter-shadow-margin",
+                    GINT_TO_POINTER(kInitialShadowMargin));
+  gtk_window_set_default_size(window, 1000 + kInitialShadowMargin * 2,
+                              720 + kInitialShadowMargin * 2);
 
   // Enforce Libadwaita's standard minimum window dimensions (360x294)
   GdkGeometry min_geometry = {};
