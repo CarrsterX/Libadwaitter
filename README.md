@@ -1,7 +1,7 @@
 # Libadwaitter
 
 [![License: LGPL v2.1](https://img.shields.io/badge/License-LGPL_v2.1--or--later-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Web-blue)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20%7C%20iOS%20%7C%20Windows%20%7C%20macOS%20%7C%20Web-blue)](https://flutter.dev)
 
 **Libadwaitter** is a modern, **pure Dart & Flutter** implementation of GNOME's **Libadwaita** design system and UI components, built strictly following the [GNOME Human Interface Guidelines (HIG)](https://developer.gnome.org/hig/).
 
@@ -30,7 +30,8 @@ This project is directly inspired by and builds upon the incredible work of the 
 * **1:1 Naming with Flutter Ergonomics**: Intuitive widget naming (`AdwActionRow`, `AdwPreferencesGroup`, `AdwHeaderBar`, `AdwButton`, `AdwSwitchRow`) backed by standard Flutter callbacks (`onPressed`, `onChanged`, `child`).
 * **Decoupled Window & CSD Management**: `AdwWindow` provides client-side decorations with 12px rounded corners, Mutter drop-shadows, and automatic 0px square corners on maximize.
 * **Native Internationalization (i18n)**: Built-in `AdwLocalizations` with English as default and extensible delegates.
-* **Companion Icon Package**: Independent [`libadwaitter_icons`](packages/libadwaitter_icons) package so you are never forced to bundle icon sets you don't use.
+* **Companion Icon Package**: Independent [`adwaitter_icons`](packages/adwaitter_icons) package so you are never forced to bundle icon sets you don't use.
+* **Android Out-of-the-Box**: Automatic edge-to-edge safe areas, Android 14+ **Predictive Back**, multi-window / Desktop Mode support, and Android 12+ Material You dynamic accent colors via `AdwaitterPlugin` — no manual `MainActivity.kt` or `AndroidManifest.xml` edits required.
 
 ---
 
@@ -74,12 +75,26 @@ dart run libadwaitter:setup [options]
 * `--no-backup`: Skip creating `.bak` files.
 * `-h`, `--help`: Show full CLI help.
 
+### Android Setup (Zero-Config)
+
+No manual edits to `MainActivity.kt` or `AndroidManifest.xml` are needed. Adding `libadwaitter` (or `adwaitter`) automatically bundles `AdwaitterPlugin`, enabling:
+* Android 14+ **Predictive Back** (`android:enableOnBackInvokedCallback="true"` via manifest merger) across `AdwNavigationView`, `AdwBottomSheet`, and bottom-sheet `AdwDialog`s.
+* Edge-to-edge system navigation bar insets (`adwBottomSystemInset` & `AdwBottomInsetConsumer`).
+* Android 12+ Material You dynamic accent color sync and `isInMultiWindowMode` / Desktop Mode detection.
+
+### Component Highlights
+
+* **Layout & Windows**: `AdwApplication`, `AdwWindow`, `AdwHeaderBar`, `AdwToolbarView`, `AdwWindowControls` (minimize, maximize, fullscreen, close), `AdwClamp`, `AdwClampScrollable`, `AdwWrapBox`, `AdwBreakpointBin`, `AdwMultiLayoutView`.
+* **Navigation**: `AdwNavigationView`, `AdwNavigationSplitView`, `AdwOverlaySplitView`, `AdwSidebar` / `AdwSidebarItem`, `AdwTabView` / `AdwTabBar` / `AdwTabOverview`, `AdwViewSwitcher`, `AdwCarousel`.
+* **Controls & Containers**: `AdwButton` (`standard`, `flat`, `suggested`, `destructive`, `pill`, `circular`, `osd`), `AdwButtonContent`, `AdwSplitButton`, `AdwToggleGroup`, `AdwEntry`, `AdwSearchBar`, `AdwDropdown`, `AdwSlider`, `AdwSwitch`, `AdwCheckbox` (`selectionMode`), `AdwRadio`, `AdwCard`, `AdwLinkedBox`, `AdwOsdSurface`, `AdwPreferencesPage`, `AdwPreferencesGroup`, `AdwActionRow`, `AdwExpanderRow`, `AdwEntryRow` / `AdwPasswordEntryRow`, `AdwComboRow`, `AdwSpinRow`, `AdwSwitchRow`, `AdwButtonRow`, `AdwStatusPage`.
+* **Display & Overlays**: `AdwAvatar`, `AdwEmblem`, `AdwSpinner`, `AdwProgressBar`, `AdwLevelBar`, `AdwDialog`, `AdwAlertDialog`, `AdwAboutDialog`, `AdwPreferencesDialog`, `AdwShortcutsDialog`, `AdwBottomSheet`, `AdwBanner`, `AdwToastOverlay`, `AdwPopoverSurface`, `AdwContextMenu`, `AdwTooltip`.
+
 ### Basic Example
 
 ```dart
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
-import 'package:libadwaitter_icons/libadwaitter_icons.dart';
+import 'package:adwaitter_icons/adwaitter_icons.dart';
 
 void main() {
   runApp(const MyApp());

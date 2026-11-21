@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:adwaitter_icons/adwaitter_icons.dart';
 import 'package:flutter/widgets.dart';
@@ -93,13 +91,13 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
   }
 
   Color _standaloneSuccessColor(AdwThemeData theme) =>
-      theme.colors.isDark ? const Color(0xFF78EABE) : const Color(0xFF1B8553);
+      theme.colors.standaloneSuccessColor;
 
   Color _standaloneWarningColor(AdwThemeData theme) =>
-      theme.colors.isDark ? const Color(0xFFF8E45C) : const Color(0xFF9C6E03);
+      theme.colors.standaloneWarningColor;
 
   Color _standaloneErrorColor(AdwThemeData theme) =>
-      theme.colors.isDark ? const Color(0xFFFF7B63) : const Color(0xFFC01C28);
+      theme.colors.standaloneErrorColor;
 
   Color _standaloneAccentColor(AdwThemeData theme) {
     final c = theme.colors.accentColor;
@@ -292,24 +290,15 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               },
             ),
             if (_osdProgress)
-              Positioned(
+              const Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                child: _StyleTooltip(
+                child: AdwTooltip(
                   message: 'osd',
-                  child: Container(
-                    height: 3.0,
-                    color:
-                        theme.colors.windowForeground.withValues(alpha: 0.12),
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.5,
-                      child: Container(
-                        height: 3.0,
-                        color: theme.colors.accentColor,
-                      ),
-                    ),
+                  child: AdwProgressBar(
+                    value: 0.5,
+                    isOsd: true,
                   ),
                 ),
               ),
@@ -330,7 +319,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
         ),
         const SizedBox(width: 6.0),
         Expanded(
-          child: _StyleTooltip(
+          child: AdwTooltip(
             message: 'flat',
             child: AdwButton.flat(
               onPressed: () {},
@@ -344,7 +333,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
     final row1Right = Row(
       children: [
         Expanded(
-          child: _StyleTooltip(
+          child: AdwTooltip(
             message: 'suggested-action',
             child: AdwButton.suggested(
               onPressed: () {},
@@ -354,7 +343,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
         ),
         const SizedBox(width: 6.0),
         Expanded(
-          child: _StyleTooltip(
+          child: AdwTooltip(
             message: 'destructive-action',
             child: AdwButton.destructive(
               onPressed: () {},
@@ -393,7 +382,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               children: [
                 Expanded(
                   child: Center(
-                    child: _StyleTooltip(
+                    child: AdwTooltip(
                       message: 'circular',
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -424,7 +413,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 const SizedBox(width: 6.0),
                 Expanded(
                   child: Center(
-                    child: _StyleTooltip(
+                    child: AdwTooltip(
                       message: 'pill',
                       child: AdwButton.pill(
                         onPressed: () {},
@@ -439,7 +428,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 const SizedBox(width: 6.0),
                 Expanded(
                   child: Center(
-                    child: _StyleTooltip(
+                    child: AdwTooltip(
                       message: 'osd',
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -478,7 +467,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
       placeholder: 'Regular',
       suffix: const Icon(AdwIcons.edit_copy_symbolic),
     );
-    final successEntry = _StyleTooltip(
+    final successEntry = AdwTooltip(
       message: 'success',
       child: AdwEntry(
         controller: _entrySuccess,
@@ -487,7 +476,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
         suffix: const Icon(AdwIcons.edit_copy_symbolic),
       ),
     );
-    final warningEntry = _StyleTooltip(
+    final warningEntry = AdwTooltip(
       message: 'warning',
       child: AdwEntry(
         controller: _entryWarning,
@@ -496,7 +485,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
         suffix: const Icon(AdwIcons.edit_copy_symbolic),
       ),
     );
-    final errorEntry = _StyleTooltip(
+    final errorEntry = AdwTooltip(
       message: 'error',
       child: AdwEntry(
         controller: _entryError,
@@ -544,7 +533,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
   }
 
   Widget _buildToggleGroupsGroup(AdwThemeData theme, bool isNarrow) {
-    final flatGroup = _StyleTooltip(
+    final flatGroup = AdwTooltip(
       message: 'flat',
       child: AdwToggleGroup<int>(
         style: AdwToggleGroupStyle.flat,
@@ -558,7 +547,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
       ),
     );
 
-    final roundGroup = _StyleTooltip(
+    final roundGroup = AdwTooltip(
       message: 'round',
       child: AdwToggleGroup<int>(
         style: AdwToggleGroupStyle.round,
@@ -572,7 +561,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
       ),
     );
 
-    final osdGroup = _StyleTooltip(
+    final osdGroup = AdwTooltip(
       message: 'osd',
       child: Container(
         height: 34.0,
@@ -674,7 +663,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           children: [
             Row(
               children: [
-                _StyleTooltip(
+                AdwTooltip(
                   message: 'linked',
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -703,7 +692,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 ),
                 const SizedBox(width: 6.0),
                 Expanded(
-                  child: _StyleTooltip(
+                  child: AdwTooltip(
                     message: 'linked',
                     child: SizedBox(
                       height: 34.0,
@@ -746,7 +735,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _StyleTooltip(
+                AdwTooltip(
                   message: 'linked',
                   child: SizedBox(
                     width: 34.0,
@@ -788,7 +777,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 ),
                 const SizedBox(width: 6.0),
                 Expanded(
-                  child: _StyleTooltip(
+                  child: AdwTooltip(
                     message: 'linked',
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -830,32 +819,32 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
     final leftColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _StyleTooltip(
+        AdwTooltip(
           message: 'title-1',
           child: Text('Title 1', style: typo.title1),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'title-2',
           child: Text('Title 2', style: typo.title2),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'title-3',
           child: Text('Title 3', style: typo.title3),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'title-4',
           child: Text('Title 4', style: typo.title4),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'monospace',
           child: Text('Monospace', style: typo.code),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'numeric',
           child: Text(
             'Numeric (1234567890)',
@@ -865,7 +854,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           ),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'accent',
           child: Text(
             'Accent',
@@ -873,7 +862,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           ),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'success',
           child: Text(
             'Success',
@@ -881,7 +870,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           ),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'warning',
           child: Text(
             'Warning',
@@ -889,7 +878,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           ),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'error',
           child: Text(
             'Error',
@@ -902,7 +891,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
     final rightColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _StyleTooltip(
+        AdwTooltip(
           message: 'document',
           child: Text(
             'This is a document paragraph. It should be used for the app\'s main content.',
@@ -910,12 +899,12 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           ),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'heading',
           child: Text('Heading', style: typo.heading),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'body',
           child: Text(
             'This is a paragraph of a body copy, to be used for medium-long text such as descriptions in the UI.',
@@ -923,12 +912,12 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           ),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'caption-heading',
           child: Text('Caption Heading', style: typo.captionHeading),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'caption',
           child: Text(
             'Caption body text, to be used for body copy on image captions and the like',
@@ -936,7 +925,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           ),
         ),
         const SizedBox(height: 12.0),
-        _StyleTooltip(
+        AdwTooltip(
           message: 'dimmed',
           child: Text(
             'This is a dimmed paragraph, mostly used for secondary labels or descriptions.',
@@ -992,7 +981,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               child: Row(
                 children: [
                   Expanded(
-                    child: _StyleTooltip(
+                    child: AdwTooltip(
                       message: 'card',
                       child: AdwCard(
                         alignment: Alignment.center,
@@ -1006,7 +995,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                   ),
                   const SizedBox(width: 12.0),
                   Expanded(
-                    child: _StyleTooltip(
+                    child: AdwTooltip(
                       message: 'card, activatable',
                       child: AdwCard(
                         activatable: true,
@@ -1022,7 +1011,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                   ),
                   const SizedBox(width: 12.0),
                   Expanded(
-                    child: _StyleTooltip(
+                    child: AdwTooltip(
                       message: 'card',
                       child: AdwCard(
                         activatable: true,
@@ -1040,7 +1029,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               ),
             ),
             const SizedBox(height: 12.0),
-            _StyleTooltip(
+            AdwTooltip(
               message: 'boxed-list',
               child: AdwPreferencesGroup(
                 boxed: true,
@@ -1077,7 +1066,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const _StyleTooltip(
+                const AdwTooltip(
                   message: 'icon-dropshadow',
                   child: AdwaitterAppLogo(size: 128.0),
                 ),
@@ -1089,7 +1078,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const _StyleTooltip(
+                const AdwTooltip(
                   message: 'icon-dropshadow',
                   child: AdwaitterAppLogo(size: 64.0),
                 ),
@@ -1101,7 +1090,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const _StyleTooltip(
+                const AdwTooltip(
                   message: 'lowres-icon',
                   child: AdwaitterAppLogo(size: 32.0),
                 ),
@@ -1167,7 +1156,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        _StyleTooltip(
+                        AdwTooltip(
                           message: 'selection-mode',
                           child: AdwCheckbox(
                             selectionMode: true,
@@ -1176,7 +1165,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                           ),
                         ),
                         const SizedBox(width: 12.0),
-                        _StyleTooltip(
+                        AdwTooltip(
                           message: 'selection-mode',
                           child: AdwCheckbox(
                             selectionMode: true,
@@ -1211,7 +1200,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _StyleTooltip(
+            AdwTooltip(
               message: 'toolbar',
               child: Container(
                 padding: const EdgeInsets.all(6.0),
@@ -1278,14 +1267,11 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               ),
             ),
             const SizedBox(height: 12.0),
-            _StyleTooltip(
+            AdwTooltip(
               message: 'toolbar, osd',
-              child: Container(
+              child: AdwOsdSurface(
+                backgroundColor: const Color(0xB3000000),
                 padding: const EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xB3000000),
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
                 child: Row(
                   children: [
                     AdwButton.osd(
@@ -1357,7 +1343,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
           child: Row(
             children: [
               Expanded(
-                child: _StyleTooltip(
+                child: AdwTooltip(
                   message: 'background',
                   child: Container(
                     color: theme.colors.windowBackground,
@@ -1374,7 +1360,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 ),
               ),
               Expanded(
-                child: _StyleTooltip(
+                child: AdwTooltip(
                   message: 'view',
                   child: Container(
                     color: theme.colors.viewBackground,
@@ -1391,7 +1377,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 ),
               ),
               Expanded(
-                child: _StyleTooltip(
+                child: AdwTooltip(
                   message: 'osd',
                   child: Container(
                     color: const Color(0xB3000000),
@@ -1487,7 +1473,7 @@ class _StatusPageDemoDialogState extends State<_StatusPageDemoDialog> {
           showSidebar: _showSidebar,
           collapseBreakpoint: 400.0,
           onShowSidebarChanged: (v) => setState(() => _showSidebar = v),
-          sidebar: const _StyleTooltip(
+          sidebar: const AdwTooltip(
             message: 'compact',
             child: AdwStatusPage(
               icon: AdwaitterSymbolicLogo(size: 96.0),
@@ -1547,7 +1533,7 @@ class _SidebarDemoDialogState extends State<_SidebarDemoDialog> {
               );
             },
           ),
-          content: _StyleTooltip(
+          content: AdwTooltip(
             message: 'navigation-sidebar',
             child: ListView(
               padding: const EdgeInsets.all(6.0),
@@ -1603,148 +1589,6 @@ class _SidebarDemoDialogState extends State<_SidebarDemoDialog> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StyleTooltip extends StatefulWidget {
-  final String message;
-  final Widget child;
-
-  const _StyleTooltip({
-    required this.message,
-    required this.child,
-  });
-
-  @override
-  State<_StyleTooltip> createState() => _StyleTooltipState();
-}
-
-class _StyleTooltipState extends State<_StyleTooltip> {
-  OverlayEntry? _entry;
-  Timer? _timer;
-  Offset? _pointerGlobalPosition;
-
-  @override
-  void dispose() {
-    _cancelTooltip();
-    super.dispose();
-  }
-
-  void _scheduleTooltip() {
-    _timer?.cancel();
-    _timer = Timer(const Duration(milliseconds: 550), _showTooltip);
-  }
-
-  void _cancelTooltip() {
-    _timer?.cancel();
-    _timer = null;
-    _pointerGlobalPosition = null;
-    _entry?.remove();
-    _entry = null;
-  }
-
-  void _showTooltip() {
-    if (!mounted || _entry != null) return;
-    final overlay = Overlay.maybeOf(context);
-    if (overlay == null) return;
-
-    final RenderBox? targetBox = context.findRenderObject() as RenderBox?;
-    final RenderBox? overlayBox =
-        overlay.context.findRenderObject() as RenderBox?;
-    if (targetBox == null ||
-        !targetBox.hasSize ||
-        overlayBox == null ||
-        !overlayBox.hasSize) {
-      return;
-    }
-
-    final theme = AdwTheme.of(context);
-    final textStyle = theme.typography.body.copyWith(
-      color: const Color(0xFFFFFFFF),
-    );
-    final textDirection = Directionality.of(context);
-    final textScaler = MediaQuery.textScalerOf(context);
-
-    final painter = TextPainter(
-      text: TextSpan(text: widget.message, style: textStyle),
-      textDirection: textDirection,
-      textScaler: textScaler,
-      maxLines: 1,
-    )..layout();
-
-    // `_tooltip.scss`: `padding: 6px 10px; border: 1px solid ...; border-radius: 9px;`
-    final tooltipWidth = painter.width + 22.0;
-    final tooltipHeight = painter.height + 14.0;
-
-    final overlaySize = overlayBox.size;
-    final Offset anchorPoint = _pointerGlobalPosition != null
-        ? overlayBox.globalToLocal(_pointerGlobalPosition!)
-        : targetBox.localToGlobal(
-            Offset(targetBox.size.width * 0.5, targetBox.size.height),
-            ancestor: overlayBox,
-          );
-
-    const edgeMargin = 6.0;
-    const pointerBelowOffset = 18.0;
-    const pointerAboveOffset = 8.0;
-
-    final double left = (anchorPoint.dx - tooltipWidth * 0.5).clamp(
-      edgeMargin,
-      math.max(edgeMargin, overlaySize.width - tooltipWidth - edgeMargin),
-    );
-
-    double top = anchorPoint.dy + pointerBelowOffset;
-    if (top + tooltipHeight + edgeMargin > overlaySize.height &&
-        anchorPoint.dy - pointerAboveOffset - tooltipHeight >= edgeMargin) {
-      top = anchorPoint.dy - pointerAboveOffset - tooltipHeight;
-    }
-
-    _entry = OverlayEntry(
-      builder: (_) => Positioned(
-        left: left,
-        top: top,
-        child: IgnorePointer(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10.0,
-              vertical: 6.0,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xCC000006),
-              borderRadius: BorderRadius.circular(9.0),
-              border: Border.all(
-                color: const Color(0x1AFFFFFF),
-                width: 1.0,
-              ),
-            ),
-            child: Text(
-              widget.message,
-              style: textStyle,
-              maxLines: 1,
-            ),
-          ),
-        ),
-      ),
-    );
-    overlay.insert(_entry!);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (event) {
-        _pointerGlobalPosition = event.position;
-        _scheduleTooltip();
-      },
-      onHover: (event) {
-        _pointerGlobalPosition = event.position;
-        if (_entry == null) {
-          _scheduleTooltip();
-        }
-      },
-      onExit: (_) => _cancelTooltip(),
-      child: widget.child,
     );
   }
 }

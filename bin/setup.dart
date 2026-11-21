@@ -1277,6 +1277,27 @@ static void window_method_call_handler(FlMethodChannel* channel,
     gboolean is_max = gtk_window_is_maximized(window);
     g_autoptr(FlValue) result = fl_value_new_bool(is_max);
     fl_method_call_respond_success(method_call, result, nullptr);
+  } else if (strcmp(method, "setFullscreen") == 0) {
+    gboolean fullscreen = FALSE;
+    FlValue* args = fl_method_call_get_args(method_call);
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* val = fl_value_lookup_string(args, "fullscreen");
+      if (val != nullptr && fl_value_get_type(val) == FL_VALUE_TYPE_BOOL) {
+        fullscreen = fl_value_get_bool(val);
+      }
+    }
+    if (fullscreen) {
+      gtk_window_fullscreen(window);
+    } else {
+      gtk_window_unfullscreen(window);
+    }
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
+  } else if (strcmp(method, "isFullscreen") == 0) {
+    GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
+    gboolean is_full = gdk_win != nullptr &&
+        (gdk_window_get_state(gdk_win) & GDK_WINDOW_STATE_FULLSCREEN) != 0;
+    g_autoptr(FlValue) result = fl_value_new_bool(is_full);
+    fl_method_call_respond_success(method_call, result, nullptr);
   } else if (strcmp(method, "isTiled") == 0) {
     gboolean is_tiled = is_gdk_window_tiled(window);
     g_autoptr(FlValue) result = fl_value_new_bool(is_tiled);
