@@ -174,8 +174,8 @@ _SetupOptions _parseArgs(List<String> args) {
   String channel = 'stable';
   String? appId;
   String? title;
-  int width = 1080;
-  int height = 720;
+  int width = 900;
+  int height = 625;
 
   for (int i = 0; i < args.length; i++) {
     final arg = args[i];
@@ -244,8 +244,8 @@ Usage:
 Native Linux / Wayland options:
   --title <name>         Initial GTK window title (defaults to pubspec.yaml name)
   --app-id <reverse.dns> Freedesktop/Wayland application ID (e.g. io.github.user.myapp)
-  --width <px>           Initial window width (default: 1080)
-  --height <px>          Initial window height (default: 720)
+  --width <px>           Initial window width (default: 900)
+  --height <px>          Initial window height (default: 625)
   --counter              Also generate a starter Libadwaitter counter app in lib/main.dart
 
 Distribution options (optional, does not affect native development):

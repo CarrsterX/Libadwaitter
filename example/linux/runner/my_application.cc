@@ -1210,10 +1210,10 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
   // Account for 24px CSD shadow margin on each side so the visible window
-  // starts at 1080x720 with a 360x294 minimum content size.
+  // starts at 900x625 (matching adwaita-1-demo) with a 360x294 minimum size.
   constexpr gint kInitialShadowMargin = 24;
-  gtk_window_set_default_size(window, 1080 + kInitialShadowMargin * 2,
-                              720 + kInitialShadowMargin * 2);
+  gtk_window_set_default_size(window, 900 + kInitialShadowMargin * 2,
+                              625 + kInitialShadowMargin * 2);
 
   // Enforce Libadwaita's standard minimum window dimensions (360x294)
   GdkGeometry min_geometry = {};
