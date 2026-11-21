@@ -646,7 +646,6 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
   }
 
   Widget _buildLinkedControlsGroup(AdwThemeData theme) {
-    const r = Radius.circular(9.0);
     final gapColor = theme.colors.isDark
         ? const Color(0xFF4C4C4E)
         : const Color(0xFFD4D4D5);
@@ -665,25 +664,24 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               children: [
                 AdwTooltip(
                   message: 'linked',
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: AdwLinkedBox(
+                    dividerColor: gapColor,
                     children: [
                       AdwButton(
                         width: 34.0,
                         height: 34.0,
                         padding: EdgeInsets.zero,
                         isChecked: _linkedViewToggle == 0,
-                        borderRadius: const BorderRadius.horizontal(left: r),
+                        borderRadius: BorderRadius.zero,
                         onPressed: () => setState(() => _linkedViewToggle = 0),
                         child: const Icon(AdwIcons.view_grid_symbolic, size: 16.0),
                       ),
-                      Container(width: 1.0, height: 34.0, color: gapColor),
                       AdwButton(
                         width: 34.0,
                         height: 34.0,
                         padding: EdgeInsets.zero,
                         isChecked: _linkedViewToggle == 1,
-                        borderRadius: const BorderRadius.horizontal(right: r),
+                        borderRadius: BorderRadius.zero,
                         onPressed: () => setState(() => _linkedViewToggle = 1),
                         child: const Icon(AdwIcons.view_list_symbolic, size: 16.0),
                       ),
@@ -694,38 +692,33 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 Expanded(
                   child: AdwTooltip(
                     message: 'linked',
-                    child: SizedBox(
-                      height: 34.0,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: AdwEntry(
-                              controller: _linkedEntry1,
-                              placeholder: 'Entry',
-                              borderRadius:
-                                  const BorderRadius.horizontal(left: r),
-                            ),
+                    child: AdwLinkedBox(
+                      mainAxisSize: MainAxisSize.max,
+                      dividerColor: gapColor,
+                      children: [
+                        Expanded(
+                          child: AdwEntry(
+                            controller: _linkedEntry1,
+                            placeholder: 'Entry',
+                            borderRadius: BorderRadius.zero,
                           ),
-                          Container(width: 1.0, color: gapColor),
-                          Expanded(
-                            child: AdwEntry(
-                              controller: _linkedEntry2,
-                              placeholder: 'Entry',
-                              borderRadius: BorderRadius.zero,
-                            ),
+                        ),
+                        Expanded(
+                          child: AdwEntry(
+                            controller: _linkedEntry2,
+                            placeholder: 'Entry',
+                            borderRadius: BorderRadius.zero,
                           ),
-                          Container(width: 1.0, color: gapColor),
-                          AdwButton(
-                            height: 34.0,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 17.0),
-                            borderRadius:
-                                const BorderRadius.horizontal(right: r),
-                            onPressed: () {},
-                            child: const Text('Button'),
-                          ),
-                        ],
-                      ),
+                        ),
+                        AdwButton(
+                          height: 34.0,
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 17.0),
+                          borderRadius: BorderRadius.zero,
+                          onPressed: () {},
+                          child: const Text('Button'),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -737,68 +730,62 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
               children: [
                 AdwTooltip(
                   message: 'linked',
-                  child: SizedBox(
-                    width: 34.0,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AdwButton(
-                          width: 34.0,
-                          height: 34.0,
-                          padding: EdgeInsets.zero,
-                          borderRadius: const BorderRadius.vertical(top: r),
-                          onPressed: () {},
-                          child:
-                              const Icon(AdwIcons.edit_cut_symbolic, size: 16.0),
-                        ),
-                        Container(height: 1.0, color: gapColor),
-                        AdwButton(
-                          width: 34.0,
-                          height: 34.0,
-                          padding: EdgeInsets.zero,
-                          borderRadius: BorderRadius.zero,
-                          onPressed: () {},
-                          child: const Icon(AdwIcons.edit_copy_symbolic,
-                              size: 16.0),
-                        ),
-                        Container(height: 1.0, color: gapColor),
-                        AdwButton(
-                          width: 34.0,
-                          height: 34.0,
-                          padding: EdgeInsets.zero,
-                          borderRadius: const BorderRadius.vertical(bottom: r),
-                          onPressed: () {},
-                          child: const Icon(AdwIcons.edit_paste_symbolic,
-                              size: 16.0),
-                        ),
-                      ],
-                    ),
+                  child: AdwLinkedBox(
+                    direction: Axis.vertical,
+                    dividerColor: gapColor,
+                    children: [
+                      AdwButton(
+                        width: 34.0,
+                        height: 34.0,
+                        padding: EdgeInsets.zero,
+                        borderRadius: BorderRadius.zero,
+                        onPressed: () {},
+                        child:
+                            const Icon(AdwIcons.edit_cut_symbolic, size: 16.0),
+                      ),
+                      AdwButton(
+                        width: 34.0,
+                        height: 34.0,
+                        padding: EdgeInsets.zero,
+                        borderRadius: BorderRadius.zero,
+                        onPressed: () {},
+                        child: const Icon(AdwIcons.edit_copy_symbolic,
+                            size: 16.0),
+                      ),
+                      AdwButton(
+                        width: 34.0,
+                        height: 34.0,
+                        padding: EdgeInsets.zero,
+                        borderRadius: BorderRadius.zero,
+                        onPressed: () {},
+                        child: const Icon(AdwIcons.edit_paste_symbolic,
+                            size: 16.0),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 6.0),
                 Expanded(
                   child: AdwTooltip(
                     message: 'linked',
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    child: AdwLinkedBox(
+                      direction: Axis.vertical,
+                      dividerColor: gapColor,
                       children: [
                         AdwEntry(
                           controller: _streetEntry,
                           placeholder: 'Street',
-                          borderRadius: const BorderRadius.vertical(top: r),
+                          borderRadius: BorderRadius.zero,
                         ),
-                        Container(height: 1.0, color: gapColor),
                         AdwEntry(
                           controller: _cityEntry,
                           placeholder: 'City',
                           borderRadius: BorderRadius.zero,
                         ),
-                        Container(height: 1.0, color: gapColor),
                         AdwEntry(
                           controller: _provinceEntry,
                           placeholder: 'Province',
-                          borderRadius:
-                              const BorderRadius.vertical(bottom: r),
+                          borderRadius: BorderRadius.zero,
                         ),
                       ],
                     ),
@@ -1270,7 +1257,6 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
             AdwTooltip(
               message: 'toolbar, osd',
               child: AdwOsdSurface(
-                backgroundColor: const Color(0xB3000000),
                 padding: const EdgeInsets.all(12.0),
                 child: Row(
                   children: [
@@ -1380,7 +1366,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
                 child: AdwTooltip(
                   message: 'osd',
                   child: Container(
-                    color: const Color(0xB3000000),
+                    color: theme.colors.osdBackground,
                     alignment: Alignment.center,
                     padding: const EdgeInsets.all(8.0),
                     child: Text(

@@ -186,32 +186,17 @@ class _AlertDialogPageState extends State<AlertDialogPage> {
                   },
                   child: const Text('Cancel'),
                 ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AdwTheme.of(context).colors.isDark
-                        ? const Color(0xFF5D4446)
-                        : const Color(0xFFF2D5D6),
-                    borderRadius: BorderRadius.circular(12),
+                AdwButton.destructive(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10.5,
                   ),
-                  child: AdwButton.flat(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10.5,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    onPressed: () {
-                      Navigator.of(context, rootNavigator: true).pop();
-                      _showResponseToast('discard');
-                    },
-                    child: Text(
-                      'Discard',
-                      style: TextStyle(
-                        color: AdwTheme.of(context).colors.isDark
-                            ? const Color(0xFFFF938C)
-                            : const Color(0xFFDC7272),
-                      ),
-                    ),
-                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  onPressed: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    _showResponseToast('discard');
+                  },
+                  child: const Text('Discard'),
                 ),
                 AdwButton.suggested(
                   padding: const EdgeInsets.symmetric(

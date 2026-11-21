@@ -945,6 +945,10 @@ static void style_method_call_handler(FlMethodChannel* channel,
 static GHashTable* g_windows_by_view_id = nullptr;
 
 static gboolean window_draw_cb(GtkWidget* widget, cairo_t* cr, gpointer user_data);
+static void apply_window_shadow_margin(GtkWindow* window, gint margin);
+static void on_window_size_allocate(GtkWidget* widget,
+                                    GtkAllocation* allocation,
+                                    gpointer user_data);
 
 static void on_sub_window_destroyed(GtkWidget* widget, gpointer user_data) {
   if (g_windows_by_view_id != nullptr) {
@@ -1168,6 +1172,8 @@ static void window_method_call_handler(FlMethodChannel* channel,
                          G_CALLBACK(on_sub_window_destroyed),
                          GINT_TO_POINTER(view_id));
         g_signal_connect(sub_win, "draw", G_CALLBACK(window_draw_cb), nullptr);
+        g_signal_connect(sub_win, "size-allocate",
+                         G_CALLBACK(on_window_size_allocate), nullptr);
         g_signal_connect(sub_win, "notify::is-active",
                          G_CALLBACK(on_window_active_changed), channel);
         g_signal_connect(sub_win, "window-state-event",
@@ -1298,6 +1304,17 @@ static void window_method_call_handler(FlMethodChannel* channel,
         (gdk_window_get_state(gdk_win) & GDK_WINDOW_STATE_FULLSCREEN) != 0;
     g_autoptr(FlValue) result = fl_value_new_bool(is_full);
     fl_method_call_respond_success(method_call, result, nullptr);
+  } else if (strcmp(method, "setShadowMargin") == 0) {
+    gint margin = 0;
+    FlValue* args = fl_method_call_get_args(method_call);
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* val = fl_value_lookup_string(args, "margin");
+      if (val != nullptr && fl_value_get_type(val) == FL_VALUE_TYPE_INT) {
+        margin = static_cast<gint>(fl_value_get_int(val));
+      }
+    }
+    apply_window_shadow_margin(window, margin);
+    fl_method_call_respond_success(method_call, nullptr, nullptr);
   } else if (strcmp(method, "isTiled") == 0) {
     gboolean is_tiled = is_gdk_window_tiled(window);
     g_autoptr(FlValue) result = fl_value_new_bool(is_tiled);
@@ -1730,6 +1747,26 @@ static void portal_method_call_handler(FlMethodChannel* channel,
   }
 }
 
+static void apply_window_shadow_margin(GtkWindow* window, gint margin) {
+  if (window == nullptr) return;
+  g_object_set_data(G_OBJECT(window), "libadwaitter-shadow-margin",
+                    GINT_TO_POINTER(margin));
+  GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
+  if (gdk_win != nullptr) {
+    gdk_window_set_shadow_width(gdk_win, margin, margin, margin, margin);
+  }
+}
+
+static void on_window_size_allocate(GtkWidget* widget,
+                                    GtkAllocation* allocation,
+                                    gpointer user_data) {
+  gint margin = GPOINTER_TO_INT(
+      g_object_get_data(G_OBJECT(widget), "libadwaitter-shadow-margin"));
+  if (margin > 0) {
+    apply_window_shadow_margin(GTK_WINDOW(widget), margin);
+  }
+}
+
 // Cairo draw callback ensuring true alpha transparency (preventing opaque corner artifacts)
 static gboolean window_draw_cb(GtkWidget* widget, cairo_t* cr, gpointer user_data) {
   cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.0);
@@ -1754,12 +1791,16 @@ static void my_application_activate(GApplication* application) {
 
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
-  gtk_window_set_default_size(window, __WINDOW_WIDTH__, __WINDOW_HEIGHT__);
+  // Account for 24px CSD shadow margin on each side so the visible window
+  // starts at the requested size with a 360x294 minimum content size.
+  constexpr gint kInitialShadowMargin = 24;
+  gtk_window_set_default_size(window, __WINDOW_WIDTH__ + kInitialShadowMargin * 2,
+                              __WINDOW_HEIGHT__ + kInitialShadowMargin * 2);
 
   // Enforce Libadwaita's standard minimum window dimensions (360x294)
   GdkGeometry min_geometry = {};
-  min_geometry.min_width = 360;
-  min_geometry.min_height = 294;
+  min_geometry.min_width = 360 + kInitialShadowMargin * 2;
+  min_geometry.min_height = 294 + kInitialShadowMargin * 2;
   gtk_window_set_geometry_hints(window, nullptr, &min_geometry,
                                 GDK_HINT_MIN_SIZE);
 
@@ -1773,16 +1814,18 @@ static void my_application_activate(GApplication* application) {
 
   // Hook draw signal to clear the Cairo surface to transparent black (operator CLEAR)
   g_signal_connect(window, "draw", G_CALLBACK(window_draw_cb), nullptr);
+  g_signal_connect(window, "size-allocate",
+                   G_CALLBACK(on_window_size_allocate), nullptr);
 
   // Apply transparent GTK CSS rule preventing opaque background drawing
   GtkCssProvider* css_provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(
       css_provider,
-      "window, .background, decoration { background-color: transparent !important; background: transparent !important; border: none !important; box-shadow: none !important; }",
+      "window, .background, decoration { background-color: transparent !important; background: transparent !important; border: none !important; outline: none !important; box-shadow: none !important; }",
       -1, nullptr);
   gtk_style_context_add_provider_for_screen(
       screen, GTK_STYLE_PROVIDER(css_provider),
-      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+      GTK_STYLE_PROVIDER_PRIORITY_USER);
 
   // Disable server-side decorations (SSD) to enable in-app client-side decorations (CSD)
   gtk_window_set_decorated(window, FALSE);

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:libadwaitter/libadwaitter.dart';
 
 enum DemoIconType {
   navigationView,
@@ -44,7 +45,10 @@ class DemoWidgetIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final iconTheme = IconTheme.of(context);
     final resolvedSize = size ?? iconTheme.size ?? 16.0;
-    final resolvedColor = color ?? iconTheme.color ?? const Color(0xFFFFFFFF);
+    final resolvedColor = color ??
+        iconTheme.color ??
+        AdwTheme.maybeOf(context)?.colors.windowForeground ??
+        const Color(0xFFFFFFFF);
 
     return SizedBox(
       width: resolvedSize,
@@ -473,16 +477,34 @@ class _DemoWidgetIconPainter extends CustomPainter {
 
       case DemoIconType.multiLayoutView:
         final u = s / 16.0;
-        final back = RRect.fromRectAndRadius(
-          Rect.fromLTWH(1.5 * u, 1.5 * u, 8.5 * u, 10.5 * u),
-          Radius.circular(2.0 * u),
-        );
-        final front = RRect.fromRectAndRadius(
-          Rect.fromLTWH(4.5 * u, 6.0 * u, 10.0 * u, 8.5 * u),
-          Radius.circular(2.0 * u),
-        );
-        canvas.drawRRect(back, strokePaint);
-        canvas.drawRRect(front, strokePaint);
+        final r = 2.0 * u;
+        // Portrait top-left rounded rect with bottom-left corner preserved and gap before front rect
+        final back = Path()
+          ..moveTo(2.4 * u, 11.8 * u)
+          ..quadraticBezierTo(1.5 * u, 11.8 * u, 1.5 * u, 11.8 * u - r)
+          ..lineTo(1.5 * u, 1.5 * u + r)
+          ..quadraticBezierTo(1.5 * u, 1.5 * u, 1.5 * u + r, 1.5 * u)
+          ..lineTo(10.0 * u - r, 1.5 * u)
+          ..quadraticBezierTo(10.0 * u, 1.5 * u, 10.0 * u, 1.5 * u + r)
+          ..lineTo(10.0 * u, 11.8 * u - r)
+          ..quadraticBezierTo(10.0 * u, 11.8 * u, 10.0 * u - r, 11.8 * u)
+          ..lineTo(7.2 * u, 11.8 * u);
+
+        // Landscape bottom-right rounded rect with open top gap
+        final front = Path()
+          ..moveTo(6.3 * u, 6.0 * u)
+          ..lineTo(4.5 * u + r, 6.0 * u)
+          ..quadraticBezierTo(4.5 * u, 6.0 * u, 4.5 * u, 6.0 * u + r)
+          ..lineTo(4.5 * u, 14.5 * u - r)
+          ..quadraticBezierTo(4.5 * u, 14.5 * u, 4.5 * u + r, 14.5 * u)
+          ..lineTo(14.5 * u - r, 14.5 * u)
+          ..quadraticBezierTo(14.5 * u, 14.5 * u, 14.5 * u, 14.5 * u - r)
+          ..lineTo(14.5 * u, 6.0 * u + r)
+          ..quadraticBezierTo(14.5 * u, 6.0 * u, 14.5 * u - r, 6.0 * u)
+          ..lineTo(12.7 * u, 6.0 * u);
+
+        canvas.drawPath(back, strokePaint);
+        canvas.drawPath(front, strokePaint);
         break;
 
       case DemoIconType.styleClasses:
