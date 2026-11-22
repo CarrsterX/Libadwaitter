@@ -1,5 +1,7 @@
 import 'package:libadwaitter/libadwaitter.dart';
 import 'package:adwaitter_icons/adwaitter_icons.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -878,12 +880,14 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           title: 'Media Player',
                           isCollapsed: isCollapsed,
                         ),
-                        _buildSidebarItem(
-                          page: DemoPage.systemTray,
-                          icon: AdwIcons.applications_system_symbolic,
-                          title: 'System Tray',
-                          isCollapsed: isCollapsed,
-                        ),
+                        if (defaultTargetPlatform != TargetPlatform.android &&
+                            defaultTargetPlatform != TargetPlatform.iOS)
+                          _buildSidebarItem(
+                            page: DemoPage.systemTray,
+                            icon: AdwIcons.applications_system_symbolic,
+                            title: 'System Tray',
+                            isCollapsed: isCollapsed,
+                          ),
                         _buildSidebarItem(
                           page: DemoPage.dragDrop,
                           icon: AdwIcons.folder_download_symbolic,
