@@ -123,6 +123,9 @@ class AdwPortal {
   static bool get _isLinux =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
 
+  static bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   /// Inspects whether the app is running natively on Linux, inside Flatpak,
   /// or inside Snap, and whether Wayland is active.
   static Future<AdwSandboxInfo> getSandboxInfo() async {
@@ -166,9 +169,10 @@ class AdwPortal {
     }
   }
 
-  /// Opens a URI (web URL, `mailto:`, etc.) via `org.freedesktop.portal.OpenURI`.
+  /// Opens a URI (web URL, `mailto:`, etc.) via `org.freedesktop.portal.OpenURI`
+  /// on Linux or `Intent.ACTION_VIEW` on Android.
   static Future<AdwPortalResult<void>> openUri(String uri) async {
-    return _invokePortal<void>('openUri', {'uri': uri});
+    return _invokePortal<void>('openUri', {'uri': uri}, true);
   }
 
   /// Sends a desktop notification via `org.freedesktop.portal.Notification`.
@@ -289,10 +293,11 @@ class AdwPortal {
   static Future<AdwPortalResult<T>> _invokePortal<T>(
     String method, [
     Map<String, dynamic>? arguments,
+    bool allowAndroid = false,
   ]) async {
-    if (!_isLinux) {
+    if (!_isLinux && !(allowAndroid && _isAndroid)) {
       return const AdwPortalResult.unsupported(
-        'AdwPortal is only available on Linux desktops.',
+        'AdwPortal is not supported on this platform.',
       );
     }
     try {
