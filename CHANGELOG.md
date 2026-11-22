@@ -1,3 +1,9 @@
+## 1.0.0-alpha.2
+
+* Added native Linux GTK3/Cairo/Pango touch text magnifier popup bridge (`updateMagnifier` / `hideMagnifier`) so `100×60` @ `2.0×` magnifier popovers extend cleanly above the window edge without stealing focus.
+* Added Linux system tray (`AdwSystemTray`), external drag-and-drop (`AdwDragDrop`), and native emoji font loading / picker bridges in `my_application.cc` and `dart run libadwaitter:setup`.
+* Updated `Adwaitter Demo` sidebar search bar to `TextFieldTapRegion` for seamless touch selection toolbar interactions.
+
 ## 1.0.0-alpha
 
 * Initial pre-alpha release of **Libadwaitter**, the GNOME Libadwaita 1.10+ suite for Flutter on Linux (Wayland/X11) and cross-platform UI via `adwaitter`.
