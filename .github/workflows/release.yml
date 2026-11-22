@@ -63,8 +63,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          repository: CarrsterX/Adwaitter_Icons
+          path: packages/adwaitter_icons
 
       - name: Instalar dependencias de Linux para Flutter
         run: |
@@ -104,8 +107,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          repository: CarrsterX/Adwaitter_Icons
+          path: packages/adwaitter_icons
 
       - uses: actions/setup-java@v4
         with:
