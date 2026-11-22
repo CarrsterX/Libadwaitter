@@ -1389,6 +1389,19 @@ static void window_method_call_handler(FlMethodChannel* channel,
         GtkWindow* popup_win = GTK_WINDOW(
             reinterpret_cast<gpointer>(fl_value_get_int(win_val)));
         if (popup_win != nullptr) {
+          FlValue* accept_focus_val =
+              fl_value_lookup_string(call_args, "acceptFocus");
+          if (accept_focus_val != nullptr &&
+              fl_value_get_type(accept_focus_val) == FL_VALUE_TYPE_BOOL &&
+              !fl_value_get_bool(accept_focus_val)) {
+            gtk_window_set_accept_focus(popup_win, FALSE);
+            gtk_window_set_focus_on_map(popup_win, FALSE);
+            gtk_widget_set_can_focus(GTK_WIDGET(popup_win), FALSE);
+            GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(popup_win));
+            if (gdk_win != nullptr) {
+              gdk_window_set_pass_through(gdk_win, TRUE);
+            }
+          }
           g_signal_connect(popup_win, "draw", G_CALLBACK(window_draw_cb),
                            nullptr);
         }
