@@ -21,6 +21,8 @@ enum DemoPage {
   multiLayoutView,
   styleClasses,
   animations,
+  notifications,
+  mediaPlayer,
   appearance,
 }
 
@@ -69,6 +71,10 @@ extension DemoPageMeta on DemoPage {
         return 'Style Classes';
       case DemoPage.animations:
         return 'Animations';
+      case DemoPage.notifications:
+        return 'Notifications';
+      case DemoPage.mediaPlayer:
+        return 'Media Player';
       case DemoPage.appearance:
         return 'Appearance & Accent';
     }

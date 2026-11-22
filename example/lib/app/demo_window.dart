@@ -23,6 +23,8 @@ import '../features/miscellaneous/style_classes_page.dart';
 import '../features/navigation_view/navigation_view_page.dart';
 import '../features/preferences/demo_preferences_dialog.dart';
 import '../features/split_views/split_views_page.dart';
+import '../features/system/media_player_page.dart';
+import '../features/system/notifications_page.dart';
 import '../features/tab_view/tab_view_page.dart';
 import '../features/toggle_groups/toggle_groups_page.dart';
 import '../features/view_switcher/view_switcher_page.dart';
@@ -857,6 +859,26 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                       ],
                       isCollapsed: isCollapsed,
                     ),
+                    _buildSidebarSection(
+                      theme,
+                      'System',
+                      [
+                        _buildSidebarItem(
+                          page: DemoPage.notifications,
+                          icon: AdwIcons
+                              .preferences_system_notifications_symbolic,
+                          title: 'Notifications',
+                          isCollapsed: isCollapsed,
+                        ),
+                        _buildSidebarItem(
+                          page: DemoPage.mediaPlayer,
+                          icon: AdwIcons.audio_x_generic_symbolic,
+                          title: 'Media Player',
+                          isCollapsed: isCollapsed,
+                        ),
+                      ],
+                      isCollapsed: isCollapsed,
+                    ),
                   ],
                 ),
               );
@@ -886,6 +908,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       'clamp',
       'banner',
       'animations',
+      'notifications',
+      'media player',
     ];
     return titles.any((t) => t.contains(_searchFilter));
   }
@@ -970,6 +994,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.buttons ||
       DemoPage.banner ||
       DemoPage.avatar ||
+      DemoPage.notifications ||
+      DemoPage.mediaPlayer ||
       DemoPage.appearance =>
         true,
       _ => false,
@@ -1033,6 +1059,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.multiLayoutView => const MultiLayoutViewPage(),
       DemoPage.styleClasses => const StyleClassesPage(),
       DemoPage.animations => const AnimationsPage(),
+      DemoPage.notifications => const NotificationsPage(),
+      DemoPage.mediaPlayer => const MediaPlayerPage(),
     };
   }
 }
