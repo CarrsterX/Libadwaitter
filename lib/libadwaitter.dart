@@ -5,5 +5,7 @@
 library libadwaitter;
 
 export 'package:adwaitter/adwaitter.dart';
+export 'src/adw_drag_drop.dart';
 export 'src/adw_media_session.dart';
 export 'src/adw_portal.dart';
+export 'src/adw_system_tray.dart';

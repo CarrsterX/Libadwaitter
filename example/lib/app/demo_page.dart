@@ -23,6 +23,8 @@ enum DemoPage {
   animations,
   notifications,
   mediaPlayer,
+  systemTray,
+  dragDrop,
   appearance,
 }
 
@@ -75,6 +77,10 @@ extension DemoPageMeta on DemoPage {
         return 'Notifications';
       case DemoPage.mediaPlayer:
         return 'Media Player';
+      case DemoPage.systemTray:
+        return 'System Tray';
+      case DemoPage.dragDrop:
+        return 'Drag & Drop';
       case DemoPage.appearance:
         return 'Appearance & Accent';
     }

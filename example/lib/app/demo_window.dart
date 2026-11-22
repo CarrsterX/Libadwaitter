@@ -23,8 +23,10 @@ import '../features/miscellaneous/style_classes_page.dart';
 import '../features/navigation_view/navigation_view_page.dart';
 import '../features/preferences/demo_preferences_dialog.dart';
 import '../features/split_views/split_views_page.dart';
+import '../features/system/drag_drop_page.dart';
 import '../features/system/media_player_page.dart';
 import '../features/system/notifications_page.dart';
+import '../features/system/system_tray_page.dart';
 import '../features/tab_view/tab_view_page.dart';
 import '../features/toggle_groups/toggle_groups_page.dart';
 import '../features/view_switcher/view_switcher_page.dart';
@@ -536,7 +538,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                                     ),
                                   Align(
                                     alignment: Alignment.centerLeft,
-                                    child: EditableText(
+                                    child: AdwEditableText(
                                       controller: _searchController,
                                       focusNode: _searchFocusNode,
                                       style: theme.typography.body.copyWith(
@@ -876,6 +878,18 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           title: 'Media Player',
                           isCollapsed: isCollapsed,
                         ),
+                        _buildSidebarItem(
+                          page: DemoPage.systemTray,
+                          icon: AdwIcons.applications_system_symbolic,
+                          title: 'System Tray',
+                          isCollapsed: isCollapsed,
+                        ),
+                        _buildSidebarItem(
+                          page: DemoPage.dragDrop,
+                          icon: AdwIcons.folder_download_symbolic,
+                          title: 'Drag & Drop',
+                          isCollapsed: isCollapsed,
+                        ),
                       ],
                       isCollapsed: isCollapsed,
                     ),
@@ -910,6 +924,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       'animations',
       'notifications',
       'media player',
+      'system tray',
+      'drag & drop',
     ];
     return titles.any((t) => t.contains(_searchFilter));
   }
@@ -996,6 +1012,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.avatar ||
       DemoPage.notifications ||
       DemoPage.mediaPlayer ||
+      DemoPage.systemTray ||
+      DemoPage.dragDrop ||
       DemoPage.appearance =>
         true,
       _ => false,
@@ -1061,6 +1079,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.animations => const AnimationsPage(),
       DemoPage.notifications => const NotificationsPage(),
       DemoPage.mediaPlayer => const MediaPlayerPage(),
+      DemoPage.systemTray => const SystemTrayPage(),
+      DemoPage.dragDrop => const DragDropPage(),
     };
   }
 }

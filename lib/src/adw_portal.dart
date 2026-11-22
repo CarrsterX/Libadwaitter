@@ -88,6 +88,21 @@ class AdwSandboxInfo {
   bool get isNativeSystem => isLinux && !isSandboxed;
 }
 
+/// Result returned by [AdwPortal.runElevated] on Linux (`pkexec`).
+class AdwElevatedCommandResult {
+  const AdwElevatedCommandResult({
+    required this.exitCode,
+    required this.stdout,
+    required this.stderr,
+  });
+
+  final int exitCode;
+  final String stdout;
+  final String stderr;
+
+  bool get isSuccess => exitCode == 0;
+}
+
 /// Priority levels for [AdwPortal.sendNotification].
 enum AdwNotificationPriority {
   low,
@@ -259,6 +274,30 @@ class AdwPortal {
     return _invokePortal<void>('openUri', {'uri': uri}, true);
   }
 
+  /// Shares [text] and/or local [filePaths] with other applications.
+  ///
+  /// - **Android:** Opens the native Android Share Sheet (`Intent.createChooser`
+  ///   with `ACTION_SEND` / `ACTION_SEND_MULTIPLE`).
+  /// - **Linux:** Opens the native "Open With..." chooser for files via
+  ///   `org.freedesktop.portal.OpenURI` (or copies plain text to the clipboard).
+  static Future<AdwPortalResult<void>> share({
+    String? text,
+    String? subject,
+    List<String> filePaths = const [],
+    String? title,
+  }) async {
+    return _invokePortal<void>(
+      'share',
+      {
+        if (text != null) 'text': text,
+        if (subject != null) 'subject': subject,
+        if (filePaths.isNotEmpty) 'filePaths': filePaths,
+        if (title != null) 'title': title,
+      },
+      true,
+    );
+  }
+
   /// Requests permission to post system notifications.
   ///
   /// On Android 13+ (API 33+) this prompts for `POST_NOTIFICATIONS` if not yet
@@ -321,6 +360,21 @@ class AdwPortal {
   /// Withdraws a previously sent notification by [id].
   static Future<AdwPortalResult<void>> withdrawNotification(String id) async {
     return _invokePortal<void>('withdrawNotification', {'id': id}, true);
+  }
+
+  /// Opens the native Linux GTK Emoji Chooser popover anchored at optional
+  /// window coordinates [x], [y] and returns the selected emoji string.
+  ///
+  /// On Android, emojis are entered natively via the system virtual keyboard,
+  /// so this returns [AdwPortalStatus.unsupported].
+  static Future<AdwPortalResult<String?>> pickEmoji({
+    double? x,
+    double? y,
+  }) async {
+    return _invokePortal<String?>('pickEmoji', {
+      if (x != null) 'x': x,
+      if (y != null) 'y': y,
+    });
   }
 
   /// Opens the native system file chooser (portal-backed in Flatpak/Snap)
@@ -414,6 +468,57 @@ class AdwPortal {
   /// Releases a previously acquired [inhibit] handle.
   static Future<AdwPortalResult<void>> uninhibit(String handle) async {
     return _invokePortal<void>('uninhibit', {'handle': handle});
+  }
+
+  /// Requests administrator authorization on Linux via Polkit
+  /// (`org.freedesktop.PolicyKit1.Authority.CheckAuthorization`), displaying
+  /// the native desktop authentication dialog when [allowUserInteraction] is
+  /// `true`.
+  ///
+  /// Returns [AdwPortalStatus.unsupported] on non-Linux platforms.
+  static Future<AdwPortalResult<bool>> requestAdminAuthorization({
+    String actionId = 'org.freedesktop.policykit.exec',
+    bool allowUserInteraction = true,
+  }) async {
+    final result = await _invokePortal<bool>('requestAdminAuthorization', {
+      'actionId': actionId,
+      'allowUserInteraction': allowUserInteraction,
+    });
+    return AdwPortalResult<bool>(
+      status: result.status,
+      value: result.value ?? result.isGranted,
+      errorMessage: result.errorMessage,
+    );
+  }
+
+  /// Executes [executable] with [arguments] using Linux Polkit elevation
+  /// (`pkexec`), showing the native system administrator prompt and returning
+  /// the command's exit code and output.
+  ///
+  /// Returns [AdwPortalStatus.cancelled] if the user dismisses the prompt, or
+  /// [AdwPortalStatus.unsupported] on non-Linux platforms.
+  static Future<AdwPortalResult<AdwElevatedCommandResult>> runElevated(
+    String executable, {
+    List<String> arguments = const [],
+  }) async {
+    final result = await _invokePortal<Map<dynamic, dynamic>>('runElevated', {
+      'executable': executable,
+      'arguments': arguments,
+    });
+    if (!result.isGranted || result.value == null) {
+      return AdwPortalResult<AdwElevatedCommandResult>(
+        status: result.status,
+        errorMessage: result.errorMessage,
+      );
+    }
+    final map = result.value!;
+    return AdwPortalResult<AdwElevatedCommandResult>.granted(
+      AdwElevatedCommandResult(
+        exitCode: (map['exitCode'] as num?)?.toInt() ?? -1,
+        stdout: map['stdout'] as String? ?? '',
+        stderr: map['stderr'] as String? ?? '',
+      ),
+    );
   }
 
   static Future<AdwPortalResult<T>> _invokePortal<T>(

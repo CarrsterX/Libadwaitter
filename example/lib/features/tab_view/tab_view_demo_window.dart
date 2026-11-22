@@ -647,7 +647,7 @@ class _TabViewDemoPageBodyState extends State<_TabViewDemoPageBody> {
                   : null,
             ),
             alignment: Alignment.centerLeft,
-            child: EditableText(
+            child: AdwEditableText(
               controller: _textController,
               focusNode: _focusNode,
               style: theme.typography.body.copyWith(
@@ -657,6 +657,7 @@ class _TabViewDemoPageBodyState extends State<_TabViewDemoPageBody> {
               ),
               cursorColor: fg,
               backgroundCursorColor: fg.withValues(alpha: 0.24),
+              selectionColor: theme.colors.accentColor.withValues(alpha: 0.3),
               onChanged: (val) {
                 widget.page.title = val;
               },
