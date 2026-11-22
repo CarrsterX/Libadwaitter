@@ -123,10 +123,11 @@ jobs:
           repository: CarrsterX/Adwaitter_Icons
           path: packages/adwaitter_icons
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      - name: Instalar OpenJDK 21
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-21-jdk
+          echo "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> "$GITHUB_ENV"
 
       - uses: subosito/flutter-action@v2
         with:
