@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -94,6 +96,46 @@ enum AdwNotificationPriority {
   urgent,
 }
 
+/// Action button attached to a system notification sent via [AdwPortal.sendNotification].
+class AdwNotificationAction {
+  const AdwNotificationAction({
+    required this.id,
+    required this.label,
+  });
+
+  /// Identifier returned in [AdwNotificationEvent.actionId] when clicked.
+  final String id;
+
+  /// Human-readable button label displayed in the system notification.
+  final String label;
+
+  Map<String, String> toMap() => {'id': id, 'label': label};
+}
+
+/// Event emitted on [AdwPortal.notificationEvents] when the user taps a
+/// notification or clicks one of its [AdwNotificationAction] buttons.
+class AdwNotificationEvent {
+  const AdwNotificationEvent({
+    required this.notificationId,
+    this.actionId,
+    this.payload,
+  });
+
+  /// The `id` originally passed to [AdwPortal.sendNotification].
+  final String notificationId;
+
+  /// The clicked [AdwNotificationAction.id], or `null` when the user tapped
+  /// the notification body itself (default action).
+  final String? actionId;
+
+  /// Optional custom string payload passed to [AdwPortal.sendNotification].
+  final String? payload;
+
+  /// Whether this event was triggered by tapping the notification body rather
+  /// than an explicit action button.
+  bool get isDefaultAction => actionId == null || actionId!.isEmpty;
+}
+
 /// Optional Linux desktop & Wayland portal bridge (`libadwaitter/portal`).
 ///
 /// This bridge is strictly decoupled from Libadwaitter's UI widgets: apps
@@ -107,17 +149,59 @@ class AdwPortal {
       MethodChannel('libadwaitter/portal');
 
   static MethodChannel _channel = _defaultChannel;
+  static bool _handlerRegistered = false;
+  static final StreamController<AdwNotificationEvent> _notificationController =
+      StreamController<AdwNotificationEvent>.broadcast();
+
+  /// Stream of system notification clicks and action button activations.
+  ///
+  /// Works on Linux (`GNotification` / `org.freedesktop.portal.Notification`)
+  /// and Android (`NotificationManager`).
+  static Stream<AdwNotificationEvent> get notificationEvents {
+    _ensureHandlerRegistered();
+    return _notificationController.stream;
+  }
+
+  static void _ensureHandlerRegistered() {
+    if (_handlerRegistered) return;
+    _handlerRegistered = true;
+    _channel.setMethodCallHandler(_handleNativeCall);
+  }
+
+  static Future<void> _handleNativeCall(MethodCall call) async {
+    if (call.method == 'onNotificationAction') {
+      final args = call.arguments;
+      if (args is Map) {
+        final notifId = args['id'] as String? ?? 'default';
+        final rawAction = args['actionId'] as String?;
+        final actionId =
+            (rawAction == null || rawAction.isEmpty) ? null : rawAction;
+        final rawPayload = args['payload'] as String?;
+        final payload =
+            (rawPayload == null || rawPayload.isEmpty) ? null : rawPayload;
+        _notificationController.add(
+          AdwNotificationEvent(
+            notificationId: notifId,
+            actionId: actionId,
+            payload: payload,
+          ),
+        );
+      }
+    }
+  }
 
   /// Allows overriding the underlying [MethodChannel] in tests.
   @visibleForTesting
   static void setChannelForTesting(MethodChannel channel) {
     _channel = channel;
+    _handlerRegistered = false;
   }
 
   /// Restores the default [MethodChannel] after tests.
   @visibleForTesting
   static void resetChannelForTesting() {
     _channel = _defaultChannel;
+    _handlerRegistered = false;
   }
 
   static bool get _isLinux =>
@@ -175,26 +259,68 @@ class AdwPortal {
     return _invokePortal<void>('openUri', {'uri': uri}, true);
   }
 
-  /// Sends a desktop notification via `org.freedesktop.portal.Notification`.
+  /// Requests permission to post system notifications.
+  ///
+  /// On Android 13+ (API 33+) this prompts for `POST_NOTIFICATIONS` if not yet
+  /// granted. On Linux and older Android versions it returns granted immediately.
+  static Future<AdwPortalResult<bool>> requestNotificationPermission() async {
+    if (_isLinux) {
+      return const AdwPortalResult.granted(true);
+    }
+    if (!_isAndroid) {
+      return const AdwPortalResult.unsupported(
+        'System notifications are only supported on Linux and Android.',
+      );
+    }
+    final result = await _invokePortal<bool>(
+      'requestNotificationPermission',
+      null,
+      true,
+    );
+    return AdwPortalResult<bool>(
+      status: result.status,
+      value: result.value ?? result.isGranted,
+      errorMessage: result.errorMessage,
+    );
+  }
+
+  /// Sends a system notification via `GNotification` /
+  /// `org.freedesktop.portal.Notification` on Linux or `NotificationManager` on
+  /// Android.
+  ///
+  /// Taps on the notification body or any [actions] button are delivered on
+  /// [notificationEvents].
   static Future<AdwPortalResult<void>> sendNotification({
     required String id,
     required String title,
     String? body,
     String? iconName,
     AdwNotificationPriority priority = AdwNotificationPriority.normal,
+    List<AdwNotificationAction> actions = const [],
+    String? payload,
+    String? category,
   }) async {
-    return _invokePortal<void>('sendNotification', {
-      'id': id,
-      'title': title,
-      if (body != null) 'body': body,
-      if (iconName != null) 'iconName': iconName,
-      'priority': priority.name,
-    });
+    _ensureHandlerRegistered();
+    return _invokePortal<void>(
+      'sendNotification',
+      {
+        'id': id,
+        'title': title,
+        if (body != null) 'body': body,
+        if (iconName != null) 'iconName': iconName,
+        'priority': priority.name,
+        if (actions.isNotEmpty)
+          'actions': actions.map((a) => a.toMap()).toList(growable: false),
+        if (payload != null) 'payload': payload,
+        if (category != null) 'category': category,
+      },
+      true,
+    );
   }
 
   /// Withdraws a previously sent notification by [id].
   static Future<AdwPortalResult<void>> withdrawNotification(String id) async {
-    return _invokePortal<void>('withdrawNotification', {'id': id});
+    return _invokePortal<void>('withdrawNotification', {'id': id}, true);
   }
 
   /// Opens the native system file chooser (portal-backed in Flatpak/Snap)

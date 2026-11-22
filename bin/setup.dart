@@ -1358,6 +1358,29 @@ static void window_method_call_handler(FlMethodChannel* channel,
 
 // --- XDG Desktop Portal & Linux Sandbox Bridge (libadwaitter/portal) ---
 
+static FlMethodChannel* g_portal_channel = nullptr;
+static GtkWindow* g_portal_main_window = nullptr;
+
+static void on_notification_action_activated(GSimpleAction* action,
+                                             GVariant* parameter,
+                                             gpointer user_data) {
+  if (g_portal_main_window != nullptr) {
+    gtk_window_present(g_portal_main_window);
+  }
+  if (g_portal_channel == nullptr || parameter == nullptr) return;
+  const gchar* id = "";
+  const gchar* action_id = "";
+  const gchar* payload = "";
+  g_variant_get(parameter, "(&s&s&s)", &id, &action_id, &payload);
+
+  g_autoptr(FlValue) map = fl_value_new_map();
+  fl_value_set_string_take(map, "id", fl_value_new_string(id));
+  fl_value_set_string_take(map, "actionId", fl_value_new_string(action_id));
+  fl_value_set_string_take(map, "payload", fl_value_new_string(payload));
+  fl_method_channel_invoke_method(g_portal_channel, "onNotificationAction", map,
+                                  nullptr, nullptr, nullptr);
+}
+
 static FlValue* build_portal_result(const char* status,
                                     FlValue* value_take,
                                     const char* error_message) {
@@ -1543,6 +1566,9 @@ static void portal_method_call_handler(FlMethodChannel* channel,
     const gchar* body = nullptr;
     const gchar* icon_name = nullptr;
     const gchar* priority_str = "normal";
+    const gchar* payload = "";
+    const gchar* category = nullptr;
+    FlValue* actions_val = nullptr;
     if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
       FlValue* v = nullptr;
       if ((v = fl_value_lookup_string(args, "id")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
@@ -1555,6 +1581,12 @@ static void portal_method_call_handler(FlMethodChannel* channel,
         icon_name = fl_value_get_string(v);
       if ((v = fl_value_lookup_string(args, "priority")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
         priority_str = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "payload")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        payload = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "category")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_STRING)
+        category = fl_value_get_string(v);
+      if ((v = fl_value_lookup_string(args, "actions")) != nullptr && fl_value_get_type(v) == FL_VALUE_TYPE_LIST)
+        actions_val = v;
     }
     g_autoptr(GNotification) notification = g_notification_new(title);
     if (body != nullptr) g_notification_set_body(notification, body);
@@ -1562,6 +1594,11 @@ static void portal_method_call_handler(FlMethodChannel* channel,
       g_autoptr(GIcon) icon = g_themed_icon_new(icon_name);
       g_notification_set_icon(notification, icon);
     }
+#if GLIB_CHECK_VERSION(2, 70, 0)
+    if (category != nullptr && category[0] != '\0') {
+      g_notification_set_category(notification, category);
+    }
+#endif
     if (strcmp(priority_str, "low") == 0) {
       g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_LOW);
     } else if (strcmp(priority_str, "high") == 0) {
@@ -1570,6 +1607,27 @@ static void portal_method_call_handler(FlMethodChannel* channel,
       g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_URGENT);
     } else {
       g_notification_set_priority(notification, G_NOTIFICATION_PRIORITY_NORMAL);
+    }
+    g_notification_set_default_action_and_target_value(
+        notification, "app.libadwaitter-notify",
+        g_variant_new("(sss)", id, "", payload));
+    if (actions_val != nullptr) {
+      size_t count = fl_value_get_length(actions_val);
+      for (size_t i = 0; i < count; ++i) {
+        FlValue* item = fl_value_get_list_value(actions_val, i);
+        if (item != nullptr && fl_value_get_type(item) == FL_VALUE_TYPE_MAP) {
+          FlValue* aid_v = fl_value_lookup_string(item, "id");
+          FlValue* label_v = fl_value_lookup_string(item, "label");
+          if (aid_v != nullptr && label_v != nullptr &&
+              fl_value_get_type(aid_v) == FL_VALUE_TYPE_STRING &&
+              fl_value_get_type(label_v) == FL_VALUE_TYPE_STRING) {
+            g_notification_add_button_with_target_value(
+                notification, fl_value_get_string(label_v),
+                "app.libadwaitter-notify",
+                g_variant_new("(sss)", id, fl_value_get_string(aid_v), payload));
+          }
+        }
+      }
     }
     g_application_send_notification(g_application_get_default(), id, notification);
     g_autoptr(FlValue) reply = build_portal_result("granted", nullptr, nullptr);
@@ -1902,8 +1960,19 @@ static void my_application_activate(GApplication* application) {
   // Register Libadwaitter XDG Desktop Portal & sandbox bridge MethodChannel
   FlMethodChannel* portal_channel =
       fl_method_channel_new(messenger, kPortalChannelName, FL_METHOD_CODEC(codec));
+  g_portal_channel = portal_channel;
+  g_portal_main_window = window;
   fl_method_channel_set_method_call_handler(
       portal_channel, portal_method_call_handler, window, nullptr);
+
+  // Register GApplication action for interactive GNotification click/button callbacks
+  if (g_action_map_lookup_action(G_ACTION_MAP(application), "libadwaitter-notify") == nullptr) {
+    g_autoptr(GSimpleAction) notify_action =
+        g_simple_action_new("libadwaitter-notify", G_VARIANT_TYPE("(sss)"));
+    g_signal_connect(notify_action, "activate",
+                     G_CALLBACK(on_notification_action_activated), nullptr);
+    g_action_map_add_action(G_ACTION_MAP(application), G_ACTION(notify_action));
+  }
 
   GSettingsSchemaSource* schema_source = g_settings_schema_source_get_default();
   if (schema_source != nullptr) {
