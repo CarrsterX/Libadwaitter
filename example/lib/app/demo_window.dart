@@ -474,7 +474,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                 ignoring: !_searchBarVisible,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
-                  child: TapRegion(
+                  child: TextFieldTapRegion(
                     onTapOutside: (_) {
                       if (_searchFocusNode.hasFocus) {
                         _searchFocusNode.unfocus();
