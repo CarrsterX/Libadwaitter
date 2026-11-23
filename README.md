@@ -2,6 +2,7 @@
 
 [![License: LGPL v2.1](https://img.shields.io/badge/License-LGPL_v2.1--or--later-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android-blue)](https://flutter.dev)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20project-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/carrster)
 
 **Libadwaitter** is a modern, **pure Dart & Flutter** implementation of GNOME's **Libadwaita** design system and UI components, built strictly following the [GNOME Human Interface Guidelines (HIG)](https://developer.gnome.org/hig/).
 
