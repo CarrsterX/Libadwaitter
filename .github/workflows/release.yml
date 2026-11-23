@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Versión X.Y.Z (ej. 0.1.0)'
+        description: 'Version X.Y.Z (e.g. 1.0.0)'
         required: true
         type: string
       channel:
-        description: 'Tipo de release'
+        description: 'Release channel'
         required: true
         default: 'alpha'
         type: choice
@@ -20,7 +20,7 @@ on:
           - beta
           - stable
       number:
-        description: 'Número de alpha/beta (ignorado en stable)'
+        description: 'Alpha/beta number (ignored for stable)'
         required: false
         default: '1'
         type: string
@@ -32,7 +32,7 @@ jobs:
       app_name: ${{ steps.meta.outputs.app_name }}
       is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
     steps:
-      - name: Calcular nombre y tipo de release
+      - name: Compute release name and type
         id: meta
         run: |
           if [[ "${{ github.event_name }}" == "push" ]]; then
@@ -74,7 +74,7 @@ jobs:
           repository: CarrsterX/Adwaitter_Icons
           path: packages/adwaitter_icons
 
-      - name: Instalar dependencias de Linux para Flutter
+      - name: Install Linux dependencies for Flutter
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -90,13 +90,14 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compilar Linux release
+      - name: Build Linux release
         working-directory: example
         run: |
+          flutter config --enable-windowing
           flutter pub get
           flutter build linux --release
 
-      - name: Empaquetar .tar.gz
+      - name: Package .tar.gz
         run: |
           APP_NAME="${{ needs.prepare.outputs.app_name }}"
           mkdir -p dist
@@ -123,7 +124,7 @@ jobs:
           repository: CarrsterX/Adwaitter_Icons
           path: packages/adwaitter_icons
 
-      - name: Instalar OpenJDK 21
+      - name: Install OpenJDK 21
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-21-jdk
@@ -134,13 +135,13 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Compilar APKs por arquitectura
+      - name: Build APKs per ABI
         working-directory: example
         run: |
           flutter pub get
           flutter build apk --release --split-per-abi
 
-      - name: Renombrar APKs
+      - name: Rename APKs
         run: |
           APP_NAME="${{ needs.prepare.outputs.app_name }}"
           OUT_DIR="example/build/app/outputs/flutter-apk"
@@ -166,7 +167,7 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Publicar GitHub Release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ needs.prepare.outputs.app_name }}

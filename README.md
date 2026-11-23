@@ -1,11 +1,13 @@
 # Libadwaitter
 
 [![License: LGPL v2.1](https://img.shields.io/badge/License-LGPL_v2.1--or--later-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20%7C%20iOS%20%7C%20Windows%20%7C%20macOS%20%7C%20Web-blue)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android-blue)](https://flutter.dev)
 
 **Libadwaitter** is a modern, **pure Dart & Flutter** implementation of GNOME's **Libadwaita** design system and UI components, built strictly following the [GNOME Human Interface Guidelines (HIG)](https://developer.gnome.org/hig/).
 
 Its goal is to enable Flutter developers to build native-feeling desktop applications with the visual elegance, animations, tactile feel, and layout patterns of the modern GNOME desktop (Fedora, Ubuntu, Arch, Debian), while enjoying the productivity, reactivity, and declarative paradigms of Flutter.
+
+> **Requirements:** Flutter `>= 3.50.0` with the multi-window feature flag enabled (`flutter config --enable-windowing`).
 
 ---
 

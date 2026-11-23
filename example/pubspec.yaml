@@ -5,15 +5,13 @@ version: 1.0.0
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.10.0'
+  flutter: '>=3.50.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  libadwaitter:
-    path: ../
-  adwaitter_icons:
-    path: ../packages/adwaitter_icons
+  libadwaitter: ^1.0.0-alpha.5
+  adwaitter_icons: ^1.0.0-alpha.5
 
 dev_dependencies:
   flutter_lints: ^6.0.0

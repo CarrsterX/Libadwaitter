@@ -1,15 +1,13 @@
 name: libadwaitter
 description: A pure Dart and Flutter implementation of GNOME's Libadwaita design system, following the GNOME Human Interface Guidelines (HIG).
-version: 1.0.0-alpha.2
-# Local monorepo development uses path dependencies; remove publish_to and switch to hosted versions before publishing.
-publish_to: 'none'
+version: 1.0.0-alpha.5
 homepage: https://github.com/CarrsterX/Libadwaitter
 repository: https://github.com/CarrsterX/Libadwaitter
 issue_tracker: https://github.com/CarrsterX/Libadwaitter/issues
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.10.0'
+  flutter: '>=3.50.0'
 
 executables:
   setup: setup
@@ -17,8 +15,7 @@ executables:
 dependencies:
   flutter:
     sdk: flutter
-  adwaitter:
-    path: packages/adwaitter
+  adwaitter: ^1.0.0-alpha.5
 
 dev_dependencies:
   flutter_test:
@@ -27,4 +24,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: false
+  plugin:
+    platforms:
+      android:
+        dartPluginClass: LibadwaitterDartPlugin
+      linux:
+        dartPluginClass: LibadwaitterDartPlugin
 
