@@ -3734,7 +3734,12 @@ static void my_application_activate(GApplication* application) {
       screen, GTK_STYLE_PROVIDER(css_provider),
       GTK_STYLE_PROVIDER_PRIORITY_USER);
 
-  // Disable server-side decorations (SSD) to enable in-app client-side decorations (CSD)
+  // Disable server-side decorations (SSD) to enable in-app client-side decorations (CSD).
+  // Setting a 0x0 empty titlebar forces KWin (KDE Wayland/X11) to honor CSD instead of
+  // falling back to server-side window frames.
+  GtkWidget* empty_titlebar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_size_request(empty_titlebar, 0, 0);
+  gtk_window_set_titlebar(window, empty_titlebar);
   gtk_window_set_decorated(window, FALSE);
 
   gtk_window_set_title(window, "__APP_TITLE__");
