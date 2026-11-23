@@ -10,8 +10,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  libadwaitter: ^1.0.0-alpha.5
-  adwaitter_icons: ^1.0.0-alpha.5
+  libadwaitter:
+    path: ../
+  adwaitter_icons:
+    path: ../packages/adwaitter_icons
 
 dev_dependencies:
   flutter_lints: ^6.0.0

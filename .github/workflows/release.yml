@@ -31,6 +31,7 @@ jobs:
     outputs:
       app_name: ${{ steps.meta.outputs.app_name }}
       is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
+      pub_version: ${{ steps.meta.outputs.pub_version }}
     steps:
       - name: Compute release name and type
         id: meta
@@ -38,14 +39,21 @@ jobs:
           if [[ "${{ github.event_name }}" == "push" ]]; then
             TAG="${GITHUB_REF_NAME#v}"
             APP_NAME="Adwaitter-${TAG}"
+            if [[ "$TAG" == *"-stable" ]]; then
+              PUB_VERSION="${TAG%-stable}"
+            else
+              PUB_VERSION="$(echo "$TAG" | sed -E 's/-(alpha|beta)-/-\1./')"
+            fi
           else
             VER="${{ inputs.version }}"
             CHAN="${{ inputs.channel }}"
             NUM="${{ inputs.number }}"
             if [[ "$CHAN" == "stable" ]]; then
               APP_NAME="Adwaitter-${VER}-stable"
+              PUB_VERSION="${VER}"
             else
               APP_NAME="Adwaitter-${VER}-${CHAN}-${NUM}"
+              PUB_VERSION="${VER}-${CHAN}.${NUM}"
             fi
           fi
 
@@ -57,6 +65,7 @@ jobs:
 
           echo "app_name=${APP_NAME}" >> "$GITHUB_OUTPUT"
           echo "is_prerelease=${IS_PRERELEASE}" >> "$GITHUB_OUTPUT"
+          echo "pub_version=${PUB_VERSION}" >> "$GITHUB_OUTPUT"
 
   build-linux:
     needs: prepare
@@ -89,6 +98,21 @@ jobs:
         with:
           channel: 'stable'
           cache: true
+
+      - name: Configure pub.dev dependencies for release
+        working-directory: example
+        run: |
+          PUB_VER="${{ needs.prepare.outputs.pub_version }}"
+          python3 -c '
+          import re, sys
+          ver = sys.argv[1]
+          with open("pubspec.yaml", "r") as f:
+              content = f.read()
+          content = re.sub(r"  libadwaitter:\n    path: [^\n]+", f"  libadwaitter: ^{ver}", content)
+          content = re.sub(r"  adwaitter_icons:\n    path: [^\n]+", f"  adwaitter_icons: ^{ver}", content)
+          with open("pubspec.yaml", "w") as f:
+              f.write(content)
+          ' "$PUB_VER"
 
       - name: Build Linux release
         working-directory: example
@@ -134,6 +158,21 @@ jobs:
         with:
           channel: 'stable'
           cache: true
+
+      - name: Configure pub.dev dependencies for release
+        working-directory: example
+        run: |
+          PUB_VER="${{ needs.prepare.outputs.pub_version }}"
+          python3 -c '
+          import re, sys
+          ver = sys.argv[1]
+          with open("pubspec.yaml", "r") as f:
+              content = f.read()
+          content = re.sub(r"  libadwaitter:\n    path: [^\n]+", f"  libadwaitter: ^{ver}", content)
+          content = re.sub(r"  adwaitter_icons:\n    path: [^\n]+", f"  adwaitter_icons: ^{ver}", content)
+          with open("pubspec.yaml", "w") as f:
+              f.write(content)
+          ' "$PUB_VER"
 
       - name: Build APKs per ABI
         working-directory: example
