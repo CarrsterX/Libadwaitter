@@ -15,7 +15,7 @@ executables:
 dependencies:
   flutter:
     sdk: flutter
-  adwaitter: ^1.0.0-alpha.6
+  adwaitter: ^1.0.0-alpha.7
 
 dev_dependencies:
   flutter_test:
