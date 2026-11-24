@@ -10,7 +10,7 @@ export 'src/adw_media_session.dart';
 export 'src/adw_portal.dart';
 export 'src/adw_system_tray.dart';
 
-/// No-op Dart plugin registration for Android and Linux.
+/// No-op Dart plugin registration for Android, Linux, and Web.
 class LibadwaitterDartPlugin {
-  static void registerWith() {}
+  static void registerWith([Object? registrar]) {}
 }

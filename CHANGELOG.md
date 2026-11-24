@@ -1,3 +1,9 @@
+## 1.0.0-alpha.8
+
+* Added official Web and WebAssembly (WASM) platform support (`flutter_web_plugins` and `LibadwaitterDartPlugin.registerWith`).
+* Added Web/WASM bridges (`dart:js_interop`) for Notifications (`Web Notifications API`), Media Session (`MediaSession` with `setPositionState` and `±10s` seek), Drag & Drop, OpenURI, and Share.
+* Gated Linux-only and Android-only features cleanly in `Adwaitter Demo` when running on Web.
+
 ## 1.0.0-alpha.7
 
 * Refactored all Linux native bridges into a modular Feature-Driven Design (FDD) Flutter Linux plugin (`LibadwaitterPlugin` under `linux/src/`) so new bridges are compiled and registered automatically without duplicating C++ code in `my_application.cc`.
