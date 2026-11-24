@@ -25,6 +25,7 @@ enum DemoPage {
   mediaPlayer,
   systemTray,
   dragDrop,
+  polkit,
   appearance,
 }
 
@@ -81,6 +82,8 @@ extension DemoPageMeta on DemoPage {
         return 'System Tray';
       case DemoPage.dragDrop:
         return 'Drag & Drop';
+      case DemoPage.polkit:
+        return 'Polkit (Superuser)';
       case DemoPage.appearance:
         return 'Appearance & Accent';
     }

@@ -88,9 +88,9 @@ class AdwSandboxInfo {
   bool get isNativeSystem => isLinux && !isSandboxed;
 }
 
-/// Result returned by [AdwPortal.runElevated] on Linux (`pkexec`).
-class AdwElevatedCommandResult {
-  const AdwElevatedCommandResult({
+/// Result returned by [AdwPortal.runCommand] and [AdwPortal.runElevated] on Linux.
+class AdwCommandResult {
+  const AdwCommandResult({
     required this.exitCode,
     required this.stdout,
     required this.stderr,
@@ -102,6 +102,9 @@ class AdwElevatedCommandResult {
 
   bool get isSuccess => exitCode == 0;
 }
+
+/// Alias kept for backwards compatibility with [AdwPortal.runElevated].
+typedef AdwElevatedCommandResult = AdwCommandResult;
 
 /// Priority levels for [AdwPortal.sendNotification].
 enum AdwNotificationPriority {
@@ -514,6 +517,42 @@ class AdwPortal {
     final map = result.value!;
     return AdwPortalResult<AdwElevatedCommandResult>.granted(
       AdwElevatedCommandResult(
+        exitCode: (map['exitCode'] as num?)?.toInt() ?? -1,
+        stdout: map['stdout'] as String? ?? '',
+        stderr: map['stderr'] as String? ?? '',
+      ),
+    );
+  }
+
+  /// Executes [executable] with [arguments] as the current unprivileged user
+  /// on Linux via the native runner (`GSubprocess`).
+  ///
+  /// When [detached] is `true`, the process is launched without waiting for it
+  /// to exit (useful for launching desktop/GUI applications).
+  ///
+  /// Returns [AdwPortalStatus.unsupported] on non-Linux platforms.
+  static Future<AdwPortalResult<AdwCommandResult>> runCommand(
+    String executable, {
+    List<String> arguments = const [],
+    String? workingDirectory,
+    bool detached = false,
+  }) async {
+    final result = await _invokePortal<Map<dynamic, dynamic>>('runCommand', {
+      'executable': executable,
+      'arguments': arguments,
+      if (workingDirectory != null && workingDirectory.isNotEmpty)
+        'workingDirectory': workingDirectory,
+      'detached': detached,
+    });
+    if (!result.isGranted || result.value == null) {
+      return AdwPortalResult<AdwCommandResult>(
+        status: result.status,
+        errorMessage: result.errorMessage,
+      );
+    }
+    final map = result.value!;
+    return AdwPortalResult<AdwCommandResult>.granted(
+      AdwCommandResult(
         exitCode: (map['exitCode'] as num?)?.toInt() ?? -1,
         stdout: map['stdout'] as String? ?? '',
         stderr: map['stderr'] as String? ?? '',

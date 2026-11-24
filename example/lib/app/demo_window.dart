@@ -1,7 +1,7 @@
 import 'package:libadwaitter/libadwaitter.dart';
 import 'package:adwaitter_icons/adwaitter_icons.dart';
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform;
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -28,6 +28,7 @@ import '../features/split_views/split_views_page.dart';
 import '../features/system/drag_drop_page.dart';
 import '../features/system/media_player_page.dart';
 import '../features/system/notifications_page.dart';
+import '../features/system/polkit_page.dart';
 import '../features/system/system_tray_page.dart';
 import '../features/tab_view/tab_view_page.dart';
 import '../features/toggle_groups/toggle_groups_page.dart';
@@ -894,6 +895,14 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           title: 'Drag & Drop',
                           isCollapsed: isCollapsed,
                         ),
+                        if (!kIsWeb &&
+                            defaultTargetPlatform == TargetPlatform.linux)
+                          _buildSidebarItem(
+                            page: DemoPage.polkit,
+                            icon: AdwIcons.security_high_symbolic,
+                            title: 'Polkit (Superuser)',
+                            isCollapsed: isCollapsed,
+                          ),
                       ],
                       isCollapsed: isCollapsed,
                     ),
@@ -906,7 +915,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
   }
 
   bool _hasSidebarResults() {
-    const titles = [
+    final titles = [
       'welcome',
       'navigation view',
       'split views',
@@ -930,6 +939,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       'media player',
       'system tray',
       'drag & drop',
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.linux)
+        'polkit (superuser)',
     ];
     return titles.any((t) => t.contains(_searchFilter));
   }
@@ -1018,6 +1029,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.mediaPlayer ||
       DemoPage.systemTray ||
       DemoPage.dragDrop ||
+      DemoPage.polkit ||
       DemoPage.appearance =>
         true,
       _ => false,
@@ -1085,6 +1097,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       DemoPage.mediaPlayer => const MediaPlayerPage(),
       DemoPage.systemTray => const SystemTrayPage(),
       DemoPage.dragDrop => const DragDropPage(),
+      DemoPage.polkit => const PolkitPage(),
     };
   }
 }

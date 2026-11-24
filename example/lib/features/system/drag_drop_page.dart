@@ -14,7 +14,6 @@ class _DragDropPageState extends State<DragDropPage> {
   final List<String> _droppedFiles = [];
   final GlobalKey _emojiButtonKey = GlobalKey();
   String _selectedEmoji = '🐧';
-  String _adminStatus = 'Not requested';
 
   void _handleDrop(List<String> files, String? text) {
     final now = DateTime.now();
@@ -54,36 +53,6 @@ class _DragDropPageState extends State<DragDropPage> {
         ),
       ),
     );
-  }
-
-  Future<void> _requestAdminAuth(BuildContext toastContext) async {
-    final res = await AdwPortal.requestAdminAuthorization();
-    if (!mounted) return;
-    setState(() {
-      _adminStatus = res.isGranted
-          ? 'Authorized (Polkit)'
-          : '${res.status.name}${res.errorMessage != null ? ' — ${res.errorMessage}' : ''}';
-    });
-    if (toastContext.mounted) {
-      AdwToastOverlay.maybeOf(toastContext)?.addToast(
-        AdwToast(title: Text('Admin auth: $_adminStatus')),
-      );
-    }
-  }
-
-  Future<void> _runElevatedSample(BuildContext toastContext) async {
-    final res = await AdwPortal.runElevated('id', arguments: const ['-un']);
-    if (!mounted) return;
-    setState(() {
-      _adminStatus = res.isGranted && res.value != null
-          ? 'pkexec id -un → ${res.value!.stdout.trim()} (exit ${res.value!.exitCode})'
-          : '${res.status.name}${res.errorMessage != null ? ' — ${res.errorMessage}' : ''}';
-    });
-    if (toastContext.mounted) {
-      AdwToastOverlay.maybeOf(toastContext)?.addToast(
-        AdwToast(title: Text(_adminStatus)),
-      );
-    }
   }
 
   Future<void> _pickEmoji(BuildContext toastContext) async {
@@ -177,24 +146,6 @@ class _DragDropPageState extends State<DragDropPage> {
                 key: _emojiButtonKey,
                 onPressed: () => _pickEmoji(toastContext),
                 child: Text('Pick $_selectedEmoji'),
-              ),
-            ),
-            AdwActionRow(
-              title: const Text('Administrator Authorization (Polkit)'),
-              subtitle: Text(_adminStatus),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AdwButton(
-                    onPressed: () => _requestAdminAuth(toastContext),
-                    child: const Text('Auth'),
-                  ),
-                  const SizedBox(width: 8),
-                  AdwButton.suggested(
-                    onPressed: () => _runElevatedSample(toastContext),
-                    child: const Text('pkexec'),
-                  ),
-                ],
               ),
             ),
           ],

@@ -1,6 +1,6 @@
 name: libadwaitter
 description: A pure Dart and Flutter implementation of GNOME's Libadwaita design system, following the GNOME Human Interface Guidelines (HIG).
-version: 1.0.0-alpha.6
+version: 1.0.0-alpha.7
 homepage: https://github.com/CarrsterX/Libadwaitter
 repository: https://github.com/CarrsterX/Libadwaitter
 issue_tracker: https://github.com/CarrsterX/Libadwaitter/issues
@@ -29,5 +29,6 @@ flutter:
       android:
         dartPluginClass: LibadwaitterDartPlugin
       linux:
+        pluginClass: LibadwaitterPlugin
         dartPluginClass: LibadwaitterDartPlugin
 
