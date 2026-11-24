@@ -881,8 +881,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                           title: 'Media Player',
                           isCollapsed: isCollapsed,
                         ),
-                        if (defaultTargetPlatform != TargetPlatform.android &&
-                            defaultTargetPlatform != TargetPlatform.iOS)
+                        if (!kIsWeb &&
+                            defaultTargetPlatform == TargetPlatform.linux)
                           _buildSidebarItem(
                             page: DemoPage.systemTray,
                             icon: AdwIcons.applications_system_symbolic,
@@ -937,7 +937,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
       'animations',
       'notifications',
       'media player',
-      'system tray',
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.linux)
+        'system tray',
       'drag & drop',
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.linux)
         'polkit (superuser)',

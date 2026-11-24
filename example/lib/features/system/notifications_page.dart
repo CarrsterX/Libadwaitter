@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:adwaitter_icons/adwaitter_icons.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
 
@@ -102,7 +103,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       iconName: 'preferences-system-notifications-symbolic',
       priority: _priorities[_priorityIndex],
       payload: 'demo-payload',
-      actions: _includeActions
+      actions: (!kIsWeb && _includeActions)
           ? const [
               AdwNotificationAction(id: 'open', label: 'Open'),
               AdwNotificationAction(id: 'ack', label: 'Acknowledge'),
@@ -183,16 +184,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     if (idx >= 0) setState(() => _priorityIndex = idx);
                   },
                 ),
-                AdwActionRow(
-                  title: const Text('Include Action Buttons'),
-                  subtitle: const Text('Adds "Open" and "Acknowledge" buttons'),
-                  trailing: AdwSwitch(
-                    value: _includeActions,
-                    onChanged: (v) => setState(() => _includeActions = v),
+                if (!kIsWeb)
+                  AdwActionRow(
+                    title: const Text('Include Action Buttons'),
+                    subtitle: const Text('Adds "Open" and "Acknowledge" buttons'),
+                    trailing: AdwSwitch(
+                      value: _includeActions,
+                      onChanged: (v) => setState(() => _includeActions = v),
+                    ),
+                    onPressed: () =>
+                        setState(() => _includeActions = !_includeActions),
                   ),
-                  onPressed: () =>
-                      setState(() => _includeActions = !_includeActions),
-                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -216,34 +218,36 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            AdwPreferencesGroup(
-              title: const Text('Received Events'),
-              description: const Text(
-                'Click the notification body or one of its action buttons to verify native callbacks.',
-              ),
-              headerSuffix: _eventLog.isNotEmpty
-                  ? AdwButton.flat(
-                      onPressed: () => setState(_eventLog.clear),
-                      child: const Text('Clear'),
-                    )
-                  : null,
-              children: _eventLog.isEmpty
-                  ? [
-                      AdwActionRow(
-                        title: Text(
-                          'No events received yet',
-                          style: theme.typography.body.copyWith(
-                            color: theme.colors.windowForeground
-                                .withValues(alpha: 0.6),
+            if (!kIsWeb) ...[
+              const SizedBox(height: 24),
+              AdwPreferencesGroup(
+                title: const Text('Received Events'),
+                description: const Text(
+                  'Click the notification body or one of its action buttons to verify native callbacks.',
+                ),
+                headerSuffix: _eventLog.isNotEmpty
+                    ? AdwButton.flat(
+                        onPressed: () => setState(_eventLog.clear),
+                        child: const Text('Clear'),
+                      )
+                    : null,
+                children: _eventLog.isEmpty
+                    ? [
+                        AdwActionRow(
+                          title: Text(
+                            'No events received yet',
+                            style: theme.typography.body.copyWith(
+                              color: theme.colors.windowForeground
+                                  .withValues(alpha: 0.6),
+                            ),
                           ),
                         ),
-                      ),
-                    ]
-                  : _eventLog
-                      .map((entry) => AdwActionRow(title: Text(entry)))
-                      .toList(growable: false),
-            ),
+                      ]
+                    : _eventLog
+                        .map((entry) => AdwActionRow(title: Text(entry)))
+                        .toList(growable: false),
+              ),
+            ],
           ],
         ),
       ),

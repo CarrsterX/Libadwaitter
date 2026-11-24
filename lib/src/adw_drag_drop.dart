@@ -1,7 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+import 'web/adw_dnd_web_stub.dart'
+    if (dart.library.js_interop) 'web/adw_dnd_web.dart' as web_dnd;
 
 /// Lifecycle phase of an external drag-and-drop operation targeting the window.
 enum AdwDropEventType {
@@ -59,6 +63,33 @@ class AdwDragAndDrop {
   static void _ensureHandlerRegistered() {
     if (_handlerRegistered) return;
     _handlerRegistered = true;
+    if (kIsWeb) {
+      web_dnd.webDndRegister(({
+        required String type,
+        required double x,
+        required double y,
+        List<String> files = const [],
+        String? text,
+      }) {
+        final eventType = switch (type) {
+          'enter' => AdwDropEventType.enter,
+          'update' => AdwDropEventType.update,
+          'leave' => AdwDropEventType.leave,
+          'drop' => AdwDropEventType.drop,
+          _ => null,
+        };
+        if (eventType == null) return;
+        _eventController.add(
+          AdwDropEvent(
+            type: eventType,
+            position: Offset(x, y),
+            files: files,
+            text: text,
+          ),
+        );
+      });
+      return;
+    }
     _channel.setMethodCallHandler(_handleNativeCall);
   }
 

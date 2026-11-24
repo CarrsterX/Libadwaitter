@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'web/adw_media_web_stub.dart'
+    if (dart.library.js_interop) 'web/adw_media_web.dart' as web_media;
+
 /// Playback state published to the system media controller (MPRIS2 on Linux,
 /// `MediaSession` on Android).
 enum AdwPlaybackStatus {
@@ -106,9 +109,9 @@ class AdwMediaSession {
       StreamController<AdwMediaCommand>.broadcast();
 
   static bool get _isSupported =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.linux ||
-          defaultTargetPlatform == TargetPlatform.android);
+      kIsWeb ||
+      defaultTargetPlatform == TargetPlatform.linux ||
+      defaultTargetPlatform == TargetPlatform.android;
 
   /// Stream of media transport commands initiated by the operating system.
   static Stream<AdwMediaCommand> get commands {
@@ -119,16 +122,24 @@ class AdwMediaSession {
   static void _ensureHandlerRegistered() {
     if (_handlerRegistered) return;
     _handlerRegistered = true;
+    if (kIsWeb) {
+      web_media.webMediaRegisterHandlers(
+        (command, {int? positionUs, int? offsetUs}) {
+          _dispatchCommand(command, positionUs: positionUs, offsetUs: offsetUs);
+        },
+      );
+      return;
+    }
     _channel.setMethodCallHandler(_handleNativeCall);
   }
 
-  static Future<void> _handleNativeCall(MethodCall call) async {
-    if (call.method != 'onMediaCommand') return;
-    final args = call.arguments;
-    if (args is! Map) return;
-    final name = args['command'] as String?;
-    if (name == null) return;
-
+  static void _dispatchCommand(
+    String name, {
+    int? offsetUs,
+    int? positionUs,
+    String? loopStr,
+    bool? shuffle,
+  }) {
     final type = switch (name) {
       'play' => AdwMediaCommandType.play,
       'pause' => AdwMediaCommandType.pause,
@@ -145,17 +156,12 @@ class AdwMediaSession {
       _ => null,
     };
     if (type == null) return;
-
-    final offsetUs = (args['offsetUs'] as num?)?.toInt();
-    final positionUs = (args['positionUs'] as num?)?.toInt();
-    final loopStr = args['loopMode'] as String?;
     final loopMode = switch (loopStr) {
       'none' => AdwLoopMode.none,
       'track' => AdwLoopMode.track,
       'playlist' => AdwLoopMode.playlist,
       _ => null,
     };
-    final shuffle = args['shuffle'] as bool?;
     _commandController.add(
       AdwMediaCommand(
         type: type,
@@ -168,10 +174,35 @@ class AdwMediaSession {
     );
   }
 
+  static Future<void> _handleNativeCall(MethodCall call) async {
+    if (call.method != 'onMediaCommand') return;
+    final args = call.arguments;
+    if (args is! Map) return;
+    final name = args['command'] as String?;
+    if (name == null) return;
+    _dispatchCommand(
+      name,
+      offsetUs: (args['offsetUs'] as num?)?.toInt(),
+      positionUs: (args['positionUs'] as num?)?.toInt(),
+      loopStr: args['loopMode'] as String?,
+      shuffle: args['shuffle'] as bool?,
+    );
+  }
+
   /// Publishes current track metadata to the system media controller.
   static Future<void> setMetadata(AdwMediaMetadata metadata) async {
     if (!_isSupported) return;
     _ensureHandlerRegistered();
+    if (kIsWeb) {
+      web_media.webMediaSetMetadata(
+        title: metadata.title,
+        artist: metadata.artist,
+        album: metadata.album,
+        artUrl: metadata.artUrl,
+        duration: metadata.duration,
+      );
+      return;
+    }
     try {
       await _channel.invokeMethod<void>('setMetadata', metadata.toMap());
     } on MissingPluginException {
@@ -194,6 +225,14 @@ class AdwMediaSession {
   }) async {
     if (!_isSupported) return;
     _ensureHandlerRegistered();
+    if (kIsWeb) {
+      web_media.webMediaSetPlaybackState(
+        status: status.name,
+        position: position,
+        rate: rate,
+      );
+      return;
+    }
     try {
       await _channel.invokeMethod<void>('setPlaybackState', {
         'status': status.name,
@@ -216,6 +255,10 @@ class AdwMediaSession {
   static Future<void> setPosition(Duration position) async {
     if (!_isSupported) return;
     _ensureHandlerRegistered();
+    if (kIsWeb) {
+      web_media.webMediaSetPosition(position);
+      return;
+    }
     try {
       await _channel.invokeMethod<void>('setPosition', {
         'positionUs': position.inMicroseconds,
@@ -229,6 +272,10 @@ class AdwMediaSession {
   /// Linux and removes the media notification/session on Android).
   static Future<void> dispose() async {
     if (!_isSupported) return;
+    if (kIsWeb) {
+      web_media.webMediaDispose();
+      return;
+    }
     try {
       await _channel.invokeMethod<void>('dispose');
     } on MissingPluginException {

@@ -1,4 +1,6 @@
 import 'package:adwaitter_icons/adwaitter_icons.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
 
@@ -125,29 +127,33 @@ class _DragDropPageState extends State<DragDropPage> {
                 child: const Text('Share'),
               ),
             ),
-            AdwActionRow(
-              title: const Text('Share Dropped Files'),
-              subtitle: Text(
-                _droppedFiles.isEmpty
-                    ? 'Drop a file below first to enable sharing'
-                    : '${_droppedFiles.length} file(s) ready to share',
+            if (!kIsWeb &&
+                (defaultTargetPlatform == TargetPlatform.linux ||
+                    defaultTargetPlatform == TargetPlatform.android))
+              AdwActionRow(
+                title: const Text('Share Dropped Files'),
+                subtitle: Text(
+                  _droppedFiles.isEmpty
+                      ? 'Drop a file below first to enable sharing'
+                      : '${_droppedFiles.length} file(s) ready to share',
+                ),
+                trailing: AdwButton(
+                  onPressed: _droppedFiles.isNotEmpty
+                      ? () => _shareDroppedFiles(toastContext)
+                      : null,
+                  child: const Text('Share Files'),
+                ),
               ),
-              trailing: AdwButton(
-                onPressed: _droppedFiles.isNotEmpty
-                    ? () => _shareDroppedFiles(toastContext)
-                    : null,
-                child: const Text('Share Files'),
+            if (!kIsWeb && defaultTargetPlatform == TargetPlatform.linux)
+              AdwActionRow(
+                title: const Text('Native Emoji Chooser (Linux)'),
+                subtitle: Text('Selected: $_selectedEmoji'),
+                trailing: AdwButton(
+                  key: _emojiButtonKey,
+                  onPressed: () => _pickEmoji(toastContext),
+                  child: Text('Pick $_selectedEmoji'),
+                ),
               ),
-            ),
-            AdwActionRow(
-              title: const Text('Native Emoji Chooser (Linux)'),
-              subtitle: Text('Selected: $_selectedEmoji'),
-              trailing: AdwButton(
-                key: _emojiButtonKey,
-                onPressed: () => _pickEmoji(toastContext),
-                child: Text('Pick $_selectedEmoji'),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 16),

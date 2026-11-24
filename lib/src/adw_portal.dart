@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'web/adw_portal_web_stub.dart'
+    if (dart.library.js_interop) 'web/adw_portal_web.dart' as web_portal;
+
 /// Outcome status of an XDG Desktop Portal or native desktop integration call.
 enum AdwPortalStatus {
   /// The user granted permission or the portal action completed successfully.
@@ -271,9 +274,32 @@ class AdwPortal {
     }
   }
 
+  static AdwPortalResult<T> _parseWebResult<T>(Map<String, dynamic> raw) {
+    final statusName = raw['status'] as String?;
+    final message = raw['errorMessage'] as String?;
+    final value = raw['value'] as T?;
+    switch (statusName) {
+      case 'granted':
+        return AdwPortalResult<T>.granted(value);
+      case 'denied':
+        return AdwPortalResult<T>.denied(message);
+      case 'cancelled':
+        return AdwPortalResult<T>.cancelled();
+      case 'unsupported':
+        return AdwPortalResult<T>.unsupported(message);
+      default:
+        return AdwPortalResult<T>.error(
+          message ?? 'Unexpected web portal response.',
+        );
+    }
+  }
+
   /// Opens a URI (web URL, `mailto:`, etc.) via `org.freedesktop.portal.OpenURI`
-  /// on Linux or `Intent.ACTION_VIEW` on Android.
+  /// on Linux, `Intent.ACTION_VIEW` on Android, or `window.open` on Web.
   static Future<AdwPortalResult<void>> openUri(String uri) async {
+    if (kIsWeb) {
+      return _parseWebResult<void>(await web_portal.webOpenUri(uri));
+    }
     return _invokePortal<void>('openUri', {'uri': uri}, true);
   }
 
@@ -283,12 +309,21 @@ class AdwPortal {
   ///   with `ACTION_SEND` / `ACTION_SEND_MULTIPLE`).
   /// - **Linux:** Opens the native "Open With..." chooser for files via
   ///   `org.freedesktop.portal.OpenURI` (or copies plain text to the clipboard).
+  /// - **Web:** Uses `navigator.share` with clipboard fallback.
   static Future<AdwPortalResult<void>> share({
     String? text,
     String? subject,
     List<String> filePaths = const [],
     String? title,
   }) async {
+    if (kIsWeb) {
+      return _parseWebResult<void>(
+        await web_portal.webShare(
+          title: title ?? subject,
+          text: text,
+        ),
+      );
+    }
     return _invokePortal<void>(
       'share',
       {
@@ -304,14 +339,25 @@ class AdwPortal {
   /// Requests permission to post system notifications.
   ///
   /// On Android 13+ (API 33+) this prompts for `POST_NOTIFICATIONS` if not yet
-  /// granted. On Linux and older Android versions it returns granted immediately.
+  /// granted. On Web this calls `Notification.requestPermission()`.
+  /// On Linux and older Android versions it returns granted immediately.
   static Future<AdwPortalResult<bool>> requestNotificationPermission() async {
+    if (kIsWeb) {
+      final result = _parseWebResult<bool>(
+        await web_portal.webRequestNotificationPermission(),
+      );
+      return AdwPortalResult<bool>(
+        status: result.status,
+        value: result.value ?? result.isGranted,
+        errorMessage: result.errorMessage,
+      );
+    }
     if (_isLinux) {
       return const AdwPortalResult.granted(true);
     }
     if (!_isAndroid) {
       return const AdwPortalResult.unsupported(
-        'System notifications are only supported on Linux and Android.',
+        'System notifications are only supported on Linux, Android, and Web.',
       );
     }
     final result = await _invokePortal<bool>(
@@ -327,8 +373,8 @@ class AdwPortal {
   }
 
   /// Sends a system notification via `GNotification` /
-  /// `org.freedesktop.portal.Notification` on Linux or `NotificationManager` on
-  /// Android.
+  /// `org.freedesktop.portal.Notification` on Linux, `NotificationManager` on
+  /// Android, or the Web Notifications API on Web.
   ///
   /// Taps on the notification body or any [actions] button are delivered on
   /// [notificationEvents].
@@ -342,6 +388,25 @@ class AdwPortal {
     String? payload,
     String? category,
   }) async {
+    if (kIsWeb) {
+      return _parseWebResult<void>(
+        await web_portal.webSendNotification(
+          id: id,
+          title: title,
+          body: body,
+          onEvent: (notifId, actionId, isClosed) {
+            if (isClosed) return;
+            _notificationController.add(
+              AdwNotificationEvent(
+                notificationId: notifId,
+                actionId: actionId.isEmpty ? null : actionId,
+                payload: payload,
+              ),
+            );
+          },
+        ),
+      );
+    }
     _ensureHandlerRegistered();
     return _invokePortal<void>(
       'sendNotification',
@@ -362,6 +427,11 @@ class AdwPortal {
 
   /// Withdraws a previously sent notification by [id].
   static Future<AdwPortalResult<void>> withdrawNotification(String id) async {
+    if (kIsWeb) {
+      return _parseWebResult<void>(
+        await web_portal.webWithdrawNotification(id),
+      );
+    }
     return _invokePortal<void>('withdrawNotification', {'id': id}, true);
   }
 
