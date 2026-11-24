@@ -42,6 +42,7 @@ LINUX_CSD_SHADOWS.md
 .pub-cache/
 .pub/
 **/pubspec.lock
+**/pubspec_overrides.yaml
 **/.metadata
 **/linux/flutter/ephemeral/
 /build/
