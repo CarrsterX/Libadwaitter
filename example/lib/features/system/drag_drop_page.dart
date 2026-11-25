@@ -161,7 +161,7 @@ class _DragDropPageState extends State<DragDropPage> {
           onDrop: _handleDrop,
           builder: (context, isDraggingOver, child) {
             return AnimatedContainer(
-              duration: AdwCurves.shortDuration,
+              duration: AdwCurves.resolve(context, AdwCurves.shortDuration),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
               decoration: BoxDecoration(
                 color: isDraggingOver
@@ -171,7 +171,10 @@ class _DragDropPageState extends State<DragDropPage> {
                 border: Border.all(
                   color: isDraggingOver
                       ? theme.colors.accentColor
-                      : theme.colors.windowForeground.withValues(alpha: 0.14),
+                      : (theme.colors.isHighContrast
+                          ? theme.colors.borderColor
+                          : theme.colors.windowForeground
+                              .withValues(alpha: 0.14)),
                   width: isDraggingOver ? 2.0 : 1.0,
                 ),
               ),
