@@ -117,6 +117,7 @@ class SplitViewsPage extends StatelessWidget {
             contentHeight: 480,
             title: 'Overlay Split View',
             child: AdwToolbarView(
+              topBarStyle: AdwToolbarStyle.raised,
               topBar: AdwHeaderBar(
                 title: const Text('Overlay Split View'),
                 start: sidebarPosition == AdwSplitViewPosition.start
