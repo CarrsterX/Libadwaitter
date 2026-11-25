@@ -167,7 +167,6 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
           child: Focus(
             autofocus: true,
             child: AdwNavigationSplitView(
-              sidebarWidth: 270.0,
               breakpoint: 600.0,
               sidebar: _buildSidebar(theme),
               content: _buildContent(),
@@ -496,14 +495,15 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                         decoration: BoxDecoration(
                           color: theme.colors.isDark
                               ? const Color(0xFF3E3E42)
-                              : const Color(0xFFFFFFFF),
+                              : const Color(0xFFD9D9DA),
                           borderRadius:
                               BorderRadius.circular(AdwMetrics.buttonRadius),
                           border: Border.all(
                             color: _searchFocused
-                                ? theme.colors.accentColor
-                                    .withValues(alpha: 0.75)
-                                : theme.colors.borderColor,
+                                ? theme.colors.focusBorderColor
+                                : (theme.colors.isHighContrast
+                                    ? theme.colors.borderColor
+                                    : const Color(0x00000000)),
                             width: _searchFocused ? 2.0 : 1.0,
                           ),
                         ),

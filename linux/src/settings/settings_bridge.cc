@@ -7,14 +7,20 @@ namespace {
 const char* kSettingsChannelName = "libadwaitter/settings";
 
 static gboolean get_system_enable_animations() {
-  GtkSettings *settings = gtk_settings_get_default();
-  if (settings != nullptr) {
-    gboolean enabled = TRUE;
-    g_object_get(settings, "gtk-enable-animations", &enabled, NULL);
-    return enabled;
-  }
   GSettingsSchemaSource *source = g_settings_schema_source_get_default();
   if (source != nullptr) {
+    g_autoptr(GSettingsSchema) a11y_schema = g_settings_schema_source_lookup(
+        source, "org.gnome.desktop.a11y.interface", TRUE);
+    if (a11y_schema != nullptr &&
+        g_settings_schema_has_key(a11y_schema, "reduced-motion")) {
+      g_autoptr(GSettings) a11y_settings =
+          g_settings_new("org.gnome.desktop.a11y.interface");
+      g_autofree gchar *rm =
+          g_settings_get_string(a11y_settings, "reduced-motion");
+      if (rm != nullptr && strcmp(rm, "reduce") == 0) {
+        return FALSE;
+      }
+    }
     g_autoptr(GSettingsSchema) schema = g_settings_schema_source_lookup(
         source, "org.gnome.desktop.interface", TRUE);
     if (schema != nullptr &&
@@ -23,6 +29,12 @@ static gboolean get_system_enable_animations() {
           g_settings_new("org.gnome.desktop.interface");
       return g_settings_get_boolean(gsettings, "enable-animations");
     }
+  }
+  GtkSettings *settings = gtk_settings_get_default();
+  if (settings != nullptr) {
+    gboolean enabled = TRUE;
+    g_object_get(settings, "gtk-enable-animations", &enabled, NULL);
+    return enabled;
   }
   return TRUE;
 }
@@ -109,6 +121,83 @@ static void on_gtk_decoration_layout_changed(GObject *object, GParamSpec *pspec,
                                   nullptr, nullptr, nullptr);
 }
 
+static gdouble get_system_text_scaling_factor() {
+  GSettingsSchemaSource *source = g_settings_schema_source_get_default();
+  if (source != nullptr) {
+    g_autoptr(GSettingsSchema) schema = g_settings_schema_source_lookup(
+        source, "org.gnome.desktop.interface", TRUE);
+    if (schema != nullptr &&
+        g_settings_schema_has_key(schema, "text-scaling-factor")) {
+      g_autoptr(GSettings) gsettings =
+          g_settings_new("org.gnome.desktop.interface");
+      gdouble factor = g_settings_get_double(gsettings, "text-scaling-factor");
+      if (factor >= 0.5 && factor <= 3.0) {
+        return factor;
+      }
+    }
+  }
+  return 1.0;
+}
+
+static gboolean get_system_overlay_scrolling() {
+  GSettingsSchemaSource *source = g_settings_schema_source_get_default();
+  if (source != nullptr) {
+    g_autoptr(GSettingsSchema) schema = g_settings_schema_source_lookup(
+        source, "org.gnome.desktop.interface", TRUE);
+    if (schema != nullptr &&
+        g_settings_schema_has_key(schema, "overlay-scrolling")) {
+      g_autoptr(GSettings) gsettings =
+          g_settings_new("org.gnome.desktop.interface");
+      return g_settings_get_boolean(gsettings, "overlay-scrolling");
+    }
+  }
+  return TRUE;
+}
+
+static gboolean get_system_show_status_shapes() {
+  GSettingsSchemaSource *source = g_settings_schema_source_get_default();
+  if (source != nullptr) {
+    g_autoptr(GSettingsSchema) schema = g_settings_schema_source_lookup(
+        source, "org.gnome.desktop.a11y.interface", TRUE);
+    if (schema != nullptr &&
+        g_settings_schema_has_key(schema, "show-status-shapes")) {
+      g_autoptr(GSettings) gsettings =
+          g_settings_new("org.gnome.desktop.a11y.interface");
+      return g_settings_get_boolean(gsettings, "show-status-shapes");
+    }
+  }
+  return FALSE;
+}
+
+static FlValue *build_accessibility_settings_map() {
+  FlValue *map = fl_value_new_map();
+  fl_value_set_string_take(map, "textScalingFactor",
+                           fl_value_new_float(get_system_text_scaling_factor()));
+  fl_value_set_string_take(map, "overlayScrolling",
+                           fl_value_new_bool(get_system_overlay_scrolling()));
+  fl_value_set_string_take(map, "showStatusShapes",
+                           fl_value_new_bool(get_system_show_status_shapes()));
+  return map;
+}
+
+static void on_interface_animations_changed(GSettings *settings,
+                                            const gchar *key,
+                                            gpointer user_data) {
+  FlMethodChannel *channel = FL_METHOD_CHANNEL(user_data);
+  g_autoptr(FlValue) map = build_animation_settings_map();
+  fl_method_channel_invoke_method(channel, "onAnimationSettingsChanged", map,
+                                  nullptr, nullptr, nullptr);
+}
+
+static void on_interface_a11y_settings_changed(GSettings *settings,
+                                               const gchar *key,
+                                               gpointer user_data) {
+  FlMethodChannel *channel = FL_METHOD_CHANNEL(user_data);
+  g_autoptr(FlValue) map = build_accessibility_settings_map();
+  fl_method_channel_invoke_method(channel, "onAccessibilitySettingsChanged",
+                                  map, nullptr, nullptr, nullptr);
+}
+
 static void on_gtk_animations_changed(GObject *object, GParamSpec *pspec,
                                       gpointer user_data) {
   FlMethodChannel *channel = FL_METHOD_CHANNEL(user_data);
@@ -128,6 +217,9 @@ static void settings_method_call_handler(FlMethodChannel *channel,
     g_autofree gchar *layout = get_window_button_layout();
     g_autoptr(FlValue) val = fl_value_new_string(layout);
     fl_method_call_respond_success(method_call, val, nullptr);
+  } else if (strcmp(method, "getAccessibilitySettings") == 0) {
+    g_autoptr(FlValue) map = build_accessibility_settings_map();
+    fl_method_call_respond_success(method_call, map, nullptr);
   } else {
     fl_method_call_respond_not_implemented(method_call, nullptr);
   }
@@ -160,6 +252,56 @@ void RegisterSettingsBridge(FlPluginRegistrar* registrar, GtkWindow* window) {
                        G_CALLBACK(on_wm_button_layout_changed),
                        settings_channel);
       g_free(g_settings_get_string(wm_settings, "button-layout"));
+    }
+
+    g_autoptr(GSettingsSchema) iface_schema = g_settings_schema_source_lookup(
+        schema_source, "org.gnome.desktop.interface", TRUE);
+    if (iface_schema != nullptr) {
+      GSettings* iface_settings =
+          g_settings_new("org.gnome.desktop.interface");
+      g_object_set_data_full(G_OBJECT(window),
+                             "libadwaitter-interface-a11y-gsettings",
+                             iface_settings, g_object_unref);
+      if (g_settings_schema_has_key(iface_schema, "text-scaling-factor")) {
+        g_signal_connect(iface_settings, "changed::text-scaling-factor",
+                         G_CALLBACK(on_interface_a11y_settings_changed),
+                         settings_channel);
+        (void)g_settings_get_double(iface_settings, "text-scaling-factor");
+      }
+      if (g_settings_schema_has_key(iface_schema, "overlay-scrolling")) {
+        g_signal_connect(iface_settings, "changed::overlay-scrolling",
+                         G_CALLBACK(on_interface_a11y_settings_changed),
+                         settings_channel);
+        (void)g_settings_get_boolean(iface_settings, "overlay-scrolling");
+      }
+      if (g_settings_schema_has_key(iface_schema, "enable-animations")) {
+        g_signal_connect(iface_settings, "changed::enable-animations",
+                         G_CALLBACK(on_interface_animations_changed),
+                         settings_channel);
+        (void)g_settings_get_boolean(iface_settings, "enable-animations");
+      }
+    }
+
+    g_autoptr(GSettingsSchema) a11y_schema = g_settings_schema_source_lookup(
+        schema_source, "org.gnome.desktop.a11y.interface", TRUE);
+    if (a11y_schema != nullptr) {
+      GSettings* a11y_settings =
+          g_settings_new("org.gnome.desktop.a11y.interface");
+      g_object_set_data_full(G_OBJECT(window),
+                             "libadwaitter-a11y-interface-gsettings",
+                             a11y_settings, g_object_unref);
+      if (g_settings_schema_has_key(a11y_schema, "show-status-shapes")) {
+        g_signal_connect(a11y_settings, "changed::show-status-shapes",
+                         G_CALLBACK(on_interface_a11y_settings_changed),
+                         settings_channel);
+        (void)g_settings_get_boolean(a11y_settings, "show-status-shapes");
+      }
+      if (g_settings_schema_has_key(a11y_schema, "reduced-motion")) {
+        g_signal_connect(a11y_settings, "changed::reduced-motion",
+                         G_CALLBACK(on_interface_animations_changed),
+                         settings_channel);
+        g_free(g_settings_get_string(a11y_settings, "reduced-motion"));
+      }
     }
   }
 

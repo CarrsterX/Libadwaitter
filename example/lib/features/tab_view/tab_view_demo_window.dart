@@ -409,6 +409,14 @@ class _TabViewDemoWindowContentState extends State<_TabViewDemoWindowContent> {
                         offset: const Offset(0, 1),
                       ),
                     ],
+                    border: theme.colors.isHighContrast
+                        ? Border(
+                            bottom: BorderSide(
+                              color: theme.colors.borderColor,
+                              width: 1.0,
+                            ),
+                          )
+                        : null,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

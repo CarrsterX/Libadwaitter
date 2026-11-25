@@ -38,8 +38,6 @@ class _BoxedListsPageState extends State<BoxedListsPage> {
             AdwActionRow(
               title: const Text('Rows Can Have Suffix Widgets'),
               suffix: AdwButton(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 onPressed: () {
                   AdwToastOverlay.of(context).addToast(
                     const AdwToast(title: Text('Action clicked')),
@@ -231,9 +229,8 @@ class _BoxedListsPageState extends State<BoxedListsPage> {
         AdwPreferencesGroup(
           title: const Text('Groups With Suffix'),
           headerSuffix: AdwButton.flat(
-            height: 30.0,
             borderRadius: BorderRadius.circular(8.0),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             onPressed: () {
               AdwToastOverlay.of(context).addToast(
                 const AdwToast(title: Text('Group suffix clicked')),
