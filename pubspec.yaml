@@ -29,7 +29,8 @@ flutter:
   plugin:
     platforms:
       android:
-        dartPluginClass: LibadwaitterDartPlugin
+        package: com.carrster.libadwaitter
+        pluginClass: LibadwaitterPlugin
       linux:
         pluginClass: LibadwaitterPlugin
         dartPluginClass: LibadwaitterDartPlugin
