@@ -1,3 +1,7 @@
+## 1.0.0-alpha.10
+
+* Fixed `README.md` showcase GIF URLs to use absolute `raw.githubusercontent.com` links so they render reliably on `pub.dev`.
+
 ## 1.0.0-alpha.9
 
 * **Unified Native Plugin Architecture**: Moved the modular FDD Android Kotlin plugin (`LibadwaitterPlugin` with `StyleChannel`, `SettingsChannel`, `DndChannel`, `PortalChannel`, `MediaChannel`, `TextActionsChannel`, and `LibadwaitterFileProvider`) into `libadwaitter`, making `libadwaitter` the single source of native Linux & Android system bridges while `adwaitter` remains 100% pure Flutter UI.

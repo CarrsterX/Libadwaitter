@@ -20,27 +20,27 @@ Its goal is to enable Flutter developers to build native-feeling desktop applica
 
 ### Native Multi-Window & Client-Side Decorations (CSD)
 
-![Libadwaitter Multi-Window](doc/screenshots/libadwaitter_multi_window.gif)
+![Libadwaitter Multi-Window](https://raw.githubusercontent.com/CarrsterX/Libadwaitter/alpha/doc/screenshots/libadwaitter_multi_window.gif)
 
 ### Native Desktop Notifications (`AdwPortal`)
 
-![Libadwaitter Notifications](doc/screenshots/libadwaitter_notifications.gif)
+![Libadwaitter Notifications](https://raw.githubusercontent.com/CarrsterX/Libadwaitter/alpha/doc/screenshots/libadwaitter_notifications.gif)
 
 ### MPRIS2 & Media Session (`AdwMediaSession`)
 
-![Libadwaitter Media Player](doc/screenshots/libadwaitter_media_player.gif)
+![Libadwaitter Media Player](https://raw.githubusercontent.com/CarrsterX/Libadwaitter/alpha/doc/screenshots/libadwaitter_media_player.gif)
 
 ### System Tray / AppIndicator (`AdwSystemTray`)
 
-![Libadwaitter System Tray](doc/screenshots/libadwaitter_system_tray.gif)
+![Libadwaitter System Tray](https://raw.githubusercontent.com/CarrsterX/Libadwaitter/alpha/doc/screenshots/libadwaitter_system_tray.gif)
 
 ### Bidirectional Drag & Drop & Native Linux Emoji Picker (`AdwDragAndDrop`)
 
-![Libadwaitter Drag and Drop and Emoji Picker](doc/screenshots/libadwaitter_dnd_and_emoji.gif)
+![Libadwaitter Drag and Drop and Emoji Picker](https://raw.githubusercontent.com/CarrsterX/Libadwaitter/alpha/doc/screenshots/libadwaitter_dnd_and_emoji.gif)
 
 ### Polkit Privileged Execution (`AdwPortal`)
 
-![Libadwaitter Polkit](doc/screenshots/libadwaitter_polkit.gif)
+![Libadwaitter Polkit](https://raw.githubusercontent.com/CarrsterX/Libadwaitter/alpha/doc/screenshots/libadwaitter_polkit.gif)
 
 ---
 
