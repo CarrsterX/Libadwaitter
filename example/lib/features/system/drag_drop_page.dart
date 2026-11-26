@@ -22,6 +22,7 @@ class _DragDropPageState extends State<DragDropPage> {
   String _selectedEmoji = '🐧';
   String? _exampleAssetPath;
   String _exampleAssetText = 'Hello World!';
+  bool _isDropTargetFocused = false;
 
   @override
   void initState() {
@@ -214,25 +215,41 @@ class _DragDropPageState extends State<DragDropPage> {
         AdwDropTarget(
           onDrop: _handleDrop,
           builder: (context, isDraggingOver, child) {
-            return AnimatedContainer(
-              duration: AdwCurves.resolve(context, AdwCurves.shortDuration),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
-              decoration: BoxDecoration(
-                color: isDraggingOver
-                    ? theme.colors.accentColor.withValues(alpha: 0.14)
-                    : theme.colors.cardBackground,
-                borderRadius: BorderRadius.circular(AdwMetrics.cardRadius),
-                border: Border.all(
-                  color: isDraggingOver
-                      ? theme.colors.accentColor
-                      : (theme.colors.isHighContrast
-                          ? theme.colors.borderColor
-                          : theme.colors.windowForeground
-                              .withValues(alpha: 0.14)),
-                  width: isDraggingOver ? 2.0 : 1.0,
+            return Semantics(
+              container: true,
+              label: 'Drop files or text here',
+              child: FocusableActionDetector(
+                onShowFocusHighlight: (focused) {
+                  if (_isDropTargetFocused != focused) {
+                    setState(() => _isDropTargetFocused = focused);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: AdwCurves.resolve(context, AdwCurves.shortDuration),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                  decoration: BoxDecoration(
+                    color: isDraggingOver
+                        ? theme.colors.accentColor.withValues(alpha: 0.14)
+                        : theme.colors.cardBackground,
+                    borderRadius: BorderRadius.circular(AdwMetrics.cardRadius),
+                    border: Border.all(
+                      color: isDraggingOver
+                          ? theme.colors.accentColor
+                          : (_isDropTargetFocused
+                              ? theme.colors.focusBorderColor
+                              : (theme.colors.isHighContrast
+                                  ? theme.colors.borderColor
+                                  : theme.colors.windowForeground
+                                      .withValues(alpha: 0.14))),
+                      width: (isDraggingOver || _isDropTargetFocused)
+                          ? 2.0
+                          : 1.0,
+                    ),
+                  ),
+                  child: child,
                 ),
               ),
-              child: child,
             );
           },
           child: Column(
@@ -312,83 +329,67 @@ class _NautilusFileTile extends StatefulWidget {
 
 class _NautilusFileTileState extends State<_NautilusFileTile> {
   bool _isHovered = false;
+  bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = AdwTheme.of(context);
-    final isDark = theme.colors.isDark;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: AdwCurves.resolve(context, AdwCurves.shortDuration),
-        width: 112,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          color: _isHovered
-              ? theme.colors.hoverColor
-              : const Color(0x00000000),
-          borderRadius: BorderRadius.circular(10),
-          border: (theme.colors.isHighContrast && _isHovered)
-              ? Border.all(color: theme.colors.borderColor, width: 1.0)
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 54,
-              height: 64,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF424246)
-                    : const Color(0xFFFFFFFF),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: theme.colors.isHighContrast
-                      ? theme.colors.borderColor
-                      : theme.colors.windowForeground.withValues(alpha: 0.16),
-                  width: 1.0,
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x1F000000),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+    return Semantics(
+      button: true,
+      label: widget.fileName,
+      child: FocusableActionDetector(
+        onShowHoverHighlight: (hovered) {
+          if (_isHovered != hovered) setState(() => _isHovered = hovered);
+        },
+        onShowFocusHighlight: (focused) {
+          if (_isFocused != focused) setState(() => _isFocused = focused);
+        },
+        child: AnimatedContainer(
+          duration: AdwCurves.resolve(context, AdwCurves.shortDuration),
+          width: 128,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            color: (_isHovered || _isFocused)
+                ? theme.colors.hoverColor
+                : const Color(0x00000000),
+            borderRadius: BorderRadius.circular(10),
+            border: _isFocused
+                ? Border.all(color: theme.colors.focusBorderColor, width: 2.0)
+                : (theme.colors.isHighContrast && _isHovered)
+                    ? Border.all(color: theme.colors.borderColor, width: 1.0)
+                    : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AdwFullColorIcon(
+                AdwFullColorIcons.text_x_generic,
+                size: 96,
               ),
-              child: Center(
-                child: Icon(
-                  AdwIcons.text_x_generic_symbolic,
-                  size: 28,
-                  color: theme.colors.windowForeground.withValues(alpha: 0.78),
+              const SizedBox(height: 8),
+              Text(
+                widget.fileName,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.typography.body.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.fileName,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: theme.typography.body.copyWith(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+              const SizedBox(height: 2),
+              Text(
+                widget.subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.typography.caption.copyWith(
+                  color: theme.colors.secondaryForeground,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              widget.subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: theme.typography.caption.copyWith(
-                color: theme.colors.secondaryForeground,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
