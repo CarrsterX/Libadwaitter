@@ -1,3 +1,10 @@
+## 1.0.0-alpha.9
+
+* **Unified Native Plugin Architecture**: Moved the modular FDD Android Kotlin plugin (`LibadwaitterPlugin` with `StyleChannel`, `SettingsChannel`, `DndChannel`, `PortalChannel`, `MediaChannel`, `TextActionsChannel`, and `LibadwaitterFileProvider`) into `libadwaitter`, making `libadwaitter` the single source of native Linux & Android system bridges while `adwaitter` remains 100% pure Flutter UI.
+* **Outgoing Drag & Drop**: Added bidirectional native Drag & Drop (`AdwDragAndDrop.startDrag` + `AdwDragSource`) on Linux GTK3 and Android (`startDragAndDrop`), with a Nautilus-style file tile demo in `Adwaitter Demo`.
+* **Android 14+ Contrast & Animator Scale**: Added two-level Android 14+ `UiModeManager.getContrast()` + `high_text_contrast_enabled` and `Settings.Global.ANIMATOR_DURATION_SCALE` bridges.
+* **Tests & Showcase**: Added root smoke test, `AdwaitaDemoApplication` test, and native platform integration GIFs in `README.md`.
+
 ## 1.0.0-alpha.8
 
 * Added official Web and WebAssembly (WASM) platform support (`flutter_web_plugins` and `LibadwaitterDartPlugin.registerWith`).

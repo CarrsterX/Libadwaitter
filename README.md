@@ -9,6 +9,38 @@
 Its goal is to enable Flutter developers to build native-feeling desktop applications with the visual elegance, animations, tactile feel, and layout patterns of the modern GNOME desktop (Fedora, Ubuntu, Arch, Debian), while enjoying the productivity, reactivity, and declarative paradigms of Flutter.
 
 > **Requirements:** Flutter `>= 3.50.0` with the multi-window feature flag enabled (`flutter config --enable-windowing`).
+>
+> **Support for Apple Devices:** Help fund a MacBook Pro on [Ko-fi](https://ko-fi.com/carrster) to build, test, and maintain native macOS & iOS support for Libadwaitter.
+
+---
+
+## 🖥️ Native Platform Integrations Showcase
+
+`Libadwaitter` extends [`adwaitter`](packages/adwaitter) with native **Linux (GTK3/Wayland)** and **Android (Kotlin)** system bridges — zero third-party packages required:
+
+### Native Multi-Window & Client-Side Decorations (CSD)
+
+![Libadwaitter Multi-Window](doc/screenshots/libadwaitter_multi_window.gif)
+
+### Native Desktop Notifications (`AdwPortal`)
+
+![Libadwaitter Notifications](doc/screenshots/libadwaitter_notifications.gif)
+
+### MPRIS2 & Media Session (`AdwMediaSession`)
+
+![Libadwaitter Media Player](doc/screenshots/libadwaitter_media_player.gif)
+
+### System Tray / AppIndicator (`AdwSystemTray`)
+
+![Libadwaitter System Tray](doc/screenshots/libadwaitter_system_tray.gif)
+
+### Bidirectional Drag & Drop & Native Linux Emoji Picker (`AdwDragAndDrop`)
+
+![Libadwaitter Drag and Drop and Emoji Picker](doc/screenshots/libadwaitter_dnd_and_emoji.gif)
+
+### Polkit Privileged Execution (`AdwPortal`)
+
+![Libadwaitter Polkit](doc/screenshots/libadwaitter_polkit.gif)
 
 ---
 
@@ -34,7 +66,7 @@ This project is directly inspired by and builds upon the incredible work of the 
 * **Decoupled Window & CSD Management**: `AdwWindow` provides client-side decorations with 12px rounded corners, Mutter drop-shadows, and automatic 0px square corners on maximize.
 * **Native Internationalization (i18n)**: Built-in `AdwLocalizations` with English as default and extensible delegates.
 * **Companion Icon Package**: Independent [`adwaitter_icons`](packages/adwaitter_icons) package so you are never forced to bundle icon sets you don't use.
-* **Android Out-of-the-Box**: Automatic edge-to-edge safe areas, Android 14+ **Predictive Back**, multi-window / Desktop Mode support, and Android 12+ Material You dynamic accent colors via `AdwaitterPlugin` — no manual `MainActivity.kt` or `AndroidManifest.xml` edits required.
+* **Android Out-of-the-Box**: Automatic edge-to-edge safe areas, Android 14+ **Predictive Back**, 2-level system contrast, multi-window / Desktop Mode support, and Android 12+ Material You dynamic accent colors via `LibadwaitterPlugin` — no manual `MainActivity.kt` or `AndroidManifest.xml` edits required.
 
 ---
 
@@ -80,7 +112,7 @@ dart run libadwaitter:setup [options]
 
 ### Android Setup (Zero-Config)
 
-No manual edits to `MainActivity.kt` or `AndroidManifest.xml` are needed. Adding `libadwaitter` (or `adwaitter`) automatically bundles `AdwaitterPlugin`, enabling:
+No manual edits to `MainActivity.kt` or `AndroidManifest.xml` are needed. Adding `libadwaitter` automatically bundles `LibadwaitterPlugin`, enabling:
 * Android 14+ **Predictive Back** (`android:enableOnBackInvokedCallback="true"` via manifest merger) across `AdwNavigationView`, `AdwBottomSheet`, and bottom-sheet `AdwDialog`s.
 * Edge-to-edge system navigation bar insets (`adwBottomSystemInset` & `AdwBottomInsetConsumer`).
 * Android 12+ Material You dynamic accent color sync and `isInMultiWindowMode` / Desktop Mode detection.
@@ -167,7 +199,6 @@ class _SettingsPageState extends State<SettingsPage> {
 ## 🌿 Branching & Versioning Strategy
 
 * **`main`**: Stable releases and tags.
-* **`rc`**: Release candidates undergoing final stabilization.
 * **`beta`**: Pre-release testing and integration.
 * **`alpha`**: Early feature-complete testing builds (e.g. `1.0.0-alpha`).
 * **`dev`**: Active day-to-day development.
