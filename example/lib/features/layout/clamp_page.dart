@@ -29,6 +29,7 @@ class _ClampPageState extends State<ClampPage> {
       child: AdwClamp(
         maximumSize: _maximumSize,
         tighteningThreshold: _tighteningThreshold,
+        minimumSize: 280.0,
         unit: _unit,
         minimumMargin: 0.0,
         child: AdwPreferencesGroup(

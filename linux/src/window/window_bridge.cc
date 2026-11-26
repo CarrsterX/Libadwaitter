@@ -261,6 +261,7 @@ static void window_method_call_handler(FlMethodChannel *channel,
                          G_CALLBACK(on_window_post_drag_event), channel);
         g_signal_connect(sub_win, "button-release-event",
                          G_CALLBACK(on_window_post_drag_event), channel);
+        gtk_widget_grab_focus(GTK_WIDGET(sub_view));
       }
     }
     fl_method_call_respond_success(method_call, nullptr, nullptr);

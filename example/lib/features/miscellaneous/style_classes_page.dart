@@ -1446,6 +1446,7 @@ class _StatusPageDemoDialogState extends State<_StatusPageDemoDialog> {
       contentWidth: 640.0,
       contentHeight: 480.0,
       child: AdwToolbarView(
+        topBarStyle: AdwToolbarStyle.raised,
         topBar: AdwHeaderBar(
           title: const Text('Status Pages'),
           start: AdwButton.flat(
@@ -1495,8 +1496,6 @@ class _SidebarDemoDialogState extends State<_SidebarDemoDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AdwTheme.of(context);
-
     return AdwDialog(
       title: 'Sidebar',
       contentWidth: 720.0,
@@ -1521,44 +1520,30 @@ class _SidebarDemoDialogState extends State<_SidebarDemoDialog> {
           ),
           content: AdwTooltip(
             message: 'navigation-sidebar',
-            child: ListView(
-              padding: const EdgeInsets.all(6.0),
-              children: [
-                for (var i = 0; i < 5; i++)
-                  Builder(
-                    builder: (ctx) {
-                      final scope = AdwNavigationSplitViewScope.maybeOf(ctx);
-                      final isCollapsed = scope?.isCollapsed ?? false;
-                      final isSelected = !isCollapsed && _selectedIndex == i;
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          setState(() => _selectedIndex = i);
-                          if (isCollapsed) {
-                            scope?.showContentPage();
-                          }
-                        },
-                        child: Container(
-                          height: 36.0,
-                          margin: const EdgeInsets.symmetric(vertical: 1.0),
-                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? theme.colors.sidebarSelectedBackground
-                                : const Color(0x00000000),
-                            borderRadius: BorderRadius.circular(6.0),
-                          ),
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Item ${i + 1}',
-                            style: theme.typography.body,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-              ],
+            child: AdwSidebarFocusGroup(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
+                children: [
+                  for (var i = 0; i < 5; i++)
+                    Builder(
+                      builder: (ctx) {
+                        final scope = AdwNavigationSplitViewScope.maybeOf(ctx);
+                        final isCollapsed = scope?.isCollapsed ?? false;
+                        final isSelected = !isCollapsed && _selectedIndex == i;
+                        return AdwSidebarItem(
+                          title: Text('Item ${i + 1}'),
+                          isSelected: isSelected,
+                          onTap: () {
+                            setState(() => _selectedIndex = i);
+                            if (isCollapsed) {
+                              scope?.showContentPage();
+                            }
+                          },
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
           ),
         ),

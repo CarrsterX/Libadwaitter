@@ -634,7 +634,8 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                   ),
                 );
               }
-              return SingleChildScrollView(
+              return AdwSidebarFocusGroup(
+                child: SingleChildScrollView(
                 padding: isCollapsed
                     ? EdgeInsets.fromLTRB(12, 24, 12, bottomSafeInset)
                     : EdgeInsets.fromLTRB(0, 8, 0, 4 + bottomSafeInset),
@@ -908,6 +909,7 @@ class _AdwaitaDemoWindowState extends State<AdwaitaDemoWindow> {
                     ),
                   ],
                 ),
+              ),
               );
             },
       ),

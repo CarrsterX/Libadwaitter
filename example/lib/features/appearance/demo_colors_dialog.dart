@@ -173,7 +173,7 @@ class _DemoColorsDialogState extends State<_DemoColorsDialog> {
   }
 }
 
-class _ThemeSwatch extends StatelessWidget {
+class _ThemeSwatch extends StatefulWidget {
   const _ThemeSwatch({
     required this.mode,
     required this.label,
@@ -189,79 +189,123 @@ class _ThemeSwatch extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_ThemeSwatch> createState() => _ThemeSwatchState();
+}
+
+class _ThemeSwatchState extends State<_ThemeSwatch> {
+  bool _isFocused = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = AdwTheme.of(context);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 56,
-              height: 56,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: selected
-                              ? accentColor
-                              : theme.colors.foreground.withValues(alpha: 0.16),
-                          width: selected ? 2.5 : 1.0,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(1.5),
-                        child: ClipOval(
-                          child: CustomPaint(
-                            painter: _ThemeCirclePainter(mode: mode),
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      label: widget.label,
+      onTap: widget.onTap,
+      child: FocusableActionDetector(
+        mouseCursor: SystemMouseCursors.click,
+        onShowFocusHighlight: (focused) {
+          if (_isFocused != focused) setState(() => _isFocused = focused);
+        },
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onTap();
+              return null;
+            },
+          ),
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (_isFocused)
+                      Positioned(
+                        left: -1,
+                        right: -1,
+                        top: -1,
+                        bottom: -1,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: theme.colors.focusBorderColor,
+                                width: 2.0,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  if (selected)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
+                    Center(
                       child: Container(
-                        width: 20,
-                        height: 20,
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
-                          color: accentColor,
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: widget.selected
+                                ? widget.accentColor
+                                : theme.colors.foreground
+                                    .withValues(alpha: 0.16),
+                            width: widget.selected ? 2.5 : 1.0,
+                          ),
                         ),
-                        child: const CustomPaint(
-                          painter: _CheckPainter(
-                            color: Color(0xFFFFFFFF),
-                            strokeWidth: 2.2,
+                        child: Padding(
+                          padding: const EdgeInsets.all(1.5),
+                          child: ClipOval(
+                            child: CustomPaint(
+                              painter: _ThemeCirclePainter(mode: widget.mode),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                ],
+                    if (widget.selected)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: widget.accentColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const CustomPaint(
+                            painter: _CheckPainter(
+                              color: Color(0xFFFFFFFF),
+                              strokeWidth: 2.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: theme.typography.caption.copyWith(
-                color: selected
-                    ? theme.colors.foreground
-                    : theme.colors.secondaryForeground,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              const SizedBox(height: 8),
+              Text(
+                widget.label,
+                style: theme.typography.caption.copyWith(
+                  color: widget.selected
+                      ? theme.colors.foreground
+                      : theme.colors.secondaryForeground,
+                  fontWeight:
+                      widget.selected ? FontWeight.w600 : FontWeight.w400,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -301,7 +345,7 @@ class _ThemeCirclePainter extends CustomPainter {
   }
 }
 
-class _AccentSwatch extends StatelessWidget {
+class _AccentSwatch extends StatefulWidget {
   const _AccentSwatch({
     required this.accent,
     required this.selected,
@@ -313,40 +357,87 @@ class _AccentSwatch extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_AccentSwatch> createState() => _AccentSwatchState();
+}
+
+class _AccentSwatchState extends State<_AccentSwatch> {
+  bool _isFocused = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = AdwTheme.of(context);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: selected
-                ? Border.all(
-                    color: theme.colors.foreground,
-                    width: 2.5,
-                  )
-                : null,
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      label: widget.accent.name,
+      onTap: widget.onTap,
+      child: FocusableActionDetector(
+        mouseCursor: SystemMouseCursors.click,
+        onShowFocusHighlight: (focused) {
+          if (_isFocused != focused) setState(() => _isFocused = focused);
+        },
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onTap();
+              return null;
+            },
           ),
-          padding: EdgeInsets.all(selected ? 2.5 : 0),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: accent.color,
-              shape: BoxShape.circle,
-            ),
-            child: selected
-                ? const CustomPaint(
-                    painter: _CheckPainter(
-                      color: Color(0xFFFFFFFF),
-                      strokeWidth: 2.0,
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              if (_isFocused)
+                Positioned(
+                  left: -3.5,
+                  right: -3.5,
+                  top: -3.5,
+                  bottom: -3.5,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: theme.colors.focusBorderColor,
+                          width: 2.0,
+                        ),
+                      ),
                     ),
-                  )
-                : null,
+                  ),
+                ),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: widget.selected
+                      ? Border.all(
+                          color: theme.colors.foreground,
+                          width: 2.5,
+                        )
+                      : null,
+                ),
+                padding: EdgeInsets.all(widget.selected ? 2.5 : 0),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: widget.accent.color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: widget.selected
+                      ? const CustomPaint(
+                          painter: _CheckPainter(
+                            color: Color(0xFFFFFFFF),
+                            strokeWidth: 2.0,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ],
           ),
         ),
       ),
