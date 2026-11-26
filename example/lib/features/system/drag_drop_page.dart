@@ -1,8 +1,12 @@
 import 'package:adwaitter_icons/adwaitter_icons.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
 import 'package:libadwaitter/libadwaitter.dart';
+
+import 'drag_out_file_stub.dart'
+    if (dart.library.io) 'drag_out_file_io.dart';
 
 class DragDropPage extends StatefulWidget {
   const DragDropPage({super.key});
@@ -16,6 +20,27 @@ class _DragDropPageState extends State<DragDropPage> {
   final List<String> _droppedFiles = [];
   final GlobalKey _emojiButtonKey = GlobalKey();
   String _selectedEmoji = '🐧';
+  String? _exampleAssetPath;
+  String _exampleAssetText = 'Hello World!';
+
+  @override
+  void initState() {
+    super.initState();
+    _prepareExampleAssetFile();
+  }
+
+  Future<void> _prepareExampleAssetFile() async {
+    try {
+      final text = await rootBundle.loadString('assets/example.txt');
+      _exampleAssetText = text.trim().isNotEmpty ? text : 'Hello World!';
+      final path = await materializeExampleAssetFile(_exampleAssetText);
+      if (mounted && path != null) {
+        setState(() => _exampleAssetPath = path);
+      }
+    } catch (_) {
+      // Fallback to plain text if asset cannot be materialized
+    }
+  }
 
   void _handleDrop(List<String> files, String? text) {
     final now = DateTime.now();
@@ -157,6 +182,35 @@ class _DragDropPageState extends State<DragDropPage> {
           ],
         ),
         const SizedBox(height: 16),
+        if (!kIsWeb &&
+            (defaultTargetPlatform == TargetPlatform.linux ||
+                defaultTargetPlatform == TargetPlatform.android)) ...[
+          AdwPreferencesGroup(
+            title: const Text('Drag Out'),
+            description: const Text(
+              'Grab the file below and drag it into Files (Nautilus), a text editor, or another app.',
+            ),
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                child: Center(
+                  child: AdwDragSource(
+                    filesProvider: () => _exampleAssetPath != null
+                        ? <String>[_exampleAssetPath!]
+                        : const <String>[],
+                    text: _exampleAssetText,
+                    child: _NautilusFileTile(
+                      fileName: 'example.txt',
+                      subtitle: '13 bytes',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
         AdwDropTarget(
           onDrop: _handleDrop,
           builder: (context, isDraggingOver, child) {
@@ -238,6 +292,104 @@ class _DragDropPageState extends State<DragDropPage> {
         ),
       ],
     ),
+      ),
+    );
+  }
+}
+
+class _NautilusFileTile extends StatefulWidget {
+  final String fileName;
+  final String subtitle;
+
+  const _NautilusFileTile({
+    required this.fileName,
+    required this.subtitle,
+  });
+
+  @override
+  State<_NautilusFileTile> createState() => _NautilusFileTileState();
+}
+
+class _NautilusFileTileState extends State<_NautilusFileTile> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AdwTheme.of(context);
+    final isDark = theme.colors.isDark;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: AdwCurves.resolve(context, AdwCurves.shortDuration),
+        width: 112,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        decoration: BoxDecoration(
+          color: _isHovered
+              ? theme.colors.hoverColor
+              : const Color(0x00000000),
+          borderRadius: BorderRadius.circular(10),
+          border: (theme.colors.isHighContrast && _isHovered)
+              ? Border.all(color: theme.colors.borderColor, width: 1.0)
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 54,
+              height: 64,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF424246)
+                    : const Color(0xFFFFFFFF),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: theme.colors.isHighContrast
+                      ? theme.colors.borderColor
+                      : theme.colors.windowForeground.withValues(alpha: 0.16),
+                  width: 1.0,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1F000000),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  AdwIcons.text_x_generic_symbolic,
+                  size: 28,
+                  color: theme.colors.windowForeground.withValues(alpha: 0.78),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.fileName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.typography.body.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              widget.subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: theme.typography.caption.copyWith(
+                color: theme.colors.secondaryForeground,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

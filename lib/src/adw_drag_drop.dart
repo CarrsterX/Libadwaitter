@@ -127,6 +127,33 @@ class AdwDragAndDrop {
     );
   }
 
+  /// Starts an outgoing native Drag & Drop session carrying local [files]
+  /// and/or plain [text] to external applications (Linux GTK3 and Android 7+).
+  ///
+  /// Returns `true` if the host OS accepted and initiated the drag session.
+  static Future<bool> startDrag({
+    List<String> files = const <String>[],
+    String? text,
+    Offset position = Offset.zero,
+  }) async {
+    if (kIsWeb) return false;
+    if (files.isEmpty && (text == null || text.isEmpty)) return false;
+    try {
+      final result = await _channel.invokeMethod<bool>(
+        'startDrag',
+        <String, Object?>{
+          if (files.isNotEmpty) 'files': files,
+          if (text != null && text.isNotEmpty) 'text': text,
+          'x': position.dx,
+          'y': position.dy,
+        },
+      );
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @visibleForTesting
   static void setChannelForTesting(MethodChannel channel) {
     _channel = channel;
@@ -226,6 +253,55 @@ class _AdwDropTargetState extends State<AdwDropTarget> {
     return KeyedSubtree(
       key: _key,
       child: content,
+    );
+  }
+}
+
+/// Declarative drag source widget that starts an outgoing native Drag & Drop
+/// session via [AdwDragAndDrop.startDrag] when the user drags [child].
+class AdwDragSource extends StatelessWidget {
+  const AdwDragSource({
+    super.key,
+    required this.child,
+    this.filesProvider,
+    this.text,
+    this.onDragStarted,
+  });
+
+  final Widget child;
+
+  /// Async or sync callback returning local file paths to export on drag.
+  final FutureOr<List<String>> Function()? filesProvider;
+
+  /// Optional plain text payload to export alongside or instead of files.
+  final String? text;
+
+  /// Optional callback invoked when the native drag session starts.
+  final VoidCallback? onDragStarted;
+
+  Future<void> _beginDrag(Offset globalPosition) async {
+    final files = filesProvider != null
+        ? await filesProvider!()
+        : const <String>[];
+    final started = await AdwDragAndDrop.startDrag(
+      files: files,
+      text: text,
+      position: globalPosition,
+    );
+    if (started) {
+      onDragStarted?.call();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.grab,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanStart: (details) => _beginDrag(details.globalPosition),
+        child: child,
+      ),
     );
   }
 }
