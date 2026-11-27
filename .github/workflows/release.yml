@@ -127,10 +127,49 @@ jobs:
           mkdir -p dist
           tar -czf "dist/${APP_NAME}-linux-x64.tar.gz" -C example/build/linux/x64/release/bundle .
 
+      - name: Package .AppImage
+        run: |
+          APP_NAME="${{ needs.prepare.outputs.app_name }}"
+          APPDIR="AppDir"
+          rm -rf "$APPDIR"
+          mkdir -p "$APPDIR/usr/bin"
+          cp -r example/build/linux/x64/release/bundle/. "$APPDIR/usr/bin/"
+          cp example/web/icons/Icon-512.png "$APPDIR/com.carrster.adwaitter_demo.png"
+          ln -sf com.carrster.adwaitter_demo.png "$APPDIR/.DirIcon"
+
+          cat > "$APPDIR/com.carrster.adwaitter_demo.desktop" <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=Adwaitter Demo
+          Comment=GNOME Libadwaita 1.10+ widget showcase for Flutter
+          Exec=adwaitter_demo
+          Icon=com.carrster.adwaitter_demo
+          Categories=Development;Utility;GTK;
+          StartupWMClass=com.carrster.adwaitter_demo
+          Terminal=false
+          EOF
+
+          cat > "$APPDIR/AppRun" <<'EOF'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          export LD_LIBRARY_PATH="$HERE/usr/bin/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          exec "$HERE/usr/bin/adwaitter_demo" "$@"
+          EOF
+          chmod +x "$APPDIR/AppRun"
+
+          curl -fsSL -o appimagetool-x86_64.AppImage \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage --appimage-extract-and-run \
+            "$APPDIR" "dist/${APP_NAME}-linux-x64.AppImage"
+          chmod +x "dist/${APP_NAME}-linux-x64.AppImage"
+
       - uses: actions/upload-artifact@v4
         with:
           name: linux-bundle
-          path: dist/*.tar.gz
+          path: |
+            dist/*.tar.gz
+            dist/*.AppImage
 
   build-android:
     needs: prepare
