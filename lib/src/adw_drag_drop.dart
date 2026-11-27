@@ -8,16 +8,28 @@ import 'web/adw_dnd_web_stub.dart'
     if (dart.library.js_interop) 'web/adw_dnd_web.dart' as web_dnd;
 
 /// Lifecycle phase of an external drag-and-drop operation targeting the window.
+///
+/// {@category Drag & Drop}
 enum AdwDropEventType {
+  /// External drag entered the window bounds.
   enter,
+
+  /// External drag moved within the window bounds.
   update,
+
+  /// External drag left the window bounds without dropping.
   leave,
+
+  /// External drag payload was dropped onto the window.
   drop,
 }
 
 /// Payload emitted on [AdwDragAndDrop.events] when files or text are dragged
-/// from another application into the window (Linux GTK3 and Android).
+/// from another application into the window (Linux GTK3, Android, and Web).
+///
+/// {@category Drag & Drop}
 class AdwDropEvent {
+  /// Creates an external drag-and-drop event payload.
   const AdwDropEvent({
     required this.type,
     this.position = Offset.zero,
@@ -25,6 +37,7 @@ class AdwDropEvent {
     this.text,
   });
 
+  /// Lifecycle phase of this drag event.
   final AdwDropEventType type;
 
   /// Pointer position in logical window coordinates.
@@ -39,10 +52,13 @@ class AdwDropEvent {
 
 /// Cross-platform external Drag & Drop bridge (`libadwaitter/dnd`).
 ///
-/// - **Linux:** Receives external files (`text/uri-list`) and text (`text/plain`)
+/// * **Linux:** Receives external files (`text/uri-list`) and text (`text/plain`)
 ///   dragged from file managers or browsers via GTK3 `drag-data-received`.
-/// - **Android:** Receives files and text dragged in split-screen / desktop
+/// * **Android:** Receives files and text dragged in split-screen / desktop
 ///   mode via `View.OnDragListener` and `requestDragAndDropPermissions`.
+/// * **Web:** Bridges HTML5 Drag & Drop events.
+///
+/// {@category Drag & Drop}
 class AdwDragAndDrop {
   AdwDragAndDrop._();
 
@@ -169,7 +185,17 @@ class AdwDragAndDrop {
 
 /// Declarative drop zone widget that reacts to external files or text dragged
 /// from other applications via [AdwDragAndDrop].
+///
+/// ```dart
+/// AdwDropTarget(
+///   onDrop: (files, text) {},
+///   child: const AdwCard(child: Text('Drop files here')),
+/// )
+/// ```
+///
+/// {@category Drag & Drop}
 class AdwDropTarget extends StatefulWidget {
+  /// Creates a declarative external drop target wrapping [child].
   const AdwDropTarget({
     super.key,
     required this.child,
@@ -178,6 +204,7 @@ class AdwDropTarget extends StatefulWidget {
     this.builder,
   });
 
+  /// Target widget subtree that accepts dropped payloads.
   final Widget child;
 
   /// Invoked when files and/or text are dropped inside this widget's bounds.
@@ -259,7 +286,17 @@ class _AdwDropTargetState extends State<AdwDropTarget> {
 
 /// Declarative drag source widget that starts an outgoing native Drag & Drop
 /// session via [AdwDragAndDrop.startDrag] when the user drags [child].
+///
+/// ```dart
+/// AdwDragSource(
+///   text: 'Hello from Libadwaitter',
+///   child: const AdwCard(child: Text('Drag me to another app')),
+/// )
+/// ```
+///
+/// {@category Drag & Drop}
 class AdwDragSource extends StatelessWidget {
+  /// Creates a declarative outgoing drag source wrapping [child].
   const AdwDragSource({
     super.key,
     required this.child,
@@ -268,6 +305,7 @@ class AdwDragSource extends StatelessWidget {
     this.onDragStarted,
   });
 
+  /// Interactive subtree that initiates a native drag when dragged.
   final Widget child;
 
   /// Async or sync callback returning local file paths to export on drag.

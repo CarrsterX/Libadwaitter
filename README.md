@@ -1,6 +1,6 @@
 # Libadwaitter
 
-[![License: LGPL v2.1](https://img.shields.io/badge/License-LGPL_v2.1--or--later-blue.svg)](LICENSE)
+[![License: LGPL v2.1](https://img.shields.io/badge/License-LGPL_v2.1--or--later-blue.svg)](https://github.com/CarrsterX/Libadwaitter/blob/alpha/LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20%7C%20Web-blue)](https://flutter.dev)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20project-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/carrster)
 
@@ -16,7 +16,7 @@ Its goal is to enable Flutter developers to build native-feeling desktop applica
 
 ## 🖥️ Native Platform Integrations Showcase
 
-`Libadwaitter` extends [`adwaitter`](packages/adwaitter) with native **Linux (GTK3/Wayland)**, **Android (Kotlin)**, and **Web / WASM (`dart:js_interop`)** system bridges — zero third-party packages required:
+`Libadwaitter` extends [`adwaitter`](https://github.com/CarrsterX/Adwaitter) with native **Linux (GTK3/Wayland)**, **Android (Kotlin)**, and **Web / WASM (`dart:js_interop`)** system bridges — zero third-party packages required:
 
 ### Native Multi-Window & Client-Side Decorations (CSD)
 
@@ -65,7 +65,7 @@ This project is directly inspired by and builds upon the incredible work of the 
 * **1:1 Naming with Flutter Ergonomics**: Intuitive widget naming (`AdwActionRow`, `AdwPreferencesGroup`, `AdwHeaderBar`, `AdwButton`, `AdwSwitchRow`) backed by standard Flutter callbacks (`onPressed`, `onChanged`, `child`).
 * **Decoupled Window & CSD Management**: `AdwWindow` provides client-side decorations with 12px rounded corners, Mutter drop-shadows, and automatic 0px square corners on maximize.
 * **Native Internationalization (i18n)**: Built-in `AdwLocalizations` with English as default and extensible delegates.
-* **Companion Icon Package**: Independent [`adwaitter_icons`](packages/adwaitter_icons) package so you are never forced to bundle icon sets you don't use.
+* **Companion Icon Package**: Independent [`adwaitter_icons`](https://github.com/CarrsterX/Adwaitter_Icons) package so you are never forced to bundle icon sets you don't use.
 * **Android Out-of-the-Box**: Automatic edge-to-edge safe areas, Android 14+ **Predictive Back**, 2-level system contrast, multi-window / Desktop Mode support, and Android 12+ Material You dynamic accent colors via `LibadwaitterPlugin` — no manual `MainActivity.kt` or `AndroidManifest.xml` edits required.
 
 ---
@@ -191,8 +191,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
 ## 📜 License
 
-* **Library Code**: Licensed under the **GNU Lesser General Public License v2.1 or later (LGPL-2.1-or-later)**. See [LICENSE](LICENSE) for details.
-* **Typefaces (`assets/fonts/`)**: `Adwaita Sans` and `Adwaita Mono` are licensed under the **SIL Open Font License 1.1 (OFL-1.1)**. See [assets/fonts/OFL.txt](assets/fonts/OFL.txt).
+* **Library Code**: Licensed under the **GNU Lesser General Public License v2.1 or later (LGPL-2.1-or-later)**. See [LICENSE](https://github.com/CarrsterX/Libadwaitter/blob/alpha/LICENSE) for details.
+* **Typefaces (`assets/fonts/`)**: `Adwaita Sans` and `Adwaita Mono` are licensed under the **SIL Open Font License 1.1 (OFL-1.1)**. See [assets/fonts/OFL.txt](https://github.com/CarrsterX/Adwaitter/blob/alpha/assets/fonts/OFL.txt).
 
 ---
 

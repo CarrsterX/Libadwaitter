@@ -7,6 +7,8 @@ import 'web/adw_portal_web_stub.dart'
     if (dart.library.js_interop) 'web/adw_portal_web.dart' as web_portal;
 
 /// Outcome status of an XDG Desktop Portal or native desktop integration call.
+///
+/// {@category Desktop Portals}
 enum AdwPortalStatus {
   /// The user granted permission or the portal action completed successfully.
   granted,
@@ -28,6 +30,8 @@ enum AdwPortalStatus {
 ///
 /// Designed to degrade gracefully on non-Linux platforms (Android, iOS, macOS,
 /// Windows, Web) where [status] will be [AdwPortalStatus.unsupported].
+///
+/// {@category Desktop Portals}
 class AdwPortalResult<T> {
   const AdwPortalResult({
     required this.status,
@@ -62,6 +66,8 @@ class AdwPortalResult<T> {
 }
 
 /// Information about the active Linux runtime and sandbox environment.
+///
+/// {@category Desktop Portals}
 class AdwSandboxInfo {
   const AdwSandboxInfo({
     required this.isLinux,
@@ -92,17 +98,26 @@ class AdwSandboxInfo {
 }
 
 /// Result returned by [AdwPortal.runCommand] and [AdwPortal.runElevated] on Linux.
+///
+/// {@category Desktop Portals}
 class AdwCommandResult {
+  /// Creates a command execution result.
   const AdwCommandResult({
     required this.exitCode,
     required this.stdout,
     required this.stderr,
   });
 
+  /// Process exit code (`0` indicates success).
   final int exitCode;
+
+  /// Captured standard output text.
   final String stdout;
+
+  /// Captured standard error text.
   final String stderr;
 
+  /// Whether the command terminated with exit code `0`.
   bool get isSuccess => exitCode == 0;
 }
 
@@ -110,15 +125,27 @@ class AdwCommandResult {
 typedef AdwElevatedCommandResult = AdwCommandResult;
 
 /// Priority levels for [AdwPortal.sendNotification].
+///
+/// {@category Desktop Portals}
 enum AdwNotificationPriority {
+  /// Low-priority silent notification.
   low,
+
+  /// Standard default notification priority.
   normal,
+
+  /// High-priority notification.
   high,
+
+  /// Urgent notification requiring immediate attention.
   urgent,
 }
 
 /// Action button attached to a system notification sent via [AdwPortal.sendNotification].
+///
+/// {@category Desktop Portals}
 class AdwNotificationAction {
+  /// Creates a notification action button descriptor.
   const AdwNotificationAction({
     required this.id,
     required this.label,
@@ -130,12 +157,16 @@ class AdwNotificationAction {
   /// Human-readable button label displayed in the system notification.
   final String label;
 
+  /// Serializes this action to a platform-channel map.
   Map<String, String> toMap() => {'id': id, 'label': label};
 }
 
 /// Event emitted on [AdwPortal.notificationEvents] when the user taps a
 /// notification or clicks one of its [AdwNotificationAction] buttons.
+///
+/// {@category Desktop Portals}
 class AdwNotificationEvent {
+  /// Creates a notification interaction event.
   const AdwNotificationEvent({
     required this.notificationId,
     this.actionId,
@@ -158,6 +189,19 @@ class AdwNotificationEvent {
 }
 
 /// Optional Linux desktop & Wayland portal bridge (`libadwaitter/portal`).
+///
+/// ```dart
+/// final info = await AdwPortal.getSandboxInfo();
+/// if (info.isLinux) {
+///   await AdwPortal.sendNotification(
+///     id: 'sync-done',
+///     title: 'Sync Complete',
+///     body: 'All files are up to date.',
+///   );
+/// }
+/// ```
+///
+/// {@category Desktop Portals}
 ///
 /// This bridge is strictly decoupled from Libadwaitter's UI widgets: apps
 /// targeting Android, iOS, or other platforms can use the full UI library

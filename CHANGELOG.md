@@ -1,3 +1,9 @@
+## 1.0.0-alpha.11
+
+* **Full Paginated `dartdoc` Documentation**: Added `dartdoc_options.yaml` with 3 topic categories (`Desktop Portals`, `Drag & Drop`, `Media & System Tray`), topic guides under `doc/`, and 100% public API documentation across `AdwPortal`, `AdwDragAndDrop`, `AdwMediaSession`, and `AdwSystemTray` (0 warnings, 0 errors on `dart doc --validate-links`).
+* Updated `README.md` links to canonical HTTPS URLs for `pub.dev` compatibility and bumped `adwaitter` dependency to `^1.0.0-alpha.11`.
+* Polished `Adwaitter Demo` style classes popover arrow positioning (`AdwPopoverArrowSide.top`).
+
 ## 1.0.0-alpha.10
 
 * Fixed `README.md` showcase GIF URLs to use absolute `raw.githubusercontent.com` links so they render reliably on `pub.dev`.

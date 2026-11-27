@@ -1,0 +1,16 @@
+dartdoc:
+  categories:
+    "Desktop Portals":
+      markdown: doc/portals.md
+      name: Desktop Portals
+    "Drag & Drop":
+      markdown: doc/drag_and_drop.md
+      name: Drag & Drop
+    "Media & System Tray":
+      markdown: doc/media_and_tray.md
+      name: Media & System Tray
+  categoryOrder:
+    - "Desktop Portals"
+    - "Drag & Drop"
+    - "Media & System Tray"
+  showUndocumentedCategories: true

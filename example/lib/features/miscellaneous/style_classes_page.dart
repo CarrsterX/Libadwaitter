@@ -140,7 +140,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
       owner: _volumeBtnKey,
       parentAnchor: AdwPopoverAnchor.bottom,
       childAnchor: AdwPopoverAnchor.top,
-      offset: const Offset(0, 6),
+      offset: const Offset(0, 4),
       constraints: const BoxConstraints(
         minWidth: 58,
         maxWidth: 64,
@@ -149,7 +149,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
       builder: (popoverContext, handle) {
         return AdwPopoverSurface(
           isOsd: true,
-          arrowSide: AdwPopoverArrowSide.none,
+          arrowSide: AdwPopoverArrowSide.top,
           padding: const EdgeInsets.all(8.0),
           child: SizedBox(
             width: 44.0,
@@ -209,7 +209,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
       owner: buttonKey,
       parentAnchor: AdwPopoverAnchor.bottom,
       childAnchor: AdwPopoverAnchor.top,
-      offset: const Offset(0, 6),
+      offset: const Offset(0, 4),
       constraints: const BoxConstraints(
         minWidth: 160,
         maxWidth: 220,
@@ -217,7 +217,7 @@ class _StyleDemoDialogState extends State<_StyleDemoDialog> {
       ),
       builder: (popoverContext, handle) {
         return AdwPopoverSurface(
-          arrowSide: AdwPopoverArrowSide.none,
+          arrowSide: AdwPopoverArrowSide.top,
           child: SizedBox(
             width: 160,
             child: Column(

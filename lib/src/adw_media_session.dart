@@ -8,21 +8,38 @@ import 'web/adw_media_web_stub.dart'
 
 /// Playback state published to the system media controller (MPRIS2 on Linux,
 /// `MediaSession` on Android).
+///
+/// {@category Media & System Tray}
 enum AdwPlaybackStatus {
+  /// Media playback is stopped.
   stopped,
+
+  /// Media is actively playing.
   playing,
+
+  /// Media playback is paused.
   paused,
 }
 
 /// Loop / repeat mode published to the system media controller (MPRIS2 `LoopStatus`).
+///
+/// {@category Media & System Tray}
 enum AdwLoopMode {
+  /// No repeat.
   none,
+
+  /// Repeat the current track.
   track,
+
+  /// Repeat the entire playlist.
   playlist,
 }
 
 /// Media track metadata published to the system media controller.
+///
+/// {@category Media & System Tray}
 class AdwMediaMetadata {
+  /// Creates a track metadata snapshot for [AdwMediaSession].
   const AdwMediaMetadata({
     required this.title,
     this.artist,
@@ -32,13 +49,25 @@ class AdwMediaMetadata {
     this.trackId,
   });
 
+  /// Track display title.
   final String title;
+
+  /// Optional artist name.
   final String? artist;
+
+  /// Optional album name.
   final String? album;
+
+  /// Optional artwork URI (`file://` or `https://`).
   final String? artUrl;
+
+  /// Optional total track duration.
   final Duration? duration;
+
+  /// Optional unique track identifier.
   final String? trackId;
 
+  /// Serializes this metadata to a platform-channel map.
   Map<String, dynamic> toMap() => {
         'title': title,
         if (artist != null) 'artist': artist,
@@ -51,23 +80,51 @@ class AdwMediaMetadata {
 
 /// Command types emitted by the system media controls (GNOME Shell, lock
 /// screen, hardware media keys, Android media shade / Bluetooth controls).
+///
+/// {@category Media & System Tray}
 enum AdwMediaCommandType {
+  /// Start or resume playback.
   play,
+
+  /// Pause playback.
   pause,
+
+  /// Toggle between playing and paused.
   playPause,
+
+  /// Stop playback.
   stop,
+
+  /// Skip to the next track.
   next,
+
+  /// Skip to the previous track.
   previous,
+
+  /// Seek by a relative [AdwMediaCommand.offset].
   seek,
+
+  /// Jump to an absolute [AdwMediaCommand.position].
   setPosition,
+
+  /// Change the repeat mode to [AdwMediaCommand.loopMode].
   setLoopMode,
+
+  /// Toggle shuffle state to [AdwMediaCommand.shuffle].
   setShuffle,
+
+  /// Bring the application window to the foreground.
   raise,
+
+  /// Request application exit.
   quit,
 }
 
 /// Command received from the system media controller via [AdwMediaSession.commands].
+///
+/// {@category Media & System Tray}
 class AdwMediaCommand {
+  /// Creates a media control command payload.
   const AdwMediaCommand({
     required this.type,
     this.offset,
@@ -76,6 +133,7 @@ class AdwMediaCommand {
     this.shuffle,
   });
 
+  /// The kind of media action requested by the system.
   final AdwMediaCommandType type;
 
   /// Relative seek offset for [AdwMediaCommandType.seek].
@@ -92,6 +150,15 @@ class AdwMediaCommand {
 }
 
 /// System media player integration bridge (`libadwaitter/media`).
+///
+/// ```dart
+/// await AdwMediaSession.setMetadata(
+///   const AdwMediaMetadata(title: 'Track 1', artist: 'Artist'),
+/// );
+/// await AdwMediaSession.setPlaybackStatus(AdwPlaybackStatus.playing);
+/// ```
+///
+/// {@category Media & System Tray}
 ///
 /// - **Linux:** Exposes an `org.mpris.MediaPlayer2` D-Bus service so GNOME
 ///   Shell, lock-screen controls, and hardware media keys control your player.

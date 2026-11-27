@@ -4,24 +4,36 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Menu item displayed in the Linux StatusNotifierItem / AppIndicator tray menu.
+///
+/// {@category Media & System Tray}
 class AdwTrayMenuItem {
+  /// Creates an interactive tray menu item with [id] and [label].
   const AdwTrayMenuItem({
     required this.id,
     required this.label,
     this.enabled = true,
   }) : isSeparator = false;
 
+  /// Creates a horizontal menu separator item.
   const AdwTrayMenuItem.separator()
       : id = '',
         label = '',
         enabled = false,
         isSeparator = true;
 
+  /// Unique identifier returned in [AdwTrayEvent.itemId] when clicked.
   final String id;
+
+  /// Human-readable label shown in the tray context menu.
   final String label;
+
+  /// Whether this menu item can be clicked. Defaults to `true`.
   final bool enabled;
+
+  /// Whether this entry renders as a visual divider line.
   final bool isSeparator;
 
+  /// Serializes this item to a platform-channel map.
   Map<String, dynamic> toMap() => {
         'id': id,
         'label': label,
@@ -31,6 +43,8 @@ class AdwTrayMenuItem {
 }
 
 /// Event types emitted by [AdwSystemTray.events].
+///
+/// {@category Media & System Tray}
 enum AdwTrayEventType {
   /// Primary click on the system tray icon.
   activate,
@@ -46,13 +60,19 @@ enum AdwTrayEventType {
 }
 
 /// Event received from the Linux system tray bridge.
+///
+/// {@category Media & System Tray}
 class AdwTrayEvent {
+  /// Creates a system tray interaction event.
   const AdwTrayEvent({
     required this.type,
     this.itemId,
   });
 
+  /// Kind of tray interaction or window visibility transition.
   final AdwTrayEventType type;
+
+  /// Clicked [AdwTrayMenuItem.id] when [type] is [AdwTrayEventType.menuItemClicked].
   final String? itemId;
 }
 
@@ -62,6 +82,14 @@ class AdwTrayEvent {
 /// Uses pure GLib `GDBus` (`org.kde.StatusNotifierItem` + `com.canonical.dbusmenu`)
 /// with zero external library dependencies. On non-Linux platforms (such as
 /// Android), [isAvailable] safely returns `false` and other calls are no-ops.
+///
+/// ```dart
+/// if (await AdwSystemTray.isAvailable()) {
+///   await AdwSystemTray.show(title: 'My App');
+/// }
+/// ```
+///
+/// {@category Media & System Tray}
 class AdwSystemTray {
   AdwSystemTray._();
 
