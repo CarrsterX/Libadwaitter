@@ -189,6 +189,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
 ---
 
+## ⚠️ Known Limitations
+
+* **Mobile Web — Browser Edge Back/Forward Gestures (Won't Fix / Browser Sandbox Limitation):** On mobile web browsers (especially Chromium/Brave/Chrome on Android 14+ and Safari on iOS), swiping from the physical left or right screen edges is reserved by the browser/OS for its own Back/Forward history transitions (including Chromium's static tab-snapshot preview and History Manipulation Intervention). Web APIs do not allow JS/CSS/WASM applications to disable, intercept, or override these browser edge gestures or receive native predictive-back progress events.
+  * **Mitigation:** On touch Web, `AdwNavigationView` reserves a `72px` safe zone on both screen edges so Adwaita's swipe-back never collides with the browser's edge gesture; in-app swipe-back works smoothly when dragging from the inner area of the view, alongside the `AdwHeaderBar` back button. Native Android APK builds are unaffected and support full Android 14+ Predictive Back natively.
+
+---
+
 ## 📜 License
 
 * **Library Code**: Licensed under the **GNU Lesser General Public License v2.1 or later (LGPL-2.1-or-later)**. See [LICENSE](https://github.com/CarrsterX/Libadwaitter/blob/alpha/LICENSE) for details.

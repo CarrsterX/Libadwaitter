@@ -251,4 +251,7 @@ jobs:
           name: ${{ needs.prepare.outputs.app_name }}
           prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
           generate_release_notes: true
+          body: |
+            ### 🌐 WebAssembly Demo App
+            - **Web:** https://carrsterx.github.io/Libadwaitter/
           files: artifacts/*
