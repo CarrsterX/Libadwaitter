@@ -245,13 +245,49 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Generate release notes body
+        run: |
+          APP_NAME="${{ needs.prepare.outputs.app_name }}"
+          {
+            if [[ "$APP_NAME" == *"-alpha-"* ]]; then
+              cat <<'EOF'
+          > [!WARNING]
+          > **Pre-release / Alpha Software:** This is an early development build and is not stable. APIs, widgets, and behaviors may change without notice, and bugs or incomplete features are expected. Do not use in production.
+
+          EOF
+              FEEDBACK_LABEL="this alpha"
+            elif [[ "$APP_NAME" == *"-beta-"* ]]; then
+              cat <<'EOF'
+          > [!WARNING]
+          > **Pre-release / Beta Software:** This is a beta testing build. APIs are stabilizing, but bugs or visual polish issues may still occur. Please test thoroughly before using in production.
+
+          EOF
+              FEEDBACK_LABEL="this beta"
+            else
+              FEEDBACK_LABEL="this release"
+            fi
+
+            cat <<EOF
+          ### 📥 Demo App Downloads
+          - **Linux (x64):** \`${APP_NAME}-linux-x64.tar.gz\`
+          - **Linux (x64):** \`${APP_NAME}-linux-x64.AppImage\`
+          - **Android (arm64-v8a):** \`${APP_NAME}-android-arm64.apk\`
+          - **Android (armeabi-v7a):** \`${APP_NAME}-android-arm.apk\`
+          - **Android (x86_64):** \`${APP_NAME}-android-x86_64.apk\`
+
+          ### 🌐 WebAssembly Demo App
+          - **Web:** https://carrsterx.github.io/Libadwaitter/
+
+          ### 🧪 Feedback
+          If you test ${FEEDBACK_LABEL} and find any issues, please report them in the [Issues](https://github.com/CarrsterX/Libadwaitter/issues) tab.
+          EOF
+          } > release_body.md
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ needs.prepare.outputs.app_name }}
           prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
           generate_release_notes: true
-          body: |
-            ### 🌐 WebAssembly Demo App
-            - **Web:** https://carrsterx.github.io/Libadwaitter/
+          body_path: release_body.md
           files: artifacts/*
