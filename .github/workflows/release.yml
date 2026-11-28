@@ -240,54 +240,109 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
       - name: Generate release notes body
+        env:
+          APP_NAME: ${{ needs.prepare.outputs.app_name }}
+          PUB_VERSION: ${{ needs.prepare.outputs.pub_version }}
+          CURRENT_TAG: ${{ github.ref_name }}
         run: |
-          APP_NAME="${{ needs.prepare.outputs.app_name }}"
-          {
-            if [[ "$APP_NAME" == *"-alpha-"* ]]; then
-              cat <<'EOF'
-          > [!WARNING]
-          > **Pre-release / Alpha Software:** This is an early development build and is not stable. APIs, widgets, and behaviors may change without notice, and bugs or incomplete features are expected. Do not use in production.
+          python3 - <<'PY'
+          import os, re, subprocess
 
-          EOF
-              FEEDBACK_LABEL="this alpha"
-            elif [[ "$APP_NAME" == *"-beta-"* ]]; then
-              cat <<'EOF'
-          > [!WARNING]
-          > **Pre-release / Beta Software:** This is a beta testing build. APIs are stabilizing, but bugs or visual polish issues may still occur. Please test thoroughly before using in production.
+          app_name = os.environ["APP_NAME"]
+          pub_version = os.environ["PUB_VERSION"]
+          current_tag = os.environ["CURRENT_TAG"]
 
-          EOF
-              FEEDBACK_LABEL="this beta"
-            else
-              FEEDBACK_LABEL="this release"
-            fi
+          # Detect channel (alpha / beta / stable)
+          lower_name = app_name.lower()
+          is_alpha = "-alpha-" in lower_name or "-alpha." in lower_name
+          is_beta = "-beta-" in lower_name or "-beta." in lower_name
 
-            cat <<EOF
-          ### 📥 Demo App Downloads
-          - **Linux (x64):** \`${APP_NAME}-linux-x64.tar.gz\`
-          - **Linux (x64):** \`${APP_NAME}-linux-x64.AppImage\`
-          - **Android (arm64-v8a):** \`${APP_NAME}-android-arm64.apk\`
-          - **Android (armeabi-v7a):** \`${APP_NAME}-android-arm.apk\`
-          - **Android (x86_64):** \`${APP_NAME}-android-x86_64.apk\`
+          parts = []
 
-          ### 🌐 WebAssembly Demo App
-          - **Web:** https://carrsterx.github.io/Libadwaitter/
+          if is_alpha:
+              parts.append(
+                  "> [!WARNING]\n"
+                  "> **Pre-release / Alpha Software:** This is an early development build and is **not stable**. "
+                  "APIs, widgets, and behaviors may change without notice, and bugs or incomplete features are expected. "
+                  "Do not use in production."
+              )
+              feedback_label = "this alpha"
+          elif is_beta:
+              parts.append(
+                  "> [!WARNING]\n"
+                  "> **Pre-release / Beta Software:** This is a beta testing build. "
+                  "APIs are stabilizing, but bugs or visual polish issues may still occur. "
+                  "Please test thoroughly before using in production."
+              )
+              feedback_label = "this beta"
+          else:
+              feedback_label = "this release"
 
-          ### 🧪 Feedback
-          If you test ${FEEDBACK_LABEL} and find any issues, please report them in the [Issues](https://github.com/CarrsterX/Libadwaitter/issues) tab.
-          EOF
-          } > release_body.md
+          # Extract current version section from CHANGELOG.md
+          if os.path.exists("CHANGELOG.md"):
+              with open("CHANGELOG.md", "r", encoding="utf-8") as f:
+                  changelog = f.read()
+              pattern = rf"^##\s+{re.escape(pub_version)}\s*\n(.*?)(?=^##\s+|\Z)"
+              m = re.search(pattern, changelog, flags=re.MULTILINE | re.DOTALL)
+              if m and m.group(1).strip():
+                  parts.append("### 📋 What's Changed\n" + m.group(1).strip())
+
+          # Compute Full Changelog compare URL against previous tag
+          tags = subprocess.check_output(
+              ["git", "tag", "--sort=-v:refname"], text=True
+          ).splitlines()
+          prev_tag = None
+          if current_tag in tags:
+              idx = tags.index(current_tag)
+              if idx + 1 < len(tags):
+                  prev_tag = tags[idx + 1]
+          elif tags:
+              prev_tag = tags[0]
+
+          if prev_tag:
+              parts.append(
+                  f"**Full Changelog**: https://github.com/CarrsterX/Libadwaitter/compare/{prev_tag}...{current_tag}"
+              )
+
+          parts.append(
+              "### 📥 Demo App Downloads\n"
+              f"- **Linux (x64):** `{app_name}-linux-x64.tar.gz`\n"
+              f"- **Linux (x64):** `{app_name}-linux-x64.AppImage`\n"
+              f"- **Android (arm64-v8a):** `{app_name}-android-arm64.apk`\n"
+              f"- **Android (armeabi-v7a):** `{app_name}-android-arm.apk`\n"
+              f"- **Android (x86_64):** `{app_name}-android-x86_64.apk`"
+          )
+
+          parts.append(
+              "### 🌐 WebAssembly Demo App\n"
+              "- **Web:** https://carrsterx.github.io/Libadwaitter/"
+          )
+
+          parts.append(
+              "### 🧪 Feedback\n"
+              f"If you test {feedback_label} and find any issues, please report them in the "
+              "[Issues](https://github.com/CarrsterX/Libadwaitter/issues) tab."
+          )
+
+          with open("release_body.md", "w", encoding="utf-8") as f:
+              f.write("\n\n".join(parts) + "\n")
+          PY
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ needs.prepare.outputs.app_name }}
           prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
-          generate_release_notes: true
+          generate_release_notes: false
           body_path: release_body.md
           files: artifacts/*
