@@ -1,3 +1,8 @@
+## 1.0.0-alpha.12
+
+* Updated `adwaitter` dependency to `^1.0.0-alpha.12` (landscape dialog fix, `AdwCarousel` `allowLongSwipes` fix, and `72px` mobile Web edge safe-zone).
+* Added `overscroll-behavior-x: none` in `example/web/index.html` and documented mobile Web browser edge-gesture limitations in `README.md`.
+
 ## 1.0.0-alpha.11
 
 * **Full Paginated `dartdoc` Documentation**: Added `dartdoc_options.yaml` with 3 topic categories (`Desktop Portals`, `Drag & Drop`, `Media & System Tray`), topic guides under `doc/`, and 100% public API documentation across `AdwPortal`, `AdwDragAndDrop`, `AdwMediaSession`, and `AdwSystemTray` (0 warnings, 0 errors on `dart doc --validate-links`).
